@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
+import { git } from "./git";
 
 const program = new Command();
 
@@ -29,11 +30,17 @@ program
 		console.log("Listing profiles...");
 	});
 
+/**
+ * 顯示目前 git 設定
+ */
 program
 	.command("current")
 	.description("Show the current git profile")
-	.action(() => {
-		console.log("Showing current profile...");
+	.action(async () => {
+		const config = await git.listConfig();
+		console.log("👤 Current Git config:");
+		console.log("  user.name:", config.all["user.name"]);
+		console.log("  user.email:", config.all["user.email"]);
 	});
 
 program
