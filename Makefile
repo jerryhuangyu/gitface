@@ -22,6 +22,7 @@ bump:
 	@echo "✅ Version bumped to $(VERSION)"
 
 release:
+	@pnpm version $(VERSION) --no-git-tag-version
 	@git tag -a $(VERSION) -m "Release $(VERSION)"
 	@git push origin $(VERSION)
 	@echo "✅ Tag created: $(VERSION), pushed to remote."
