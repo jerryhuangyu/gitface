@@ -1,18 +1,9 @@
 import { describe, expect, test, vi } from "vitest";
-import type { ConfigScope, GitIdentity } from "../src/core/git-service.js";
-import type { Profile } from "../src/core/profile.js";
-import {
-	type GitGateway,
-	ProfileService,
-} from "../src/core/profile-service.js";
-import {
-	ProfileAlreadyExistsError,
-	ProfileNotFoundError,
-} from "../src/errors/index.js";
-import type {
-	ProfileRecord,
-	ProfileStore,
-} from "../src/infrastructure/profile-store.js";
+import type { ConfigScope, GitIdentity } from "../src/core/git-service";
+import type { Profile } from "../src/core/profile";
+import { type GitGateway, ProfileService } from "../src/core/profile-service";
+import { ProfileAlreadyExistsError, ProfileNotFoundError } from "../src/errors";
+import type { ProfileRecord, ProfileStore } from "../src/infra/profile-store";
 
 class InMemoryProfileStore implements ProfileStore {
 	private readonly store = new Map<string, ProfileRecord>();

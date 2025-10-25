@@ -1,4 +1,4 @@
-import { InvalidProfileError } from "../errors";
+import { InvalidProfileError } from "@/errors";
 
 export interface ProfileSnapshot {
 	name: string;

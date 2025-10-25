@@ -1,6 +1,6 @@
 import { Command } from "commander";
-import { ProfileService } from "../core/profile-service";
-import { withCommandHandling } from "./command-runner";
+import { withCommandHandling } from "@/commands/command-runner";
+import { ProfileService } from "@/core/profile-service";
 
 interface EditProfileOptions {
 	gitName?: string;
@@ -9,7 +9,7 @@ interface EditProfileOptions {
 	unsetSigningKey?: boolean;
 }
 
-export const editProfileCommand = new Command("edit")
+export const editProfileCommand: Command = new Command("edit")
 	.description("Update the stored details for an existing Git profile")
 	.argument("<profile>", "profile identifier")
 	.option("-n, --git-name <value>", "New Git user.name value")

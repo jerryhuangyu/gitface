@@ -1,16 +1,12 @@
 # Tech Stack
 
-## make-dir
-https://github.com/sindresorhus/make-dir?tab=readme-ov-file
+## Used Libraries
 
-## simple-git
-https://github.com/steveukx/git-js#readme
+- [commander](https://github.com/tj/commander.js)
+- [simple-git](https://github.com/steveukx/git-js)
 
-## listr
-https://github.com/SamVerschueren/listr
+## Non-used Libraries
 
-## execa
-https://github.com/sindresorhus/execa
-
-## commander
-https://github.com/tj/commander.js?tab=readme-ov-file
+- [make-dir](https://github.com/sindresorhus/make-dir)
+- [listr](https://github.com/SamVerschueren/listr)
+- [execa](https://github.com/sindresorhus/execa)

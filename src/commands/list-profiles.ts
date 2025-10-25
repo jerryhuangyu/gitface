@@ -1,8 +1,8 @@
 import { Command } from "commander";
-import { ProfileService } from "../core/profile-service";
-import { withCommandHandling } from "./command-runner";
+import { withCommandHandling } from "@/commands/command-runner";
+import { ProfileService } from "@/core/profile-service";
 
-export const listProfilesCommand = new Command("list")
+export const listProfilesCommand: Command = new Command("list")
 	.alias("ls")
 	.description("Display all stored Git profiles")
 	.action(

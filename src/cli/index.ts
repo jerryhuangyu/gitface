@@ -6,7 +6,7 @@ import {
 	newProfileCommand,
 	removeProfileCommand,
 	useProfileCommand,
-} from "../commands";
+} from "@/commands";
 
 function buildProgram(): Command {
 	const program = new Command();

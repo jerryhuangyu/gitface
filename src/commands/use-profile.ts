@@ -1,6 +1,6 @@
 import { Command } from "commander";
-import { ProfileService } from "../core/profile-service";
-import { withCommandHandling } from "./command-runner";
+import { withCommandHandling } from "@/commands/command-runner";
+import { ProfileService } from "@/core/profile-service";
 
 interface UseProfileOptions {
 	scope?: string;
@@ -8,7 +8,7 @@ interface UseProfileOptions {
 
 const VALID_SCOPES = new Set(["local", "global", "system"]);
 
-export const useProfileCommand = new Command("use")
+export const useProfileCommand: Command = new Command("use")
 	.description("Apply a stored profile to the active Git configuration")
 	.argument("<profile>", "profile identifier")
 	.option("-s, --scope <scope>", "local (default), global, or system", "local")

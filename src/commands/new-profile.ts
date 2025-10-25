@@ -1,6 +1,6 @@
 import { Command } from "commander";
-import { ProfileService } from "../core/profile-service";
-import { withCommandHandling } from "./command-runner";
+import { withCommandHandling } from "@/commands/command-runner";
+import { ProfileService } from "@/core/profile-service";
 
 interface NewProfileOptions {
 	gitName?: string;
@@ -9,7 +9,7 @@ interface NewProfileOptions {
 	force?: boolean;
 }
 
-export const newProfileCommand = new Command("new")
+export const newProfileCommand: Command = new Command("new")
 	.description("Create a profile from the current Git config or passed options")
 	.argument("<profile>", "profile identifier")
 	.option("-n, --git-name <value>", "Git user.name value to store")

@@ -1,8 +1,8 @@
 import { Command } from "commander";
-import { ProfileService } from "../core/profile-service";
-import { withCommandHandling } from "./command-runner";
+import { withCommandHandling } from "@/commands/command-runner";
+import { ProfileService } from "@/core/profile-service";
 
-export const currentIdentityCommand = new Command("current")
+export const currentIdentityCommand: Command = new Command("current")
 	.description("Show the Git identity currently configured in this repository")
 	.action(
 		withCommandHandling(async () => {

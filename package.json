@@ -1,39 +1,39 @@
 {
-  "name": "gitface",
-  "version": "0.0.0",
-  "description": "A simple CLI tool to change your “face” in Git.",
-  "type": "module",
-  "license": "MIT",
-  "files": [
-    "dist"
-  ],
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": "./dist/index.js",
-    "./package.json": "./package.json"
-  },
-  "scripts": {
-    "build": "tsdown",
-    "dev": "tsdown --watch",
-    "test": "vitest",
-    "typecheck": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.0.6",
-    "@types/node": "^24.9.1",
-    "bumpp": "^10.3.1",
-    "tsdown": "^0.15.9",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.1"
-  },
-  "bin": {
-    "gitface": "./dist/index.js"
-  },
-  "packageManager": "pnpm@9.12.3+sha512.cce0f9de9c5a7c95bef944169cc5dfe8741abfb145078c0d508b868056848a87c81e626246cb60967cbd7fd29a6c062ef73ff840d96b3c86c40ac92cf4a813ee",
-  "dependencies": {
-    "commander": "^14.0.1",
-    "simple-git": "^3.28.0"
-  }
+	"name": "gitface",
+	"version": "0.0.0",
+	"description": "A simple CLI tool to change your “face” in Git.",
+	"type": "module",
+	"license": "MIT",
+	"files": [
+		"dist"
+	],
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": "./dist/index.js",
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"build": "tsdown",
+		"dev": "tsdown --watch",
+		"test": "vitest",
+		"typecheck": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.0.6",
+		"@types/node": "^24.9.1",
+		"bumpp": "^10.3.1",
+		"tsdown": "^0.15.9",
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.1"
+	},
+	"bin": {
+		"gitface": "./dist/index.js"
+	},
+	"packageManager": "pnpm@9.12.3+sha512.cce0f9de9c5a7c95bef944169cc5dfe8741abfb145078c0d508b868056848a87c81e626246cb60967cbd7fd29a6c062ef73ff840d96b3c86c40ac92cf4a813ee",
+	"dependencies": {
+		"commander": "^14.0.1",
+		"simple-git": "^3.28.0"
+	}
 }

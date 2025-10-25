@@ -3,7 +3,7 @@ import {
 	InvalidProfileError,
 	ProfileAlreadyExistsError,
 	ProfileNotFoundError,
-} from "../errors";
+} from "@/errors";
 
 export function withCommandHandling<Args extends unknown[]>(
 	handler: (...args: Args) => Promise<void> | void,

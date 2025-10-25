@@ -1,11 +1,15 @@
 import {
+	type ConfigScope,
+	type GitIdentity,
+	GitService,
+} from "@/core/git-service";
+import { Profile, type ProfileInput, type ProfileUpdate } from "@/core/profile";
+import {
 	InvalidProfileError,
 	ProfileAlreadyExistsError,
 	ProfileNotFoundError,
-} from "../errors/index";
-import { FileProfileStore, type ProfileStore } from "../infra/profile-store";
-import { type ConfigScope, type GitIdentity, GitService } from "./git-service";
-import { Profile, type ProfileInput, type ProfileUpdate } from "./profile";
+} from "@/errors/index";
+import { FileProfileStore, type ProfileStore } from "@/infra/profile-store";
 
 export interface CreateProfileOptions {
 	name: string;

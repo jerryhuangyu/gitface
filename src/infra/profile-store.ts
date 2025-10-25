@@ -9,8 +9,8 @@ import {
 } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
-import type { Profile, ProfileInput, ProfileSnapshot } from "../core/profile";
-import { InvalidProfileError, ProfileNotFoundError } from "../errors";
+import type { Profile, ProfileInput, ProfileSnapshot } from "@/core/profile";
+import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 
 const PROFILE_FILE_EXTENSION = ".json";
 

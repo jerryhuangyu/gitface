@@ -1,12 +1,12 @@
 import { Command } from "commander";
-import { ProfileService } from "../core/profile-service";
-import { withCommandHandling } from "./command-runner";
+import { withCommandHandling } from "@/commands/command-runner";
+import { ProfileService } from "@/core/profile-service";
 
 interface RemoveProfileOptions {
 	force?: boolean;
 }
 
-export const removeProfileCommand = new Command("rm")
+export const removeProfileCommand: Command = new Command("rm")
 	.alias("remove")
 	.description("Delete a stored Git profile")
 	.argument("<profile>", "profile identifier")
