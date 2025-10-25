@@ -1,3 +1,12 @@
+## [0.2.0] - 2025-10-25
+
+### 🚀 Features
+
+- Add versioning to gitface --version
+
+### ⚙️ Miscellaneous Tasks
+
+- Add version bump for npm package
 ## [0.1.1] - 2025-10-25
 
 ### ⚙️ Miscellaneous Tasks
