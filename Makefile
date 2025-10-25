@@ -17,12 +17,12 @@ lint:
 
 bump:
 	@git-cliff --unreleased --bump --prepend CHANGELOG.md
-	@git add CHANGELOG.md
+	@pnpm version $(VERSION) --no-git-tag-version
+	@git add CHANGELOG.md package.json
 	@git commit -m "chore(release): bump version to $(VERSION)"
 	@echo "✅ Version bumped to $(VERSION)"
 
 release:
-	@pnpm version $(VERSION) --no-git-tag-version
 	@git tag -a $(VERSION) -m "Release $(VERSION)"
 	@git push origin $(VERSION)
 	@echo "✅ Tag created: $(VERSION), pushed to remote."

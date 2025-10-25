@@ -8,13 +8,13 @@ import {
 	useProfileCommand,
 } from "@/commands";
 
-function buildProgram(): Command {
+function buildProgram(version: string): Command {
 	const program = new Command();
 
 	program
 		.name("gitface")
 		.description("A simple CLI tool to change your “face” in Git")
-		.version("0.1.0");
+		.version(version);
 
 	// Profile CRUD
 	program.addCommand(newProfileCommand);
@@ -32,7 +32,7 @@ function buildProgram(): Command {
 	return program;
 }
 
-export function runCLI(): void {
-	const program = buildProgram();
+export function runCLI(version: string): void {
+	const program = buildProgram(version);
 	program.parse();
 }
