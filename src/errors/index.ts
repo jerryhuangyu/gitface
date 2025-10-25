@@ -13,6 +13,7 @@ export class ProfileNotFoundError extends GitfaceError {
 }
 
 export class InvalidProfileError extends GitfaceError {
+	// biome-ignore lint/complexity/noUselessConstructor: <remain extending ability>
 	constructor(message: string) {
 		super(message);
 	}
