@@ -1,3 +1,8 @@
+## [0.1.1] - 2025-10-25
+
+### ⚙️ Miscellaneous Tasks
+
+- Add --no-git-checks to npm publish command
 ## [0.1.0] - 2025-10-25
 
 ### 🚀 Features

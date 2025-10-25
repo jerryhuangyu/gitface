@@ -1,4 +1,4 @@
-VERSION = v$(shell git cliff --unreleased --bump --context | jq -r '.[0].version')
+VERSION = $(shell git cliff --unreleased --bump --context | jq -r '.[0].version')
 
 link:
 	@npm link
