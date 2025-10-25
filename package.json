@@ -17,12 +17,16 @@
 	"scripts": {
 		"build": "tsdown",
 		"dev": "tsdown --watch",
-		"test": "vitest",
+		"test": "vitest run --silent --coverage",
+		"test:ui": "vitest --ui",
+		"lint": "biome check",
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.0.6",
 		"@types/node": "^24.9.1",
+		"@vitest/coverage-v8": "4.0.2",
+		"@vitest/ui": "4.0.2",
 		"bumpp": "^10.3.1",
 		"tsdown": "^0.15.9",
 		"typescript": "^5.9.3",
