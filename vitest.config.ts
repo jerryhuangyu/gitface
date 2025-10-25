@@ -8,6 +8,7 @@ export default defineConfig({
 		},
     coverage: {
       reportOnFailure: true,
+      reporter: ['text', 'html', 'clover', 'json', 'json-summary']
     }
 	},
 });
