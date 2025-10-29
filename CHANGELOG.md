@@ -1,3 +1,12 @@
+## [0.4.0] - 2025-10-29
+
+### 🚀 Features
+
+- Add interactive UI for new profile creation command
+
+### ⚙️ Miscellaneous Tasks
+
+- Format code
 ## [0.3.0] - 2025-10-29
 
 ### 🚀 Features
