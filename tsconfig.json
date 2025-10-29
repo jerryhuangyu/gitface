@@ -17,6 +17,7 @@
 		"skipLibCheck": true,
 		"sourceMap": true,
 		"isolatedDeclarations": true,
+    "jsx": "react-jsx",
 		"paths": {
 			"@/*": ["./src/*"]
 		}

@@ -14,17 +14,19 @@ function buildProgram(version: string): Command {
 	program
 		.name("gitface")
 		.description("A simple CLI tool to change your “face” in Git")
-		.version(version);
+		.version(version)
+		// default command action
+		.action(currentIdentityCommand.action);
 
 	// Profile CRUD
 	program.addCommand(newProfileCommand);
-	program.addCommand(listProfilesCommand);
-	program.addCommand(editProfileCommand);
+	program.addCommand(listProfilesCommand.command);
+	program.addCommand(editProfileCommand.command);
 	program.addCommand(removeProfileCommand);
 
 	// Profile application
 	program.addCommand(useProfileCommand);
-	program.addCommand(currentIdentityCommand);
+	program.addCommand(currentIdentityCommand.command);
 
 	program.showHelpAfterError("(use --help for usage information)");
 	program.showSuggestionAfterError(true);

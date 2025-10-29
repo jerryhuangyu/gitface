@@ -5,7 +5,7 @@ GitFace is a tiny CLI that saves your favorite Git identities and applies them t
 ## Features
 
 - Built for frantic context switches—capture work/personal/OSS personas once and swap in under a second.
-- Profiles live in plain JSON under `~/.config/gitface/profiles`, so they are portable, auditable, and Git-friendly.
+- Profiles live in plain JSON under `~/.config/gitface/profiles`, so they are portable, auditable.
 - Scope-aware applies (`local`, `global`, or `system`) keep dotfiles honest without hand-editing `git config`.
 - One command (`gitface current`) confirms the active identity before you commit, preventing wrong-address mistakes.
 - Optional signing-key storage keeps GPG/SSH signing aligned with each persona.
@@ -44,17 +44,5 @@ gitface [command] --help
 ## Development
 
 GitFace uses TypeScript, Vitest, tsdown, and Biome. CI mirrors the commands above, so keep them green before opening a PR.
-
-## Release workflow
-
-1. Run `make bump` to:
-   - generate the changelog entry via `git-cliff`
-   - bump `package.json` (no tag yet)
-   - commit the version bump
-   - push the bump commit and wait for ci to pass
-2. Run `make release` to:
-   - create an annotated git tag from the latest commit
-   - push the tag to GitHub
-3. GitHub Actions picks up the tag and publishes the package to npm.
 
 If you need to dry-run a global install locally, `make link` (or `npm link`) exposes `gitface` from your workspace.
