@@ -1,3 +1,12 @@
+## [0.3.0] - 2025-10-29
+
+### 🚀 Features
+
+- Improve ui for current, edit, list commands with ink
+
+### 📚 Documentation
+
+- Update README and workflow name for clarity
 ## [0.2.0] - 2025-10-25
 
 ### 🚀 Features

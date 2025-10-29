@@ -1,6 +1,6 @@
 {
 	"name": "gitface",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "A simple CLI tool to change your “face” in Git.",
 	"type": "module",
 	"license": "MIT",
