@@ -15,11 +15,10 @@ function buildProgram(version: string): Command {
 		.name("gitface")
 		.description("A simple CLI tool to change your “face” in Git")
 		.version(version)
-		// default command action
 		.action(currentIdentityCommand.action);
 
 	// Profile CRUD
-	program.addCommand(newProfileCommand);
+	program.addCommand(newProfileCommand.command);
 	program.addCommand(listProfilesCommand.command);
 	program.addCommand(editProfileCommand.command);
 	program.addCommand(removeProfileCommand);

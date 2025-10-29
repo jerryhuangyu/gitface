@@ -45,6 +45,7 @@
 		"ink-text-input": "^6.0.0",
 		"react": "^19.2.0",
 		"simple-git": "^3.28.0",
-		"string-width": "^8.1.0"
+		"string-width": "^8.1.0",
+		"zod": "^4.1.12"
 	}
 }
