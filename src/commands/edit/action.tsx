@@ -19,6 +19,7 @@ const action: (name: string, options: EditProfileOptions) => Promise<void> =
 				email: options.email,
 				signingKey: options.unsetSigningKey ? null : options.signingKey,
 			});
+
 			sendProfileUpdateSuccessMsg(profile.name);
 			return;
 		}
