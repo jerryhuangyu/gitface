@@ -173,10 +173,14 @@ export const sendProfileCreateSuccessMsg = (profile: Profile): void => {
 	const name = profile.name;
 	const gitName = profile.gitName;
 	const email = profile.email;
-	const signingKey = profile.signingKey ?? chalk.gray("<unset>");
+	const signingKey = profile.signingKey ?? chalk.dim("<unset>");
 
-	console.log(`ℹ ${chalk.cyan("user.name")}  ${chalk.white(gitName)}`);
-	console.log(`ℹ ${chalk.cyan("user.email")}  ${chalk.white(email)}`);
-	console.log(`ℹ ${chalk.cyan("signingKey")}  ${chalk.white(signingKey)}`);
-	console.log(chalk.green(`\n${chalk.green("✔")} Saved profile '${name}'`));
+	const infoIcon = chalk.blue("ℹ");
+	const checkIcon = chalk.greenBright("✔");
+
+	console.log(`${infoIcon} ${chalk.dim("user.name")}  ${gitName}`);
+	console.log(`${infoIcon} ${chalk.dim("user.email")}  ${email}`);
+	console.log(`${infoIcon} ${chalk.dim("signingKey")}  ${signingKey}`);
+	console.log();
+	console.log(`${checkIcon} Saved profile ${chalk.green(`'${name}'`)}`);
 };
