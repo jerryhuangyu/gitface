@@ -26,9 +26,11 @@ const action: (name: string, options: RemoveProfileOptions) => Promise<void> =
 			}
 			if (error instanceof ProfileNotFoundError) {
 				sendProfileRemoveFailedMsg(`'${name}' does not exist.`);
+				process.exitCode = 1;
 				return;
 			}
 			sendProfileRemoveFailedMsg(`Unexpected error ${JSON.stringify(error)}`);
+			process.exitCode = 1;
 		}
 	});
 
