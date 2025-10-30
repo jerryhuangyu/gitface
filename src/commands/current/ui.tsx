@@ -1,55 +1,18 @@
-import { Box, Text } from "ink";
-import { useEffect, useState } from "react";
-import { ProfileService } from "@/core/profile-service";
+import chalk from "chalk";
+import type { GitIdentity } from "@/core/git-service";
 
-const CurrentIdentity: React.FC = () => {
-	const [identity, setIdentity] = useState<{
-		gitName?: string;
-		email?: string;
-		signingKey?: string;
-	} | null>(null);
+const infoIcon = chalk.blue("ℹ");
 
-	useEffect(() => {
-		const fetchIdentity = async () => {
-			const service = ProfileService.create();
-			const result = await service.getCurrentIdentity();
-			setIdentity(result);
-		};
-		fetchIdentity();
-	}, []);
+export const sendCurrentIdentityMsg = (identity: GitIdentity): void => {
+	const gitName = identity.gitName;
+	const email = identity.email;
+	const signingKey = identity.signingKey ?? chalk.dim("<unset>");
 
-	if (!identity) {
-		return <Text color="yellow">Loading Git identity…</Text>;
-	}
-
-	return (
-		<Box flexDirection="column" gap={0} paddingTop={1}>
-			<Text bold color="magenta">
-				Current Git identity:
-			</Text>
-
-			<Box>
-				<Box width={14} marginLeft={2}>
-					<Text dimColor>user.name</Text>
-				</Box>
-				<Text>{identity.gitName ?? "<unset>"}</Text>
-			</Box>
-
-			<Box>
-				<Box width={14} marginLeft={2}>
-					<Text dimColor>user.email</Text>
-				</Box>
-				<Text>{identity.email ?? "<unset>"}</Text>
-			</Box>
-
-			<Box display={identity.signingKey ? "flex" : "none"}>
-				<Box width={14} marginLeft={2}>
-					<Text dimColor>signingKey</Text>
-				</Box>
-				<Text>{identity.signingKey ?? "<unset>"}</Text>
-			</Box>
-		</Box>
-	);
+	console.log();
+	console.log("Current Git identity:");
+	console.log();
+	console.log(`${infoIcon} ${chalk.dim("user.name")}  ${gitName}`);
+	console.log(`${infoIcon} ${chalk.dim("user.email")}  ${email}`);
+	console.log(`${infoIcon} ${chalk.dim("signingKey")}  ${signingKey}`);
+	console.log();
 };
-
-export default CurrentIdentity;

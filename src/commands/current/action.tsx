@@ -1,10 +1,12 @@
-import { render } from "ink";
+import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
-import CurrentIdentity from "./ui";
+import { sendCurrentIdentityMsg } from "./ui";
 
 const action: () => Promise<void> = withCommandHandling(async () => {
-	const instance = render(<CurrentIdentity />);
-	await instance.waitUntilExit();
+	const service = ProfileService.create();
+	const identity = await service.getCurrentIdentity();
+
+	sendCurrentIdentityMsg(identity);
 });
 
 export default action;
