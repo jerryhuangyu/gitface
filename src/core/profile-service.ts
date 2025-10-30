@@ -46,6 +46,14 @@ export class ProfileService {
 			.sort((a, b) => a.name.localeCompare(b.name));
 	}
 
+	async findProfile(name: string): Promise<Profile | null> {
+		if (!(await this.store.exists(name))) {
+			return null;
+		}
+		const snapshot = await this.store.load(name);
+		return Profile.fromSnapshot(snapshot);
+	}
+
 	async getProfile(name: string): Promise<Profile> {
 		if (!(await this.store.exists(name))) {
 			throw new ProfileNotFoundError(name);

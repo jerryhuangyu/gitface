@@ -26,7 +26,7 @@ const action: (name: string, options: NewActionOptions) => Promise<void> =
 			return;
 		}
 
-		const targetProfile = await service.getProfile(name);
+		const targetProfile = await service.findProfile(name);
 		const instance = render(
 			<CreateProfile
 				name={name}
