@@ -21,7 +21,7 @@ function buildProgram(version: string): Command {
 	program.addCommand(newProfileCommand.command);
 	program.addCommand(listProfilesCommand.command);
 	program.addCommand(editProfileCommand.command);
-	program.addCommand(removeProfileCommand);
+	program.addCommand(removeProfileCommand.command);
 
 	// Profile application
 	program.addCommand(useProfileCommand);
