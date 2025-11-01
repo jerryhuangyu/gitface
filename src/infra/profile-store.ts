@@ -7,10 +7,10 @@ import {
 	unlink,
 	writeFile,
 } from "node:fs/promises";
-import { homedir } from "node:os";
 import path from "node:path";
 import type { Profile, ProfileInput, ProfileSnapshot } from "@/core/profile";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
+import { osPaths } from "@/infra/os-path";
 
 const PROFILE_FILE_EXTENSION = ".json";
 
@@ -123,9 +123,8 @@ export class FileProfileStore implements ProfileStore {
 }
 
 function resolveConfigDirectory(): string {
-	const configRoot =
-		process.env.XDG_CONFIG_HOME ?? path.join(homedir(), ".config");
-	return path.join(configRoot, "gitface");
+	const dir = osPaths.config("gitface") ?? path.join(process.cwd(), ".gitface");
+	return dir;
 }
 
 function parseSnapshot(name: string, raw: string): ProfileSnapshot {
