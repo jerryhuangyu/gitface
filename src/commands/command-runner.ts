@@ -4,6 +4,7 @@ import {
 	ProfileAlreadyExistsError,
 	ProfileNotFoundError,
 } from "@/errors";
+import { logger } from "@/infra/logger";
 
 export function withCommandHandling<Args extends unknown[]>(
 	handler: (...args: Args) => Promise<void> | void,
@@ -38,8 +39,8 @@ export function renderCommandError(error: unknown): void {
 
 	if (error instanceof Error) {
 		console.error(`✖ ${error.message}`);
-		if (process.env.GITFACE_DEBUG === "1" && error.stack) {
-			console.error(error.stack);
+		if (error.stack) {
+			logger.debug(error.stack);
 		}
 		return;
 	}

@@ -10,6 +10,7 @@ import {
 import path from "node:path";
 import type { Profile, ProfileInput, ProfileSnapshot } from "@/core/profile";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
+import { logger } from "@/infra/logger";
 import { osPaths } from "@/infra/os-path";
 
 const PROFILE_FILE_EXTENSION = ".json";
@@ -123,8 +124,18 @@ export class FileProfileStore implements ProfileStore {
 }
 
 function resolveConfigDirectory(): string {
-	const dir = osPaths.config("gitface") ?? path.join(process.cwd(), ".gitface");
-	return dir;
+	const resolved = osPaths.config("gitface");
+	if (resolved) {
+		logger.info("Resolved config directory:", resolved);
+		return resolved;
+	}
+
+	const fallback = path.join(process.cwd(), "gitface");
+	logger.critical(
+		"Unable to resolve OS-specific config directory; falling back to workspace path:",
+		fallback,
+	);
+	return fallback;
 }
 
 function parseSnapshot(name: string, raw: string): ProfileSnapshot {

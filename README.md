@@ -85,7 +85,7 @@ Run `gitface <command> --help` to see all flags and examples.
 - GitFace automatically wipes `user.signingkey` when the target profile has no
   key.
 
-Set `GITFACE_DEBUG=1` to print stack traces when something goes wrong.
+Set `GITFACE_LOG_LEVEL=debug` (or `GITFACE_DEBUG=1`) to print stack traces and additional diagnostics. Supported levels: `critical`, `error`, `warn`, `info`, `debug`, `trace`, `silent`.
 
 ## Development
 

@@ -51,4 +51,4 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 
 - Profile validation failures (`InvalidProfileError`) set `process.exitCode = 1`.
 - Domain-specific messages bubble up as chalk-coloured ✖ lines.
-- Unexpected errors surface their message; set `GITFACE_DEBUG=1` to append stack traces.
+- Unexpected errors surface their message; set `GITFACE_LOG_LEVEL=debug` (or `GITFACE_DEBUG=1`) to append stack traces.
