@@ -1,3 +1,30 @@
+## [0.5.0] - 2025-11-01
+
+### 🚀 Features
+
+- Implement new remove profile command with feedback
+- Implement new use profile command with align ux
+- Add OS path utilities for config file resolution
+- Implement logging with configurable levels
+- Enhance debug logging in commands
+
+### 🐛 Bug Fixes
+
+- Avoid crash when new a profile
+- Show single error message and exit with code 1 on removal failure
+
+### 🚜 Refactor
+
+- Clarify and polish success message when creating profiles
+- Align current identity display message with other outputs
+
+### 📚 Documentation
+
+- Update README and add CLI reference documentation
+
+### ⚙️ Miscellaneous Tasks
+
+- Update build script to include type checking
 ## [0.4.0] - 2025-10-29
 
 ### 🚀 Features
