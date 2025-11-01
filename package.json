@@ -15,7 +15,7 @@
 		"./package.json": "./package.json"
 	},
 	"scripts": {
-		"build": "tsdown",
+		"build": "tsc --noEmit && tsdown",
 		"dev": "tsdown --watch",
 		"test": "vitest run --silent --coverage",
 		"test:ui": "vitest --ui",

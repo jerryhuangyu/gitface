@@ -15,6 +15,14 @@ dev:
 lint:
 	@pnpm run lint
 
+typecheck:
+	@pnpm run typecheck
+
+unit-test:
+	@pnpm run test
+
+test: lint typecheck unit-test
+
 bump:
 	@git-cliff --unreleased --bump --prepend CHANGELOG.md
 	@pnpm version $(VERSION) --no-git-tag-version
