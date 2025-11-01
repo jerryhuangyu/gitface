@@ -24,7 +24,7 @@ function buildProgram(version: string): Command {
 	program.addCommand(removeProfileCommand.command);
 
 	// Profile application
-	program.addCommand(useProfileCommand);
+	program.addCommand(useProfileCommand.command);
 	program.addCommand(currentIdentityCommand.command);
 
 	program.showHelpAfterError("(use --help for usage information)");

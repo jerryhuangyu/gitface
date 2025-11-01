@@ -91,7 +91,7 @@ export class ProfileService {
 		await this.store.remove(name);
 	}
 
-	async useProfile(
+	async applyProfile(
 		name: string,
 		scope: ConfigScope = "local",
 	): Promise<Profile> {

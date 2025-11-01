@@ -119,7 +119,7 @@ describe("ProfileService", () => {
 			signingKey: "ABC123",
 		});
 
-		await service.useProfile("work", "global");
+		await service.applyProfile("work", "global");
 
 		expect(applySpy).toHaveBeenCalledTimes(1);
 		expect(applySpy.mock.calls[0]?.[1]).toBe("global");
