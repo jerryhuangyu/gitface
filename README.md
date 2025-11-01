@@ -1,14 +1,16 @@
 # [GitFace](https://github.com/jerryhuangyu/gitface) · [![npm version](https://img.shields.io/npm/v/gitface.svg?style=flat)](https://www.npmjs.com/package/gitface) [![npm total downloads](https://img.shields.io/npm/dt/gitface.svg?style=flat)](https://www.npmjs.com/package/gitface) [![Test](https://github.com/jerryhuangyu/gitface/actions/workflows/test.yml/badge.svg)](https://github.com/jerryhuangyu/gitface/actions/workflows/test.yml) [![Release](https://github.com/jerryhuangyu/gitface/actions/workflows/release.yml/badge.svg)](https://github.com/jerryhuangyu/gitface/actions/workflows/release.yml)
 
-GitFace is a tiny CLI that saves your favorite Git identities and applies them to any repository with a single command. Keep personal, work, OSS, or throwaway personas organized without hand-editing `git config`.
+GitFace keeps your Git personas in sync. Capture each identity once, store it as
+JSON, and apply it to any repository without touching `git config`.
 
-## Features
+## Why GitFace?
 
-- Built for frantic context switches—capture work/personal/OSS personas once and swap in under a second.
-- Profiles live in plain JSON under `~/.config/gitface/profiles`, so they are portable, auditable.
-- Scope-aware applies (`local`, `global`, or `system`) keep dotfiles honest without hand-editing `git config`.
-- One command (`gitface current`) confirms the active identity before you commit, preventing wrong-address mistakes.
-- Optional signing-key storage keeps GPG/SSH signing aligned with each persona.
+- **Frictionless switching** – apply profiles to any repo with
+  `gitface use <profile>`.
+- **Delightful UX** – flags for scripts, Interactive prompts for human.
+- **Local first** – profiles live right on your machine.
+- **Safety rails** – default scope is local, never pollute your global config by
+  mistake.
 
 ## Install
 
@@ -16,33 +18,85 @@ GitFace is a tiny CLI that saves your favorite Git identities and applies them t
 npm install --global gitface
 ```
 
-Prefer not to install? Use `npx gitface --help` whenever you need it.
+Prefer one-off use? Run `npx gitface --help`.
 
-## Quickstart
+## Quick Start
 
 ```bash
-# Capture the current repo identity
+# Create a profile using the current repo identity as defaults
 gitface new work
 
-# Or create one from scratch
-gitface new work -n "Company" -e "company@example.com"
+# Non-interactive creation (useful for CI scripts)
+gitface new oss --git-name "Open Source" --email "oss@example.com"
 
-# See what you have stored
+# See what is saved (sorted by last update)
 gitface list
 
-# Apply it to the repo you are standing in (default: local scope)
+# Apply a profile to the current repo (local scope is the default)
 gitface use work
 
-# Double-check the active config
+# Inspect the active Git identity
 gitface current
-
-# Help for more details
-gitface
-gitface [command] --help
 ```
+
+Run `gitface <command> --help` to see all flags and examples.
+
+## Command Reference
+
+| Command                  | Description                                                                                   |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`). |
+| `gitface edit <profile>` | Update a stored profile via flags or an interactive editor.                                   |
+| `gitface list`           | Render the saved profiles in an Ink table with relative timestamps.                           |
+| `gitface use <profile>`  | Apply a profile to Git config; supports `--scope local                                        |
+| `gitface current`        | Display the Git identity currently resolved from config.                                      |
+| `gitface rm <profile>`   | Remove a profile; add `--force` to ignore missing entries.                                    |
+
+## Profiles & Storage
+
+- Files are saved as prettified JSON in
+  `~/.config/gitface/profiles/<profile>.json`.
+- When you omit `--git-name` or `--email`, GitFace falls back to the identity
+  reported by `git config`.
+- Created profiles capture `createdAt` and `updatedAt` ISO timestamps for
+  auditing.
+- `--signing-key` values map to `user.signingkey`; use
+  `gitface edit <name> --unset-signing-key` to remove it.
+
+### Example profile file
+
+```json
+{
+  "name": "work",
+  "gitName": "Company Dev",
+  "email": "dev@company.com",
+  "signingKey": "ABC123",
+  "createdAt": "2024-12-01T17:33:14.023Z",
+  "updatedAt": "2024-12-01T17:33:14.023Z"
+}
+```
+
+## Scopes & Safety
+
+- `local` scope updates `.git/config` in the current repo (default).
+- `global` writes to your user config (`~/.gitconfig`), handy when you swap
+  machines.
+- `system` forwards to the system config for admin setups.
+- GitFace automatically wipes `user.signingkey` when the target profile has no
+  key.
+
+Set `GITFACE_DEBUG=1` to print stack traces when something goes wrong.
 
 ## Development
 
-GitFace uses TypeScript, Vitest, tsdown, and Biome. CI mirrors the commands above, so keep them green before opening a PR.
+```bash
+pnpm install          # install dependencies
+pnpm run lint         # Biome checks
+pnpm run typecheck    # tsc --noEmit
+pnpm run test         # Vitest (coverage enabled)
+pnpm run build        # tsc + tsdown bundle
+```
 
-If you need to dry-run a global install locally, `make link` (or `npm link`) exposes `gitface` from your workspace.
+- `pnpm run dev` runs tsdown in watch mode for local hacking.
+- `make link` (or `npm link`) exposes the CLI globally for manual testing.
+- Release automation lives in `docs/release.md`; keep CI green before tagging.
