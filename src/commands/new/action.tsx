@@ -11,7 +11,7 @@ interface NewActionOptions {
 }
 
 const action: (name: string, options: NewActionOptions) => Promise<void> =
-	withCommandHandling(async (name, options) => {
+	withCommandHandling("command:new", async (name, options) => {
 		const service = ProfileService.create();
 		if (hasNewProfileOptions(options)) {
 			const profile = await service.createProfile({

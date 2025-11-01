@@ -12,7 +12,7 @@ interface RemoveProfileOptions {
 }
 
 const action: (name: string, options: RemoveProfileOptions) => Promise<void> =
-	withCommandHandling(async (name, options) => {
+	withCommandHandling("command:remove", async (name, options) => {
 		const service = ProfileService.create();
 
 		try {

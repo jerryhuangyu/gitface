@@ -11,7 +11,7 @@ interface EditProfileOptions {
 }
 
 const action: (name: string, options: EditProfileOptions) => Promise<void> =
-	withCommandHandling(async (name, options) => {
+	withCommandHandling("command:edit", async (name, options) => {
 		if (hasUpdates(options)) {
 			const service = ProfileService.create();
 			const profile = await service.updateProfile(name, {

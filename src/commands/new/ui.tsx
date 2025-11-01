@@ -5,6 +5,7 @@ import { useReducer, useState } from "react";
 import { z } from "zod";
 import type { Profile } from "@/core/profile";
 import { ProfileService } from "@/core/profile-service";
+import { logger } from "@/infra/logger";
 
 interface Props {
 	name: string;
@@ -99,7 +100,7 @@ const CreateProfile: React.FC<Props> = ({
 			exit();
 			sendProfileCreateSuccessMsg(profile);
 		} catch (error) {
-			console.error("Failed to create profile:", error);
+			logger.error("command:new interactive flow failed", error);
 		}
 	};
 

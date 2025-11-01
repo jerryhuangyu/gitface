@@ -38,6 +38,7 @@ export class FileProfileStore implements ProfileStore {
 
 	async list(): Promise<ProfileRecord[]> {
 		await this.ready;
+		logger.debug("profile-store:list entries", { baseDir: this.profilesDir });
 		const entries = await readdir(this.profilesDir, { withFileTypes: true });
 		const names = entries
 			.filter(
@@ -49,21 +50,31 @@ export class FileProfileStore implements ProfileStore {
 		const snapshots = await Promise.all(
 			names.map((name) => this.safeLoad(name)),
 		);
-		return snapshots.filter(
+		const records = snapshots.filter(
 			(snapshot): snapshot is ProfileRecord => snapshot !== null,
 		);
+		logger.debug("profile-store:list result", {
+			total: entries.length,
+			valid: records.length,
+		});
+		return records;
 	}
 
 	async load(name: string): Promise<ProfileRecord> {
 		await this.ready;
+		logger.debug("profile-store:load invoked", { name });
 		const filePath = this.profilePath(name);
 		try {
 			const raw = await readFile(filePath, "utf8");
-			return parseSnapshot(name, raw);
+			const snapshot = parseSnapshot(name, raw);
+			logger.debug("profile-store:load success", { name });
+			return snapshot;
 		} catch (error) {
 			if (isNotFound(error)) {
+				logger.warn("profile-store:load missing profile", { name, filePath });
 				throw new ProfileNotFoundError(name);
 			}
+			logger.error("profile-store:load unexpected error", { name, error });
 			throw error;
 		}
 	}
@@ -72,6 +83,10 @@ export class FileProfileStore implements ProfileStore {
 		await this.ready;
 		const filePath = this.profilePath(profile.name);
 		const payload = JSON.stringify(profile.snapshot(), null, 2);
+		logger.info("profile-store:save profile", {
+			name: profile.name,
+			filePath,
+		});
 		await writeFile(filePath, `${payload}\n`, "utf8");
 	}
 
@@ -80,10 +95,13 @@ export class FileProfileStore implements ProfileStore {
 		const filePath = this.profilePath(name);
 		try {
 			await unlink(filePath);
+			logger.info("profile-store:remove profile", { name, filePath });
 		} catch (error) {
 			if (isNotFound(error)) {
+				logger.warn("profile-store:remove profile missing", { name, filePath });
 				throw new ProfileNotFoundError(name);
 			}
+			logger.error("profile-store:remove unexpected error", { name, error });
 			throw error;
 		}
 	}
@@ -93,16 +111,23 @@ export class FileProfileStore implements ProfileStore {
 		const filePath = this.profilePath(name);
 		try {
 			await access(filePath, fsConstants.F_OK);
+			logger.info("profile-store:exists profile present", { name });
 			return true;
 		} catch (error) {
 			if (isNotFound(error)) {
+				logger.debug("profile-store:exists profile missing", { name });
 				return false;
 			}
+			logger.error("profile-store:exists unexpected error", { name, error });
 			throw error;
 		}
 	}
 
 	private async ensureDirectories(): Promise<void> {
+		logger.debug("profile-store:ensureDirectories", {
+			baseDir: this.baseDir,
+			profilesDir: this.profilesDir,
+		});
 		await mkdir(this.baseDir, { recursive: true });
 		await mkdir(this.profilesDir, { recursive: true });
 	}
@@ -116,6 +141,9 @@ export class FileProfileStore implements ProfileStore {
 			return await this.load(name);
 		} catch (error) {
 			if (error instanceof InvalidProfileError) {
+				logger.warn("profile-store:safeLoad skipped invalid profile", {
+					name,
+				});
 				return null;
 			}
 			throw error;
@@ -126,7 +154,7 @@ export class FileProfileStore implements ProfileStore {
 function resolveConfigDirectory(): string {
 	const resolved = osPaths.config("gitface");
 	if (resolved) {
-		logger.info("Resolved config directory:", resolved);
+		logger.debug("profile-store:config resolved", { path: resolved });
 		return resolved;
 	}
 
