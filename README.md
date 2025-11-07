@@ -3,6 +3,8 @@
 GitFace keeps your Git personas in sync. Capture each identity once, store it as
 JSON, and apply it to any repository without touching `git config`.
 
+![GitFace Demo](assets/demo.gif)
+
 ## Why GitFace?
 
 - **Frictionless switching** – apply profiles to any repo with
