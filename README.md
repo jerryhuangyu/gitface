@@ -1,4 +1,8 @@
+![Gitface](https://raw.githubusercontent.com/jerryhuangyu/gitface/refs/heads/main/gif/demo.gif)
+
 # [GitFace](https://github.com/jerryhuangyu/gitface) · [![npm version](https://img.shields.io/npm/v/gitface.svg?style=flat)](https://www.npmjs.com/package/gitface) [![npm total downloads](https://img.shields.io/npm/dt/gitface.svg?style=flat)](https://www.npmjs.com/package/gitface) [![Test](https://github.com/jerryhuangyu/gitface/actions/workflows/test.yml/badge.svg)](https://github.com/jerryhuangyu/gitface/actions/workflows/test.yml) [![Release](https://github.com/jerryhuangyu/gitface/actions/workflows/release.yml/badge.svg)](https://github.com/jerryhuangyu/gitface/actions/workflows/release.yml)
+
+> Commit with the right face, every time.
 
 GitFace keeps your Git personas in sync. Capture each identity once, store it as
 JSON, and apply it to any repository without touching `git config`.
@@ -85,7 +89,9 @@ Run `gitface <command> --help` to see all flags and examples.
 - GitFace automatically wipes `user.signingkey` when the target profile has no
   key.
 
-Set `GITFACE_LOG_LEVEL=debug` (or `GITFACE_DEBUG=1`) to print stack traces and additional diagnostics. Supported levels: `critical`, `error`, `warn`, `info`, `debug`, `trace`, `silent`.
+Set `GITFACE_LOG_LEVEL=debug` (or `GITFACE_DEBUG=1`) to print stack traces and
+additional diagnostics. Supported levels: `critical`, `error`, `warn`, `info`,
+`debug`, `trace`, `silent`.
 
 ## Development
 

@@ -1,0 +1,252 @@
+# The configurations that used for the recording, feel free to edit them
+config:
+
+  # Specify a command to be executed
+  # like `/bin/bash -l`, `ls`, or any other commands
+  # the default is bash for Linux
+  # or powershell.exe for Windows
+  command: /bin/zsh
+
+  # Specify the current working directory path
+  # the default is the current working directory path
+  cwd: /Users/jerry
+
+  # Export additional ENV variables
+  env:
+    recording: true
+
+  # Explicitly set the number of columns
+  # or use `auto` to take the current
+  # number of columns of your shell
+  cols: 100
+
+  # Explicitly set the number of rows
+  # or use `auto` to take the current
+  # number of rows of your shell
+  rows: 15
+
+  # Amount of times to repeat GIF
+  # If value is -1, play once
+  # If value is 0, loop indefinitely
+  # If value is a positive number, loop n times
+  repeat: 0
+
+  # Quality
+  # 1 - 100
+  quality: 100
+
+  # Delay between frames in ms
+  # If the value is `auto` use the actual recording delays
+  frameDelay: auto
+
+  # Maximum delay between frames in ms
+  # Ignored if the `frameDelay` isn't set to `auto`
+  # Set to `auto` to prevent limiting the max idle time
+  maxIdleTime: 2000
+
+  # The surrounding frame box
+  # The `type` can be null, window, floating, or solid`
+  # To hide the title use the value null
+  # Don't forget to add a backgroundColor style with a null as type
+  frameBox:
+    type: solid
+    title: null
+    style:
+      boxShadow: none
+      margin: 0px
+      borderRadius: 0px
+      # border: 0px black solid
+
+  # Add a watermark image to the rendered gif
+  # You need to specify an absolute path for
+  # the image on your machine or a URL, and you can also
+  # add your own CSS styles
+  watermark:
+    imagePath: null
+    style:
+      position: absolute
+      right: 15px
+      bottom: 15px
+      width: 100px
+      opacity: 0.9
+
+  # Cursor style can be one of
+  # `block`, `underline`, or `bar`
+  cursorStyle: block
+
+  # Font family
+  # You can use any font that is installed on your machine
+  # in CSS-like syntax
+  fontFamily: "Monaco, Lucida Console, Ubuntu Mono, Monospace"
+
+  # The size of the font
+  fontSize: 24
+
+  # The height of lines
+  lineHeight: 1
+
+  # The spacing between letters
+  letterSpacing: 0
+
+  # Theme
+  theme:
+    background: "transparent"
+    foreground: "#afafaf"
+    cursor: "#c7c7c7"
+    black: "#232628"
+    red: "#fc4384"
+    green: "#b3e33b"
+    yellow: "#ffa727"
+    blue: "#75dff2"
+    magenta: "#ae89fe"
+    cyan: "#708387"
+    white: "#d5d5d0"
+    brightBlack: "#626566"
+    brightRed: "#ff7fac"
+    brightGreen: "#c8ed71"
+    brightYellow: "#ebdf86"
+    brightBlue: "#75dff2"
+    brightMagenta: "#ae89fe"
+    brightCyan: "#b1c6ca"
+    brightWhite: "#f9f9f4"
+
+# Records, feel free to edit them
+records:
+  - delay: 22
+    content: "\e[1m\e[7m%\e[27m\e[1m\e[0m                                                                                                   \r \r\e]2;jerry@jerrys-MacBook-Air:~/gitface\a\e]1;~/gitface\a\e]7;file://jerrys-MacBook-Air.local/Users/jerry/gitface\e\\"
+  - delay: 8
+    content: "\r\e[0m\e[27m\e[24m\e[J\e[0m\e[49m\e[39m\e[0m\e[49m\e[38;2;87;199;255m~/gitface\e[0m\e[38;2;87;199;255m\e[49m\e[38;2;87;199;255m\e[0m\e[38;2;87;199;255m\e[49m \e[0m\e[38;2;87;199;255m\e[49m\e[38;2;255;106;193m❯\e[0m\e[38;2;255;106;193m\e[49m\e[38;2;255;106;193m\e[0m\e[38;2;255;106;193m\e[49m\e[30m\e[0m\e[38;2;0;0;0m\e[49m\e[39m \e[0m\e[49m\e[39m\e[K\e[87C\e[0m\e[49m\e[39m\e[87D\e[?1h\e=\e[?2004h\e[?25l\r\r\e[0m\e[27m\e[24m\e[J\e[0m\e[38;5;242m\e[49m\e[39m\e[0m\e[49m\e[38;2;87;199;255m~/gitface\e[0m\e[38;2;87;199;255m\e[49m\e[38;2;87;199;255m\e[0m\e[38;2;87;199;255m\e[49m \e[0m\e[38;2;87;199;255m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242mmain\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m \e[0m\e[38;2;0;0;242m\e[49m\e[38;2;255;106;193m❯\e[0m\e[38;2;255;106;193m\e[49m\e[38;2;255;106;193m\e[0m\e[38;2;255;106;193m\e[49m\e[30m\e[0m\e[38;2;0;0;0m\e[49m\e[39m \e[0m\e[49m\e[39m\e[K\e[82C\e[0m\e[49m\e[39m\e[82D\e[?25h\e[?25l\r\r\e[0m\e[27m\e[24m\e[J\e[0m\e[38;5;242m\e[49m\e[39m\e[0m\e[49m\e[38;2;87;199;255m~/gitface\e[0m\e[38;2;87;199;255m\e[49m\e[38;2;87;199;255m\e[0m\e[38;2;87;199;255m\e[49m \e[0m\e[38;2;87;199;255m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242mmain\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m \e[0m\e[38;2;0;0;242m\e[49m\e[38;2;255;106;193m❯\e[0m\e[38;2;255;106;193m\e[49m\e[38;2;255;106;193m\e[0m\e[38;2;255;106;193m\e[49m\e[30m\e[0m\e[38;2;0;0;0m\e[49m\e[39m \e[0m\e[49m\e[39m\e[K\e[82C\e[0m\e[49m\e[39m\e[82D\e[?25h"
+  - delay: 515
+    content: g
+  - delay: 64
+    content: "\b\e[1m\e[31mg\e[1m\e[31mi\e[0m\e[39m"
+  - delay: 68
+    content: "\b\b\e[0m\e[32mg\e[0m\e[32mi\e[32mt\e[39m"
+  - delay: 66
+    content: "\b\b\b\e[1m\e[31mg\e[1m\e[31mi\e[1m\e[31mt\e[1m\e[31mf\e[0m\e[39m"
+  - delay: 61
+    content: "\b\e[1m\e[31mf\e[1m\e[31ma\e[0m\e[39m"
+  - delay: 68
+    content: "\b\e[1m\e[31ma\e[1m\e[31mc\e[0m\e[39m"
+  - delay: 69
+    content: "\b\b\b\b\b\b\e[0m\e[32mg\e[0m\e[32mi\e[0m\e[32mt\e[0m\e[32mf\e[0m\e[32ma\e[0m\e[32mc\e[32me\e[39m"
+  - delay: 66
+    content: " "
+  - delay: 133
+    content: "n"
+  - delay: 69
+    content: e
+  - delay: 85
+    content: w
+  - delay: 65
+    content: " "
+  - delay: 120
+    content: m
+  - delay: 61
+    content: e
+  - delay: 68
+    content: "\e[?1l\e>\e[?2004l\r\r\n\e]2;gitface new me\a\e]1;gitface\a"
+  - delay: 205
+    content: "\e[?25l\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.name: \e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (1/3)\e[22m\r\n\r\n\e[?25l"
+  - delay: 670
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.name: M\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (1/3)\e[22m\r\n\r\n"
+  - delay: 170
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.name: Me\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (1/3)\e[22m\r\n\r\n"
+  - delay: 510
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: \e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 128
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: m\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 66
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: me\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 138
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: me@\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 137
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: me@g\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 131
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: me@gm\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 171
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: me@gma\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 131
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: me@gmai\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 132
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: me@gmail\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 127
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: me@gmail.\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 197
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: me@gmail.c\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 128
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: me@gmail.co\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 75
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Git user.email: me@gmail.com\e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (2/3)\e[22m\r\n\r\n"
+  - delay: 637
+    content: "\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[1A\e[2K\e[G\r\n \e[1mCreate Profile: me\e[22m\r\n\r\n Signing key (optional): \e[7m \e[27m\r\n\r\n \e[2mPress Enter to continue (3/3)\e[22m\r\n\r\n"
+  - delay: 94
+    content: "\e[?25h\e[?25h\e[34mℹ\e[39m \e[2muser.name\e[22m  Me\r\n\e[34mℹ\e[39m \e[2muser.email\e[22m  me@gmail.com\r\n\e[34mℹ\e[39m \e[2msigningKey\e[22m  \e[2m<unset>\e[22m\r\n\r\n\e[92m✔\e[39m Saved profile \e[32m'me'\e[39m\r\n"
+  - delay: 44
+    content: "\e[?25h"
+  - delay: 12
+    content: "\e[1m\e[7m%\e[27m\e[1m\e[0m                                                                                                   \r \r\e]2;jerry@jerrys-MacBook-Air:~/gitface\a\e]1;~/gitface\a\e]7;file://jerrys-MacBook-Air.local/Users/jerry/gitface\e\\\r\e[0m\e[27m\e[24m\e[J\e[0m\e[38;5;242m\e[49m\e[39m\e[0m\e[49m\e[38;2;87;199;255m~/gitface\e[0m\e[38;2;87;199;255m\e[49m\e[38;2;87;199;255m\e[0m\e[38;2;87;199;255m\e[49m \e[0m\e[38;2;87;199;255m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242mmain\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m \e[0m\e[38;2;0;0;242m\e[49m\e[38;2;255;106;193m❯\e[0m\e[38;2;255;106;193m\e[49m\e[38;2;255;106;193m\e[0m\e[38;2;255;106;193m\e[49m\e[30m\e[0m\e[38;2;0;0;0m\e[49m\e[39m \e[0m\e[49m\e[39m\e[K\e[80C\e[0m\e[49m\e[38;2;243;249;157m7s\e[0m\e[38;2;243;249;157m\e[49m\e[38;2;243;249;157m\e[0m\e[38;2;243;249;157m\e[49m\e[38;2;243;249;157m\e[0m\e[38;2;243;249;157m\e[49m\e[39m\e[82D\e[?1h\e=\e[?2004h"
+  - delay: 2510
+    content: "\e[32mg\e[39m"
+  - delay: 67
+    content: "\b\e[1m\e[31mg\e[1m\e[31mi\e[0m\e[39m"
+  - delay: 84
+    content: "\b\b\e[0m\e[32mg\e[0m\e[32mi\e[32mt\e[39m"
+  - delay: 65
+    content: "\b\b\b\e[1m\e[31mg\e[1m\e[31mi\e[1m\e[31mt\e[1m\e[31mf\e[0m\e[39m"
+  - delay: 65
+    content: "\b\e[1m\e[31mf\e[1m\e[31ma\e[0m\e[39m"
+  - delay: 65
+    content: "\b\e[1m\e[31ma\e[1m\e[31mc\e[0m\e[39m"
+  - delay: 69
+    content: "\b\b\b\b\b\b\e[0m\e[32mg\e[0m\e[32mi\e[0m\e[32mt\e[0m\e[32mf\e[0m\e[32ma\e[0m\e[32mc\e[32me\e[39m"
+  - delay: 67
+    content: " "
+  - delay: 101
+    content: l
+  - delay: 61
+    content: s
+  - delay: 123
+    content: "\e[?1l\e>\e[?2004l\r\r\n\e]2;gitface ls\a\e]1;gitface\a"
+  - delay: 127
+    content: "\e[?25l\e[1m\U0001F4C1 Saved Profiles:\e[22m\r\n╭─────────┬──────────┬──────────────┬─────────────┬──────────╮\r\n│\e[1m\e[34m PROFILE\e[39m\e[22m │\e[1m\e[34m GIT NAME\e[39m\e[22m │\e[1m\e[34m EMAIL       \e[39m\e[22m │\e[1m\e[34m SIGNING KEY\e[39m\e[22m │\e[1m\e[34m UPDATED \e[39m\e[22m │\r\n├─────────┼──────────┼──────────────┼─────────────┼──────────┤\r\n│ \e[32mme\e[39m      │ \e[36mMe\e[39m       │ \e[33mme@gmail.com\e[39m │ \e[35m<none>\e[39m      │ \e[2mJust now\e[22m │\r\n╰─────────┴──────────┴──────────────┴─────────────┴──────────╯\r\n\e[?25l"
+  - delay: 33
+    content: "\e[?25h\e[?25h\e[?25h"
+  - delay: 5
+    content: "\e[1m\e[7m%\e[27m\e[1m\e[0m                                                                                                   \r \r\e]2;jerry@jerrys-MacBook-Air:~/gitface\a\e]1;~/gitface\a\e]7;file://jerrys-MacBook-Air.local/Users/jerry/gitface\e\\\r\e[0m\e[27m\e[24m\e[J\e[0m\e[38;5;242m\e[49m\e[39m\e[0m\e[49m\e[38;2;87;199;255m~/gitface\e[0m\e[38;2;87;199;255m\e[49m\e[38;2;87;199;255m\e[0m\e[38;2;87;199;255m\e[49m \e[0m\e[38;2;87;199;255m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242mmain\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m \e[0m\e[38;2;0;0;242m\e[49m\e[38;2;255;106;193m❯\e[0m\e[38;2;255;106;193m\e[49m\e[38;2;255;106;193m\e[0m\e[38;2;255;106;193m\e[49m\e[30m\e[0m\e[38;2;0;0;0m\e[49m\e[39m \e[0m\e[49m\e[39m\e[K\e[82C\e[0m\e[49m\e[39m\e[82D\e[?1h\e=\e[?2004h\e[?25l\r\r\e[0m\e[27m\e[24m\e[J\e[0m\e[38;5;242m\e[49m\e[39m\e[0m\e[49m\e[38;2;87;199;255m~/gitface\e[0m\e[38;2;87;199;255m\e[49m\e[38;2;87;199;255m\e[0m\e[38;2;87;199;255m\e[49m \e[0m\e[38;2;87;199;255m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242mmain\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m \e[0m\e[38;2;0;0;242m\e[49m\e[38;2;255;106;193m❯\e[0m\e[38;2;255;106;193m\e[49m\e[38;2;255;106;193m\e[0m\e[38;2;255;106;193m\e[49m\e[30m\e[0m\e[38;2;0;0;0m\e[49m\e[39m \e[0m\e[49m\e[39m\e[K\e[82C\e[0m\e[49m\e[39m\e[82D\e[?25h"
+  - delay: 2414
+    content: "\e[32mg\e[39m"
+  - delay: 145
+    content: "\b\e[1m\e[31mg\e[1m\e[31mi\e[0m\e[39m"
+  - delay: 65
+    content: "\b\b\e[0m\e[32mg\e[0m\e[32mi\e[32mt\e[39m"
+  - delay: 60
+    content: "\b\b\b\e[1m\e[31mg\e[1m\e[31mi\e[1m\e[31mt\e[1m\e[31mf\e[0m\e[39m"
+  - delay: 61
+    content: "\b\e[1m\e[31mf\e[1m\e[31ma\e[0m\e[39m"
+  - delay: 64
+    content: "\b\e[1m\e[31ma\e[1m\e[31mc\e[0m\e[39m"
+  - delay: 62
+    content: "\b\b\b\b\b\b\e[0m\e[32mg\e[0m\e[32mi\e[0m\e[32mt\e[0m\e[32mf\e[0m\e[32ma\e[0m\e[32mc\e[32me\e[39m"
+  - delay: 62
+    content: " "
+  - delay: 112
+    content: u
+  - delay: 84
+    content: s
+  - delay: 64
+    content: e
+  - delay: 64
+    content: " "
+  - delay: 139
+    content: m
+  - delay: 64
+    content: e
+  - delay: 106
+    content: "\e[?1l\e>\e[?2004l\r\r\n\e]2;gitface use me\a\e]1;gitface\a"
+  - delay: 131
+    content: "\r\n\e[34mℹ\e[39m \e[2muser.name\e[22m  Me\r\n\e[34mℹ\e[39m \e[2muser.email\e[22m  me@gmail.com\r\n\e[34mℹ\e[39m \e[2msigningKey\e[22m  \e[2m<unset>\e[22m\r\n\r\n\e[92m✔\e[39m Used profile \e[32m'me'\e[39m to \e[32mlocal\e[39m Git config.\r\n"
+  - delay: 6
+    content: "\e[1m\e[7m%\e[27m\e[1m\e[0m                                                                                                   \r \r\e]2;jerry@jerrys-MacBook-Air:~/gitface\a\e]1;~/gitface\a\e]7;file://jerrys-MacBook-Air.local/Users/jerry/gitface\e\\\r\e[0m\e[27m\e[24m\e[J\e[0m\e[38;5;242m\e[49m\e[39m\e[0m\e[49m\e[38;2;87;199;255m~/gitface\e[0m\e[38;2;87;199;255m\e[49m\e[38;2;87;199;255m\e[0m\e[38;2;87;199;255m\e[49m \e[0m\e[38;2;87;199;255m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242mmain\e[0m\e[38;2;0;0;242m\e[49m\e[38;5;242m\e[0m\e[38;2;0;0;242m\e[49m \e[0m\e[38;2;0;0;242m\e[49m\e[38;2;255;106;193m❯\e[0m\e[38;2;255;106;193m\e[49m\e[38;2;255;106;193m\e[0m\e[38;2;255;106;193m\e[49m\e[30m\e[0m\e[38;2;0;0;0m\e[49m\e[39m \e[0m\e[49m\e[39m\e[K\e[82C\e[0m\e[49m\e[39m\e[82D\e[?1h\e=\e[?2004h"
+  - delay: 2334
+    content: "\e[?2004l\r\r\n"
