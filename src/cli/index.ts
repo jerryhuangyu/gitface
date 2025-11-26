@@ -5,6 +5,7 @@ import {
 	listProfilesCommand,
 	newProfileCommand,
 	removeProfileCommand,
+	renameProfileCommand,
 	useProfileCommand,
 } from "@/commands";
 
@@ -22,6 +23,7 @@ function buildProgram(version: string): Command {
 	program.addCommand(listProfilesCommand.command);
 	program.addCommand(editProfileCommand.command);
 	program.addCommand(removeProfileCommand.command);
+	program.addCommand(renameProfileCommand.command);
 
 	// Profile application
 	program.addCommand(useProfileCommand.command);

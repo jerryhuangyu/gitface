@@ -126,6 +126,40 @@ export class ProfileService {
 		logger.info("profile-service:deleteProfile removed", { name });
 	}
 
+	async renameProfile(
+		oldName: string,
+		newName: string,
+		force = false,
+	): Promise<Profile> {
+		logger.info("profile-service:renameProfile invoked", {
+			oldName,
+			newName,
+			force,
+		});
+
+		const profile = await this.getProfile(oldName);
+
+		if (!force && (await this.store.exists(newName))) {
+			throw new ProfileAlreadyExistsError(newName);
+		}
+
+		const newProfile = Profile.create({
+			name: newName,
+			gitName: profile.gitName,
+			email: profile.email,
+			signingKey: profile.signingKey,
+		});
+
+		await this.store.save(newProfile);
+		await this.store.remove(oldName);
+
+		logger.info("profile-service:renameProfile completed", {
+			oldName,
+			newName,
+		});
+		return newProfile;
+	}
+
 	async applyProfile(
 		name: string,
 		scope: ConfigScope = "local",

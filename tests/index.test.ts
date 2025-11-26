@@ -124,4 +124,29 @@ describe("ProfileService", () => {
 		expect(applySpy).toHaveBeenCalledTimes(1);
 		expect(applySpy.mock.calls[0]?.[1]).toBe("global");
 	});
+
+	test("renames a profile", async () => {
+		const git = new FakeGitGateway({
+			gitName: "Jane",
+			email: "jane@example.com",
+		});
+		const service = createService({ git });
+
+		await service.createProfile({
+			name: "old",
+			gitName: "Old User",
+			email: "old@example.com",
+		});
+
+		const renamed = await service.renameProfile("old", "new");
+
+		expect(renamed.name).toBe("new");
+		expect(renamed.gitName).toBe("Old User");
+
+		await expect(service.getProfile("old")).rejects.toBeInstanceOf(
+			ProfileNotFoundError,
+		);
+		const fetched = await service.getProfile("new");
+		expect(fetched.gitName).toBe("Old User");
+	});
 });
