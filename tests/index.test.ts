@@ -125,6 +125,29 @@ describe("ProfileService", () => {
 		expect(applySpy.mock.calls[0]?.[1]).toBe("global");
 	});
 
+	test("clones a profile", async () => {
+		const git = new FakeGitGateway({
+			gitName: "Jane",
+			email: "jane@example.com",
+		});
+		const service = createService({ git });
+
+		await service.createProfile({
+			name: "source",
+			gitName: "Source User",
+			email: "source@example.com",
+		});
+
+		const cloned = await service.cloneProfile("source", "target");
+
+		expect(cloned.name).toBe("target");
+		expect(cloned.gitName).toBe("Source User");
+		expect(cloned.email).toBe("source@example.com");
+
+		const fetched = await service.getProfile("target");
+		expect(fetched.gitName).toBe("Source User");
+	});
+
 	test("renames a profile", async () => {
 		const git = new FakeGitGateway({
 			gitName: "Jane",

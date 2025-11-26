@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import {
+	cloneProfileCommand,
 	currentIdentityCommand,
 	editProfileCommand,
 	listProfilesCommand,
@@ -23,6 +24,7 @@ function buildProgram(version: string): Command {
 	program.addCommand(listProfilesCommand.command);
 	program.addCommand(editProfileCommand.command);
 	program.addCommand(removeProfileCommand.command);
+	program.addCommand(cloneProfileCommand.command);
 	program.addCommand(renameProfileCommand.command);
 
 	// Profile application

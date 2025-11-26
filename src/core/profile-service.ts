@@ -126,6 +126,37 @@ export class ProfileService {
 		logger.info("profile-service:deleteProfile removed", { name });
 	}
 
+	async cloneProfile(
+		sourceName: string,
+		targetName: string,
+		force = false,
+	): Promise<Profile> {
+		logger.info("profile-service:cloneProfile invoked", {
+			sourceName,
+			targetName,
+			force,
+		});
+
+		const sourceProfile = await this.getProfile(sourceName);
+
+		if (!force && (await this.store.exists(targetName))) {
+			throw new ProfileAlreadyExistsError(targetName);
+		}
+
+		const newProfile = Profile.create({
+			name: targetName,
+			gitName: sourceProfile.gitName,
+			email: sourceProfile.email,
+			signingKey: sourceProfile.signingKey,
+		});
+
+		await this.store.save(newProfile);
+		logger.info("profile-service:cloneProfile saved", {
+			name: newProfile.name,
+		});
+		return newProfile;
+	}
+
 	async renameProfile(
 		oldName: string,
 		newName: string,
