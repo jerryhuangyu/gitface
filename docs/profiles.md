@@ -31,8 +31,10 @@
 
 1. **Creation** – `ProfileService.createProfile` composes a `ProfileInput`, applies defaults from the current Git identity, and saves the snapshot through `FileProfileStore`.
 2. **Updates** – Mutations go through `Profile.update`, which refreshes `updatedAt` and re-validates required fields.
-3. **Deletion** – Profiles are removed via `FileProfileStore.remove`; missing profiles raise `ProfileNotFoundError` unless `--force` is supplied.
-4. **Listing** – `FileProfileStore.list` lazily reads each JSON file, skipping invalid payloads instead of failing wholesale.
+3. **Cloning** – `ProfileService.cloneProfile` creates a copy of an existing profile with a new name.
+4. **Renaming** – `ProfileService.renameProfile` creates a new profile with the new name and removes the old one.
+5. **Deletion** – Profiles are removed via `FileProfileStore.remove`; missing profiles raise `ProfileNotFoundError` unless `--force` is supplied.
+6. **Listing** – `FileProfileStore.list` lazily reads each JSON file, skipping invalid payloads instead of failing wholesale.
 
 ## Custom Directories
 

@@ -54,6 +54,8 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface list`           | Render the saved profiles in an Ink table with relative timestamps.                           |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope local                                        |
 | `gitface current`        | Display the Git identity currently resolved from config.                                      |
+| `gitface clone <src> <tgt>` | Clone a profile to a new name.                                                                |
+| `gitface rename <old> <new>` | Rename a profile (alias: `mv`).                                                              |
 | `gitface rm <profile>`   | Remove a profile; add `--force` to ignore missing entries.                                    |
 
 ## Profiles & Storage
