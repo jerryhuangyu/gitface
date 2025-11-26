@@ -1,3 +1,19 @@
+## [0.6.0] - 2025-11-26
+
+### 🚀 Features
+
+- Support profile renaming functionality with new CLI commands
+- Support profile cloning functionality with new CLI commands
+
+### 📚 Documentation
+
+- Update readme with demo gif
+- Update new command: clone, rename
+
+### ⚙️ Miscellaneous Tasks
+
+- Update dependencies version
+- Update biome config schema
 ## [0.5.0] - 2025-11-01
 
 ### 🚀 Features
