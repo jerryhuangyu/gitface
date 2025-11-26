@@ -23,15 +23,15 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.0.6",
-		"@types/node": "^24.9.1",
-		"@types/react": "^19.2.2",
-		"@vitest/coverage-v8": "4.0.2",
-		"@vitest/ui": "4.0.2",
+		"@biomejs/biome": "2.3.7",
+		"@types/node": "^24.10.1",
+		"@types/react": "^19.2.7",
+		"@vitest/coverage-v8": "4.0.14",
+		"@vitest/ui": "4.0.14",
 		"bumpp": "^10.3.1",
 		"tsdown": "^0.15.9",
 		"typescript": "^5.9.3",
-		"vitest": "^4.0.1"
+		"vitest": "^4.0.14"
 	},
 	"bin": {
 		"gitface": "./dist/index.js"
@@ -39,13 +39,13 @@
 	"packageManager": "pnpm@9.12.3+sha512.cce0f9de9c5a7c95bef944169cc5dfe8741abfb145078c0d508b868056848a87c81e626246cb60967cbd7fd29a6c062ef73ff840d96b3c86c40ac92cf4a813ee",
 	"dependencies": {
 		"chalk": "^5.6.2",
-		"commander": "^14.0.1",
-		"ink": "^6.4.0",
+		"commander": "^14.0.2",
+		"ink": "^6.5.1",
 		"ink-select-input": "^6.2.0",
 		"ink-text-input": "^6.0.0",
 		"react": "^19.2.0",
-		"simple-git": "^3.28.0",
+		"simple-git": "^3.30.0",
 		"string-width": "^8.1.0",
-		"zod": "^4.1.12"
+		"zod": "^4.1.13"
 	}
 }
