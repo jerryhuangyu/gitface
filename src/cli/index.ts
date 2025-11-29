@@ -4,6 +4,8 @@ import {
 	currentIdentityCommand,
 	doctorCommand,
 	editProfileCommand,
+	exportProfileCommand,
+	importProfileCommand,
 	listProfilesCommand,
 	newProfileCommand,
 	removeProfileCommand,
@@ -27,6 +29,8 @@ function buildProgram(version: string): Command {
 	program.addCommand(removeProfileCommand.command);
 	program.addCommand(cloneProfileCommand.command);
 	program.addCommand(renameProfileCommand.command);
+	program.addCommand(exportProfileCommand.command);
+	program.addCommand(importProfileCommand.command);
 
 	// Profile application
 	program.addCommand(useProfileCommand.command);
