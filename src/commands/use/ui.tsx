@@ -1,9 +1,9 @@
 import chalk from "chalk";
-import type { Profile } from "@/core/profile";
 import { Box, Text, useApp } from "ink";
-import { useEffect, useState } from "react";
-import { ProfileService } from "@/core/profile-service";
 import SelectInput from "ink-select-input";
+import { useEffect, useState } from "react";
+import type { Profile } from "@/core/profile";
+import { ProfileService } from "@/core/profile-service";
 
 const infoIcon = chalk.blue("ℹ");
 const checkIcon = chalk.greenBright("✔");

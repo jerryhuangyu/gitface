@@ -22,10 +22,9 @@ const action: () => Promise<void> = withCommandHandling(
 	async () => {
 		sendDoctorHeading();
 
-		const results = await Promise.all(
-			doctorChecks.map((check) => check()),
-		);
+		const results = await Promise.all(doctorChecks.map((check) => check()));
 
+		// biome-ignore lint/suspicious/useIterableCallbackReturn: <todo>
 		results.forEach((result) => sendDoctorCheckResult(result));
 
 		const hasFailures = results.some((result) => result.status === "fail");

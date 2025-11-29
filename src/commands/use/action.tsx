@@ -2,7 +2,11 @@ import { render } from "ink";
 import type { ConfigScope } from "@/core/git-service";
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
-import { sendProfileUseFailedMsg, sendProfileUseSuccessMsg, SelectProfile } from "./ui";
+import {
+	SelectProfile,
+	sendProfileUseFailedMsg,
+	sendProfileUseSuccessMsg,
+} from "./ui";
 
 interface UseProfileOptions {
 	scope?: string;
