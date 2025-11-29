@@ -1,5 +1,6 @@
 export { default as cloneProfileCommand } from "./clone";
 export { default as currentIdentityCommand } from "./current";
+export { default as doctorCommand } from "./doctor";
 export { default as editProfileCommand } from "./edit";
 export { default as listProfilesCommand } from "./list";
 export { default as newProfileCommand } from "./new";

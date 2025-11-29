@@ -2,6 +2,7 @@ import { Command } from "commander";
 import {
 	cloneProfileCommand,
 	currentIdentityCommand,
+	doctorCommand,
 	editProfileCommand,
 	listProfilesCommand,
 	newProfileCommand,
@@ -30,6 +31,9 @@ function buildProgram(version: string): Command {
 	// Profile application
 	program.addCommand(useProfileCommand.command);
 	program.addCommand(currentIdentityCommand.command);
+
+	// Diagnostics
+	program.addCommand(doctorCommand.command);
 
 	program.showHelpAfterError("(use --help for usage information)");
 	program.showSuggestionAfterError(true);
