@@ -1,3 +1,18 @@
+## [0.7.0] - 2025-11-30
+
+### 🚀 Features
+
+- Support doctor command that reports git install, profile store access, and global identity checks
+- Support interaction way of choosing the profile to use
+- Support profile export and import
+
+### 🚜 Refactor
+
+- Use iterable callback pattern
+
+### 🧪 Testing
+
+- Add end-to-end tests for CLI commands
 ## [0.6.0] - 2025-11-26
 
 ### 🚀 Features
