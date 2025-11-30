@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import {
 	cloneProfileCommand,
+	completionCommand,
 	currentIdentityCommand,
 	doctorCommand,
 	editProfileCommand,
@@ -31,6 +32,7 @@ function buildProgram(version: string): Command {
 	program.addCommand(renameProfileCommand.command);
 	program.addCommand(exportProfileCommand.command);
 	program.addCommand(importProfileCommand.command);
+	program.addCommand(completionCommand.command);
 
 	// Profile application
 	program.addCommand(useProfileCommand.command);

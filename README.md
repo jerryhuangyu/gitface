@@ -45,6 +45,14 @@ gitface current
 
 Run `gitface <command> --help` to see all flags and examples.
 
+## Tab Completion
+
+- Generate shell snippets from the CLI to stay in sync with new releases:
+  - Zsh: `gitface completion snippet --shell zsh`
+  - Bash: `gitface completion snippet --shell bash`
+- Append the snippet to your shell rc (or source it) and reload your terminal.
+- Completion is scoped to profile-taking commands: `gitface use <Tab>` and `gitface rm/remove <Tab>` suggest saved profile names.
+
 ## Command Reference
 
 | Command                  | Description                                                                                   |
