@@ -1,8 +1,9 @@
 import { describe, expect, test, vi } from "vitest";
 import type { ConfigScope, GitIdentity } from "../src/core/git-service";
-import type { Profile } from "../src/core/profile";
+import type { Profile } from "../src/domain/profile";
 import { type GitGateway, ProfileService } from "../src/core/profile-service";
 import { ProfileAlreadyExistsError, ProfileNotFoundError } from "../src/errors";
+import type { ProfileConfigStore } from "../src/infra/profile-config-store";
 import type { ProfileRecord, ProfileStore } from "../src/infra/profile-store";
 
 class InMemoryProfileStore implements ProfileStore {
@@ -62,12 +63,40 @@ class FakeGitGateway implements GitGateway {
 	}
 }
 
+class NoopProfileConfigStore implements ProfileConfigStore {
+	getProfileConfigPath(name: string): string {
+		return `/tmp/gitface-test/identities/${name}.gitconfig`;
+	}
+
+	async save(_profile: Profile): Promise<void> {}
+
+	async remove(_name: string): Promise<void> {}
+}
+
+class RecordingProfileConfigStore extends NoopProfileConfigStore {
+	public readonly saved: string[] = [];
+	public readonly removed: string[] = [];
+
+	override async save(profile: Profile): Promise<void> {
+		this.saved.push(profile.name);
+	}
+
+	override async remove(name: string): Promise<void> {
+		this.removed.push(name);
+	}
+}
+
 function createService(
-	overrides: { store?: ProfileStore; git?: GitGateway } = {},
+	overrides: {
+		store?: ProfileStore;
+		git?: GitGateway;
+		configStore?: ProfileConfigStore;
+	} = {},
 ): ProfileService {
 	const store = overrides.store ?? new InMemoryProfileStore();
 	const git = overrides.git ?? new FakeGitGateway({ gitName: "", email: "" });
-	return new ProfileService(store, git);
+	const configStore = overrides.configStore ?? new NoopProfileConfigStore();
+	return new ProfileService(store, git, configStore);
 }
 
 describe("ProfileService", () => {
@@ -171,5 +200,32 @@ describe("ProfileService", () => {
 		);
 		const fetched = await service.getProfile("new");
 		expect(fetched.gitName).toBe("Old User");
+	});
+
+	test("syncs profile identity configs through config store", async () => {
+		const git = new FakeGitGateway({
+			gitName: "Jane",
+			email: "jane@example.com",
+		});
+		const configStore = new RecordingProfileConfigStore();
+		const service = createService({ git, configStore });
+
+		await service.createProfile({
+			name: "source",
+			gitName: "Source User",
+			email: "source@example.com",
+		});
+		await service.updateProfile("source", { gitName: "Source Updated" });
+		await service.cloneProfile("source", "copy");
+		await service.renameProfile("copy", "copy-renamed");
+		await service.deleteProfile("copy-renamed");
+
+		expect(configStore.saved).toEqual([
+			"source",
+			"source",
+			"copy",
+			"copy-renamed",
+		]);
+		expect(configStore.removed).toEqual(["copy", "copy-renamed"]);
 	});
 });

@@ -3,16 +3,21 @@ import {
 	type GitIdentity,
 	GitService,
 } from "@/core/git-service";
-import { Profile, type ProfileInput, type ProfileUpdate } from "@/domain/profile";
+import {
+	Profile,
+	type ProfileInput,
+	type ProfileUpdate,
+} from "@/domain/profile";
 import {
 	InvalidProfileError,
 	ProfileAlreadyExistsError,
 	ProfileNotFoundError,
 } from "@/errors/index";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { logger } from "@/infra/logger";
-import { osPaths } from "@/infra/os-path";
+import {
+	FileProfileConfigStore,
+	type ProfileConfigStore,
+} from "@/infra/profile-config-store";
 import { FileProfileStore, type ProfileStore } from "@/infra/profile-store";
 
 export interface CreateProfileOptions {
@@ -37,49 +42,27 @@ export class ProfileService {
 	constructor(
 		private readonly store: ProfileStore,
 		private readonly gitGateway: GitGateway,
+		private readonly profileConfigStore: ProfileConfigStore,
 	) {}
 
 	static create(): ProfileService {
-		return new ProfileService(new FileProfileStore(), new GitService());
+		return new ProfileService(
+			new FileProfileStore(),
+			new GitService(),
+			new FileProfileConfigStore(),
+		);
 	}
 
 	getProfileConfigPath(name: string): string {
-		const configDir =
-			osPaths.config("gitface") || path.join(process.cwd(), "gitface");
-		return path.join(configDir, "identities", `${name}.gitconfig`);
+		return this.profileConfigStore.getProfileConfigPath(name);
 	}
 
 	private async ensureProfileConfig(profile: Profile): Promise<void> {
-		const filePath = this.getProfileConfigPath(profile.name);
-		const dir = path.dirname(filePath);
-		await mkdir(dir, { recursive: true });
-
-		let content = `[user]\n\tname = ${profile.gitName}\n\temail = ${profile.email}\n`;
-		if (profile.signingKey) {
-			content += `\tsigningkey = ${profile.signingKey}\n`;
-		}
-
-		await writeFile(filePath, content, "utf8");
-		logger.debug("profile-service:ensureProfileConfig saved", {
-			name: profile.name,
-			filePath,
-		});
+		await this.profileConfigStore.save(profile);
 	}
 
 	private async removeProfileConfig(name: string): Promise<void> {
-		const filePath = this.getProfileConfigPath(name);
-		try {
-			await unlink(filePath);
-			logger.debug("profile-service:removeProfileConfig removed", {
-				name,
-				filePath,
-			});
-		} catch (error) {
-			logger.debug("profile-service:removeProfileConfig config missing", {
-				name,
-				filePath,
-			});
-		}
+		await this.profileConfigStore.remove(name);
 	}
 
 	async listProfiles(): Promise<Profile[]> {

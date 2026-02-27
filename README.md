@@ -70,6 +70,9 @@ Run `gitface <command> --help` to see all flags and examples.
 
 - Files are saved as prettified JSON in
   `~/.config/gitface/profiles/<profile>.json`.
+- Git include files are generated in
+  `~/.config/gitface/identities/<profile>.gitconfig` for folder rules and
+  advanced git config workflows.
 - When you omit `--git-name` or `--email`, GitFace falls back to the identity
   reported by `git config`.
 - Created profiles capture `createdAt` and `updatedAt` ISO timestamps for
