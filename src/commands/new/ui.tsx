@@ -3,7 +3,7 @@ import { Box, Text, useApp } from "ink";
 import TextInput from "ink-text-input";
 import { useReducer, useState } from "react";
 import { z } from "zod";
-import type { Profile } from "@/core/profile";
+import type { Profile } from "@/domain/profile";
 import { ProfileService } from "@/core/profile-service";
 import { logger } from "@/infra/logger";
 

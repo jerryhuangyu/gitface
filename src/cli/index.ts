@@ -11,6 +11,7 @@ import {
 	newProfileCommand,
 	removeProfileCommand,
 	renameProfileCommand,
+	rulesCommand,
 	useProfileCommand,
 } from "@/commands";
 
@@ -37,6 +38,7 @@ function buildProgram(version: string): Command {
 	// Profile application
 	program.addCommand(useProfileCommand.command);
 	program.addCommand(currentIdentityCommand.command);
+    program.addCommand(rulesCommand.command);
 
 	// Diagnostics
 	program.addCommand(doctorCommand.command);

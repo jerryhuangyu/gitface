@@ -3,13 +3,16 @@ import {
 	type GitIdentity,
 	GitService,
 } from "@/core/git-service";
-import { Profile, type ProfileInput, type ProfileUpdate } from "@/core/profile";
+import { Profile, type ProfileInput, type ProfileUpdate } from "@/domain/profile";
 import {
 	InvalidProfileError,
 	ProfileAlreadyExistsError,
 	ProfileNotFoundError,
 } from "@/errors/index";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { logger } from "@/infra/logger";
+import { osPaths } from "@/infra/os-path";
 import { FileProfileStore, type ProfileStore } from "@/infra/profile-store";
 
 export interface CreateProfileOptions {
@@ -38,6 +41,45 @@ export class ProfileService {
 
 	static create(): ProfileService {
 		return new ProfileService(new FileProfileStore(), new GitService());
+	}
+
+	getProfileConfigPath(name: string): string {
+		const configDir =
+			osPaths.config("gitface") || path.join(process.cwd(), "gitface");
+		return path.join(configDir, "identities", `${name}.gitconfig`);
+	}
+
+	private async ensureProfileConfig(profile: Profile): Promise<void> {
+		const filePath = this.getProfileConfigPath(profile.name);
+		const dir = path.dirname(filePath);
+		await mkdir(dir, { recursive: true });
+
+		let content = `[user]\n\tname = ${profile.gitName}\n\temail = ${profile.email}\n`;
+		if (profile.signingKey) {
+			content += `\tsigningkey = ${profile.signingKey}\n`;
+		}
+
+		await writeFile(filePath, content, "utf8");
+		logger.debug("profile-service:ensureProfileConfig saved", {
+			name: profile.name,
+			filePath,
+		});
+	}
+
+	private async removeProfileConfig(name: string): Promise<void> {
+		const filePath = this.getProfileConfigPath(name);
+		try {
+			await unlink(filePath);
+			logger.debug("profile-service:removeProfileConfig removed", {
+				name,
+				filePath,
+			});
+		} catch (error) {
+			logger.debug("profile-service:removeProfileConfig config missing", {
+				name,
+				filePath,
+			});
+		}
 	}
 
 	async listProfiles(): Promise<Profile[]> {
@@ -93,6 +135,7 @@ export class ProfileService {
 		const profileInput = await this.buildProfileInput(options);
 		const profile = Profile.create(profileInput);
 		await this.store.save(profile);
+		await this.ensureProfileConfig(profile);
 		logger.info("profile-service:createProfile saved", {
 			name: profile.name,
 		});
@@ -112,6 +155,7 @@ export class ProfileService {
 		const profile = await this.getProfile(name);
 		profile.update(update);
 		await this.store.save(profile);
+		await this.ensureProfileConfig(profile);
 		logger.info("profile-service:updateProfile saved", { name: profile.name });
 		return profile;
 	}
@@ -123,6 +167,7 @@ export class ProfileService {
 			throw new ProfileNotFoundError(name);
 		}
 		await this.store.remove(name);
+		await this.removeProfileConfig(name);
 		logger.info("profile-service:deleteProfile removed", { name });
 	}
 
@@ -151,6 +196,7 @@ export class ProfileService {
 		});
 
 		await this.store.save(newProfile);
+		await this.ensureProfileConfig(newProfile);
 		logger.info("profile-service:cloneProfile saved", {
 			name: newProfile.name,
 		});
@@ -182,7 +228,9 @@ export class ProfileService {
 		});
 
 		await this.store.save(newProfile);
+		await this.ensureProfileConfig(newProfile);
 		await this.store.remove(oldName);
+		await this.removeProfileConfig(oldName);
 
 		logger.info("profile-service:renameProfile completed", {
 			oldName,

@@ -8,7 +8,7 @@ import {
 	writeFile,
 } from "node:fs/promises";
 import path from "node:path";
-import type { Profile, ProfileInput, ProfileSnapshot } from "@/core/profile";
+import type { Profile, ProfileInput, ProfileSnapshot } from "@/domain/profile";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { logger } from "@/infra/logger";
 import { osPaths } from "@/infra/os-path";

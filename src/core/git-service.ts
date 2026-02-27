@@ -73,8 +73,44 @@ export class GitService {
 		}
 	}
 
+	async getConfig(key: string, scope: ConfigScope = "local"): Promise<string | null> {
+		const args = ["config", ...scopeArgs(scope), "--get", key];
+		try {
+			const result = await this.git.raw(args);
+			return result.trim() || null;
+		} catch (error) {
+			return null;
+		}
+	}
+
+	async getAllConfig(scope: ConfigScope = "local"): Promise<Record<string, string>> {
+		const args = ["config", ...scopeArgs(scope), "--list"];
+		const result = await this.git.raw(args);
+		const config: Record<string, string> = {};
+		for (const line of result.split("\n")) {
+			const [key, ...value] = line.split("=");
+			if (key && value) {
+				config[key.trim()] = value.join("=").trim();
+			}
+		}
+		return config;
+	}
+
+	async addConfig(
+		key: string,
+		value: string,
+		scope: ConfigScope = "local",
+	): Promise<void> {
+		const gitScope = scope as GitConfigScope;
+		await this.git.addConfig(key, value, false, gitScope);
+	}
+
+	async removeConfig(key: string, scope: ConfigScope = "local"): Promise<void> {
+		await this.unsetConfig(key, scope);
+	}
+
 	private async unsetConfig(key: string, scope: ConfigScope): Promise<void> {
-		const args = ["config", ...scopeArgs(scope), "--unset", key];
+		const args = ["config", ...scopeArgs(scope), "--unset-all", key];
 		try {
 			await this.git.raw(args);
 			logger.debug("git-service:unsetConfig cleared key", { key, scope });
@@ -83,7 +119,9 @@ export class GitService {
 				const message = error.message.toLowerCase();
 				if (
 					message.includes("no such section or key") ||
-					message.includes("not found")
+					message.includes("not found") ||
+					// exit code 5 means variable does not exist
+					(error as any).exitCode === 5
 				) {
 					logger.debug("git-service:unsetConfig key already absent", {
 						key,

@@ -2,7 +2,7 @@ import chalk from "chalk";
 import { Box, Text, useApp } from "ink";
 import SelectInput from "ink-select-input";
 import { useEffect, useState } from "react";
-import type { Profile } from "@/core/profile";
+import type { Profile } from "@/domain/profile";
 import { ProfileService } from "@/core/profile-service";
 
 const infoIcon = chalk.blue("ℹ");

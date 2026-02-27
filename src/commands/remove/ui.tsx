@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import type { Profile } from "@/core/profile";
+import type { Profile } from "@/domain/profile";
 
 const infoIcon = chalk.blue("ℹ");
 const checkIcon = chalk.greenBright("✔");
