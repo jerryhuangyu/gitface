@@ -59,7 +59,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | ------------------------ | --------------------------------------------------------------------------------------------- |
 | `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`). |
 | `gitface edit <profile>` | Update a stored profile via flags or an interactive editor.                                   |
-| `gitface list`           | Render the saved profiles in an Ink table with relative timestamps.                           |
+| `gitface list`           | Render saved profiles in an Ink table, or use `list --json` for machine-readable output.      |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope local                                        |
 | `gitface current`        | Display the Git identity currently resolved from config.                                      |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name.                                                                |

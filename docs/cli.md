@@ -27,6 +27,8 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 - Fetches all profile snapshots, sorts them by `updatedAt`, and renders a table using box-drawing characters for clarity.
 - Empty states display guidance text instead of an empty table.
 - Useful before CI runs to confirm the workspace is pre-seeded.
+- `gitface list --json` emits a machine-readable JSON array:
+  `[{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }]`.
 
 ## `gitface use <name>`
 

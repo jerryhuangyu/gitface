@@ -7,7 +7,7 @@ import React from "react";
 import { render } from "ink";
 import { listProfilesCommand } from "../src/commands/index";
 import { ProfileService } from "../src/core/profile-service";
-import { runCli, safeRemove } from "./helpers/e2e";
+import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
 
 describe("list command e2e", () => {
 	test(
@@ -69,6 +69,61 @@ describe("list command e2e", () => {
 	},
 		10_000,
 	);
+
+	test("outputs profiles as json with --json sorted by updatedAt desc", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-json-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			const older = await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await new Promise((resolve) => setTimeout(resolve, 5));
+			const newer = await service.createProfile({
+				name: "personal",
+				gitName: "Personal User",
+				email: "me@example.com",
+			});
+
+			const restoreLog = spyConsole(logs);
+			await runCli([listProfilesCommand.command], [
+				"node",
+				"gitface",
+				"list",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as Array<{
+				name: string;
+				gitName: string;
+				email: string;
+				signingKey?: string | null;
+				createdAt: string;
+				updatedAt: string;
+			}>;
+
+			expect(parsed).toHaveLength(2);
+			expect(parsed[0].name).toBe(newer.name);
+			expect(parsed[1].name).toBe(older.name);
+			expect(parsed[0].updatedAt >= parsed[1].updatedAt).toBe(true);
+		} finally {
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
 });
 
 function createWritableCapture(): {

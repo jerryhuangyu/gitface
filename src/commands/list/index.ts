@@ -5,6 +5,7 @@ import action from "./action";
 const command: Command = new Command("list")
 	.alias("ls")
 	.description("Display all stored Git profiles")
+	.option("--json", "Output profiles as JSON")
 	.action(action);
 
 const listProfilesCommand: CliCommand = {

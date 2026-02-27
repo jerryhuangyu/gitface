@@ -34,18 +34,13 @@ const ProfilesList: React.FC<{ profiles: ProfileRow[] }> = ({ profiles }) => {
 		);
 	}
 
-	const rows = [...profiles]
-		.sort(
-			(a, b) =>
-				new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-		)
-		.map((p) => ({
-			PROFILE: chalk.green(p.name),
-			"GIT NAME": chalk.cyan(p.gitName ?? "<unset>"),
-			EMAIL: chalk.yellow(p.email ?? "<unset>"),
-			"SIGNING KEY": chalk.magenta(p.signingKey ?? "<none>"),
-			UPDATED: chalk.dim(timeAgo(p.updatedAt)),
-		}));
+	const rows = [...profiles].map((p) => ({
+		PROFILE: chalk.green(p.name),
+		"GIT NAME": chalk.cyan(p.gitName ?? "<unset>"),
+		EMAIL: chalk.yellow(p.email ?? "<unset>"),
+		"SIGNING KEY": chalk.magenta(p.signingKey ?? "<none>"),
+		UPDATED: chalk.dim(timeAgo(p.updatedAt)),
+	}));
 
 	return (
 		<>
