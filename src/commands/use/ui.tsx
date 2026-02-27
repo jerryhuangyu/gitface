@@ -2,6 +2,7 @@ import chalk from "chalk";
 import { Box, Text, useApp } from "ink";
 import SelectInput from "ink-select-input";
 import { useEffect, useState } from "react";
+import type { ConfigScope } from "@/core/git-service";
 import { ProfileService } from "@/core/profile-service";
 import type { Profile } from "@/domain/profile";
 
@@ -32,6 +33,37 @@ export const sendProfileUseSuccessMsg = (
 export const sendProfileUseFailedMsg = (reason: string): void => {
 	console.log();
 	console.log(`${crossIcon} Profile use failed: ${chalk.red(reason)}`);
+};
+
+export const sendProfileUseSuccessJson = (
+	profile: Profile,
+	scope: ConfigScope,
+): void => {
+	console.log(
+		JSON.stringify(
+			{
+				name: profile.name,
+				gitName: profile.gitName,
+				email: profile.email,
+				signingKey: profile.signingKey ?? null,
+				scope,
+			},
+			null,
+			2,
+		),
+	);
+};
+
+export const sendProfileUseFailedJson = (reason: string): void => {
+	console.log(
+		JSON.stringify(
+			{
+				error: reason,
+			},
+			null,
+			2,
+		),
+	);
 };
 
 interface Props {

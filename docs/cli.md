@@ -35,6 +35,8 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 - Applies a profile to Git configuration using `simple-git addConfig`.
 - Options:
   - `--scope <local|global|system>` / `-s` (defaults to `local`).
+- `--json` emits machine-readable output:
+  `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
 - Successful runs log the applied values so you can double-check before committing.
 - Invalid scopes short-circuit the command with an error banner and status `1`.
 

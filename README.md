@@ -60,7 +60,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`). |
 | `gitface edit <profile>` | Update a stored profile via flags or an interactive editor.                                   |
 | `gitface list`           | Render saved profiles in an Ink table, or use `list --json` for machine-readable output.      |
-| `gitface use <profile>`  | Apply a profile to Git config; supports `--scope local                                        |
+| `gitface use <profile>`  | Apply a profile to Git config; supports `--scope` and `use --json` output.                    |
 | `gitface current`        | Display active Git identity; use `current --json` for machine-readable output.                |
 | `gitface doctor`         | Run environment diagnostics; use `doctor --json` for machine-readable output.                  |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name.                                                                |
@@ -103,6 +103,8 @@ Run `gitface <command> --help` to see all flags and examples.
 - `system` forwards to the system config for admin setups.
 - GitFace automatically wipes `user.signingkey` when the target profile has no
   key.
+- `gitface use <profile> --json` emits machine-readable output:
+  `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
 
 Set `GITFACE_LOG_LEVEL=debug` (or `GITFACE_DEBUG=1`) to print stack traces and
 additional diagnostics. Supported levels: `critical`, `error`, `warn`, `info`,

@@ -4,12 +4,15 @@ import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
 import {
 	SelectProfile,
+	sendProfileUseFailedJson,
 	sendProfileUseFailedMsg,
+	sendProfileUseSuccessJson,
 	sendProfileUseSuccessMsg,
 } from "./ui";
 
 interface UseProfileOptions {
 	scope?: string;
+	json?: boolean;
 }
 
 const action: (
@@ -20,12 +23,24 @@ const action: (
 	async (name: string | undefined, options: UseProfileOptions) => {
 		const scope = (options.scope ?? "local").toLowerCase();
 		if (!isValidScope(scope)) {
-			sendProfileUseFailedMsg("Scope must be one of: local, global, system.");
+			const reason = "Scope must be one of: local, global, system.";
+			if (options.json) {
+				sendProfileUseFailedJson(reason);
+			} else {
+				sendProfileUseFailedMsg(reason);
+			}
 			process.exitCode = 1;
 			return;
 		}
 
 		let profileName = name;
+		if (options.json && !profileName) {
+			sendProfileUseFailedJson(
+				"Profile name is required when using --json output mode.",
+			);
+			process.exitCode = 1;
+			return;
+		}
 
 		if (!profileName) {
 			await new Promise<void>((resolve) => {
@@ -43,6 +58,11 @@ const action: (
 
 		const service = ProfileService.create();
 		const profile = await service.applyProfile(profileName, scope);
+
+		if (options.json) {
+			sendProfileUseSuccessJson(profile, scope);
+			return;
+		}
 
 		sendProfileUseSuccessMsg(profile, scope);
 	},

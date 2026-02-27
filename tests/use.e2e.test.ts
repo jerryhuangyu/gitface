@@ -126,4 +126,67 @@ describe("use command e2e", () => {
 			await safeRemove(tmpRoot);
 		}
 	});
+
+	test("emits JSON output when applying a profile with --json", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
+		const repoDir = path.join(tmpRoot, "repo");
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		await fs.mkdir(repoDir);
+		const git = simpleGit({ baseDir: repoDir });
+		await git.init();
+
+		try {
+			process.chdir(repoDir);
+			process.env.XDG_CONFIG_HOME = configDir;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await runCli([useProfileCommand.command], [
+				"node",
+				"gitface",
+				"use",
+				"work",
+				"--json",
+			]);
+
+			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
+				string,
+				unknown
+			>;
+			expect(parsed).toEqual({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+				signingKey: null,
+				scope: "local",
+			});
+
+			const config = await git.listConfig();
+			expect(config.all["user.name"]).toBe("Work User");
+			expect(config.all["user.email"]).toBe("work@example.com");
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreLog();
+			await safeRemove(tmpRoot);
+		}
+	});
 });
