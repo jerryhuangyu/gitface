@@ -55,10 +55,14 @@ export class RuleService {
 		// Create a dummy rule just to get the config key from directory
 		const rule = Rule.create(directory, "dummy");
 
-		logger.info("rule-service:removeRule invoked", { directory: rule.directory });
+		logger.info("rule-service:removeRule invoked", {
+			directory: rule.directory,
+		});
 
 		await this.gitService.removeConfig(rule.configKey, "global");
 
-		logger.info("rule-service:removeRule removed", { directory: rule.directory });
+		logger.info("rule-service:removeRule removed", {
+			directory: rule.directory,
+		});
 	}
 }

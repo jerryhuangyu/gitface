@@ -1,7 +1,7 @@
-import { RuleService } from "@/core/rule-service";
-import { logger } from "@/infra/logger";
 import chalk from "chalk";
+import { RuleService } from "@/core/rule-service";
 import { ProfileNotFoundError } from "@/errors";
+import { logger } from "@/infra/logger";
 
 export async function addRuleAction(
 	directory: string,
@@ -17,10 +17,10 @@ export async function addRuleAction(
 		);
 	} catch (error) {
 		if (error instanceof ProfileNotFoundError) {
-            console.error(chalk.red(`Profile '${profileName}' not found.`));
-            process.exit(1);
-        }
-        
+			console.error(chalk.red(`Profile '${profileName}' not found.`));
+			process.exit(1);
+		}
+
 		logger.error("Failed to add rule", { error });
 		console.error(chalk.red("Failed to add rule:"), error);
 		process.exit(1);

@@ -1,6 +1,6 @@
+import chalk from "chalk";
 import { RuleService } from "@/core/rule-service";
 import { logger } from "@/infra/logger";
-import chalk from "chalk";
 
 export async function listRulesAction(): Promise<void> {
 	const ruleService = RuleService.create();

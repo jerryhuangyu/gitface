@@ -73,17 +73,22 @@ export class GitService {
 		}
 	}
 
-	async getConfig(key: string, scope: ConfigScope = "local"): Promise<string | null> {
+	async getConfig(
+		key: string,
+		scope: ConfigScope = "local",
+	): Promise<string | null> {
 		const args = ["config", ...scopeArgs(scope), "--get", key];
 		try {
 			const result = await this.git.raw(args);
 			return result.trim() || null;
-		} catch (error) {
+		} catch {
 			return null;
 		}
 	}
 
-	async getAllConfig(scope: ConfigScope = "local"): Promise<Record<string, string>> {
+	async getAllConfig(
+		scope: ConfigScope = "local",
+	): Promise<Record<string, string>> {
 		const args = ["config", ...scopeArgs(scope), "--list"];
 		const result = await this.git.raw(args);
 		const config: Record<string, string> = {};
@@ -121,7 +126,7 @@ export class GitService {
 					message.includes("no such section or key") ||
 					message.includes("not found") ||
 					// exit code 5 means variable does not exist
-					(error as any).exitCode === 5
+					hasExitCode(error, 5)
 				) {
 					logger.debug("git-service:unsetConfig key already absent", {
 						key,
@@ -158,4 +163,11 @@ function scopeArgs(scope: ConfigScope): string[] {
 		default:
 			return [];
 	}
+}
+
+function hasExitCode(error: Error, expected: number): boolean {
+	const maybeError = error as Error & { exitCode?: unknown };
+	return (
+		typeof maybeError.exitCode === "number" && maybeError.exitCode === expected
+	);
 }

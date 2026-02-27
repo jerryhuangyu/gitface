@@ -38,7 +38,7 @@ function buildProgram(version: string): Command {
 	// Profile application
 	program.addCommand(useProfileCommand.command);
 	program.addCommand(currentIdentityCommand.command);
-    program.addCommand(rulesCommand.command);
+	program.addCommand(rulesCommand.command);
 
 	// Diagnostics
 	program.addCommand(doctorCommand.command);

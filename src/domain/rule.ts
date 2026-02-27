@@ -32,7 +32,7 @@ export class Rule {
 		// Value is the path to the profile config file: .../identities/<name>.gitconfig
 		const configPath = value;
 		const basename = path.basename(configPath);
-		
+
 		if (!basename.endsWith(".gitconfig")) {
 			return null;
 		}
@@ -47,7 +47,8 @@ export class Rule {
 
 	equals(other: Rule): boolean {
 		return (
-			this.directory === other.directory && this.profileName === other.profileName
+			this.directory === other.directory &&
+			this.profileName === other.profileName
 		);
 	}
 }

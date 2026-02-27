@@ -117,5 +117,7 @@ pnpm run build        # tsc + tsdown bundle
 ```
 
 - `pnpm run dev` runs tsdown in watch mode for local hacking.
+- CI requires `pnpm run lint` to pass before test workflow continues. Use
+  `pnpm exec biome check --write .` for safe auto-fixes.
 - `make link` (or `npm link`) exposes the CLI globally for manual testing.
 - Release automation lives in `docs/release.md`; keep CI green before tagging.
