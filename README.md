@@ -62,6 +62,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface list`           | Render saved profiles in an Ink table, or use `list --json` for machine-readable output.      |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope local                                        |
 | `gitface current`        | Display active Git identity; use `current --json` for machine-readable output.                |
+| `gitface doctor`         | Run environment diagnostics; use `doctor --json` for machine-readable output.                  |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name.                                                                |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`).                                                              |
 | `gitface rm <profile>`   | Remove a profile; add `--force` to ignore missing entries.                                    |

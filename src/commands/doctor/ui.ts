@@ -7,6 +7,11 @@ export interface DoctorCheckResult {
 	message: string;
 }
 
+export interface DoctorReport {
+	checks: DoctorCheckResult[];
+	hasFailures: boolean;
+}
+
 const successIcon = chalk.green("✔");
 const warningIcon = chalk.yellow("⚠");
 const failureIcon = chalk.red("✖");
@@ -37,4 +42,17 @@ export const sendDoctorSummary = (hasFailures: boolean): void => {
 	}
 
 	console.log(chalk.green("✔ All checks passed. You are good to go!"));
+};
+
+export const sendDoctorReportJson = (report: DoctorReport): void => {
+	console.log(
+		JSON.stringify(
+			{
+				checks: report.checks,
+				hasFailures: report.hasFailures,
+			},
+			null,
+			2,
+		),
+	);
 };

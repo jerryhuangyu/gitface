@@ -2,14 +2,19 @@ import path from "node:path";
 import simpleGit from "simple-git";
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
-import type { DoctorCheckResult } from "./ui";
+import type { DoctorCheckResult, DoctorReport } from "./ui";
 import {
 	sendDoctorCheckResult,
 	sendDoctorHeading,
+	sendDoctorReportJson,
 	sendDoctorSummary,
 } from "./ui";
 
 type DoctorCheck = () => Promise<DoctorCheckResult>;
+
+interface DoctorOptions {
+	json?: boolean;
+}
 
 const doctorChecks: DoctorCheck[] = [
 	checkGitInstallation,
@@ -17,22 +22,30 @@ const doctorChecks: DoctorCheck[] = [
 	checkGlobalConfig,
 ];
 
-const action: () => Promise<void> = withCommandHandling(
+const runDoctorChecks = async (): Promise<DoctorReport> => {
+	const checks = await Promise.all(doctorChecks.map((check) => check()));
+	return {
+		checks,
+		hasFailures: checks.some((check) => check.status === "fail"),
+	};
+};
+
+const action: (options: DoctorOptions) => Promise<void> = withCommandHandling(
 	"command:doctor",
-	async () => {
-		sendDoctorHeading();
+	async (options) => {
+		const report = await runDoctorChecks();
 
-		const results = await Promise.all(doctorChecks.map((check) => check()));
-
-		for (const result of results) {
-			sendDoctorCheckResult(result);
+		if (options.json) {
+			sendDoctorReportJson(report);
+		} else {
+			sendDoctorHeading();
+			for (const result of report.checks) {
+				sendDoctorCheckResult(result);
+			}
+			sendDoctorSummary(report.hasFailures);
 		}
 
-		const hasFailures = results.some((result) => result.status === "fail");
-
-		sendDoctorSummary(hasFailures);
-
-		if (hasFailures) {
+		if (report.hasFailures) {
 			process.exitCode = 1;
 		}
 	},

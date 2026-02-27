@@ -45,6 +45,14 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 - `gitface current --json` emits machine-readable output:
   `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123" }`.
 
+## `gitface doctor`
+
+- Runs health checks for common setup issues (Git availability, profile store access, global identity hints).
+- Human mode prints pass/warn/fail lines plus a summary.
+- `gitface doctor --json` emits machine-readable output:
+  `{ "checks": [{ "status": "pass", "message": "..." }], "hasFailures": false }`.
+- Exit behavior is unchanged: if any check fails, command exit code is `1`.
+
 ## `gitface rm <name>`
 
 - Alias: `gitface remove <name>`.
