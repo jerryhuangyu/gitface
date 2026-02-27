@@ -55,6 +55,21 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
   `{ "checks": [{ "status": "pass", "message": "..." }], "hasFailures": false }`.
 - Exit behavior is unchanged: if any check fails, command exit code is `1`.
 
+## `gitface export [file]`
+
+- Exports all saved profile snapshots as JSON.
+- When `file` is omitted, JSON is printed to stdout (useful for pipes/backups).
+- When `file` is provided, GitFace writes a prettified JSON array to disk and
+  prints a success summary.
+
+## `gitface import <file>`
+
+- Imports profile snapshots from a JSON array file.
+- `--overwrite` replaces existing profile names instead of skipping them.
+- `--dry-run` validates payload/duplicates and reports outcomes without writing
+  any profile files.
+- Import continues entry-by-entry: one bad profile does not stop the entire run.
+
 ## `gitface rm <name>`
 
 - Alias: `gitface remove <name>`.
