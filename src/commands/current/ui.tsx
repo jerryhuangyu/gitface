@@ -16,3 +16,17 @@ export const sendCurrentIdentityMsg = (identity: GitIdentity): void => {
 	console.log(`${infoIcon} ${chalk.dim("signingKey")}  ${signingKey}`);
 	console.log();
 };
+
+export const sendCurrentIdentityJson = (identity: GitIdentity): void => {
+	console.log(
+		JSON.stringify(
+			{
+				gitName: identity.gitName,
+				email: identity.email,
+				signingKey: identity.signingKey ?? null,
+			},
+			null,
+			2,
+		),
+	);
+};

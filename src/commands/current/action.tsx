@@ -1,12 +1,21 @@
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
-import { sendCurrentIdentityMsg } from "./ui";
+import { sendCurrentIdentityJson, sendCurrentIdentityMsg } from "./ui";
 
-const action: () => Promise<void> = withCommandHandling(
+interface CurrentOptions {
+	json?: boolean;
+}
+
+const action: (options: CurrentOptions) => Promise<void> = withCommandHandling(
 	"command:current",
-	async () => {
+	async (options) => {
 		const service = ProfileService.create();
 		const identity = await service.getCurrentIdentity();
+
+		if (options.json) {
+			sendCurrentIdentityJson(identity);
+			return;
+		}
 
 		sendCurrentIdentityMsg(identity);
 	},

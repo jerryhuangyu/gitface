@@ -4,6 +4,7 @@ import action from "./action";
 
 const command = new Command("current")
 	.description("Show the Git identity currently configured in this repository")
+	.option("--json", "Output current identity as JSON")
 	.action(action);
 
 const currentIdentityCommand: CliCommand = {

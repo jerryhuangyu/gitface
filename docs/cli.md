@@ -42,6 +42,8 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 
 - Shows the identity resolved by Git in the active working directory (respects scope precedence).
 - Helpful as a pre-push check or for debugging environment setup scripts.
+- `gitface current --json` emits machine-readable output:
+  `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123" }`.
 
 ## `gitface rm <name>`
 
