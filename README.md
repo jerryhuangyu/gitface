@@ -65,6 +65,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface clone <src> <tgt>` | Clone a profile to a new name.                                                                |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`).                                                              |
 | `gitface rm <profile>`   | Remove a profile; add `--force` to ignore missing entries.                                    |
+| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`) with optional `rules list --json` output.      |
 
 ## Profiles & Storage
 

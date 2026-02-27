@@ -2,10 +2,21 @@ import chalk from "chalk";
 import { RuleService } from "@/core/rule-service";
 import { logger } from "@/infra/logger";
 
-export async function listRulesAction(): Promise<void> {
+interface ListRulesOptions {
+	json?: boolean;
+}
+
+export async function listRulesAction(
+	options: ListRulesOptions,
+): Promise<void> {
 	const ruleService = RuleService.create();
 	try {
 		const rules = await ruleService.listRules();
+		if (options.json) {
+			console.log(JSON.stringify(rules, null, 2));
+			return;
+		}
+
 		if (rules.length === 0) {
 			console.log(chalk.gray("No folder rules defined."));
 			return;

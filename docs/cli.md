@@ -47,6 +47,16 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 - Deletes the JSON file for a profile and echoes the removed values.
 - `--force` turns missing-profile errors into informational messages, making it safe to run in automation loops.
 
+## `gitface rules <subcommand>`
+
+- Manage folder-based profile rules through:
+  - `gitface rules add <directory> <profile>`
+  - `gitface rules remove <directory>`
+  - `gitface rules list` (human-readable)
+- `gitface rules list --json` emits a machine-readable JSON array:
+  `[{ "directory": "/abs/path/", "profileName": "work" }]`.
+- Empty JSON output is `[]`, which is safe for CI/script parsing.
+
 ## Exit Codes & Troubleshooting
 
 - Profile validation failures (`InvalidProfileError`) set `process.exitCode = 1`.

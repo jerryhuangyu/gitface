@@ -12,6 +12,7 @@ command
 	.command("list")
 	.alias("ls")
 	.description("List all folder rules")
+	.option("--json", "Output folder rules as JSON")
 	.action(listRulesAction);
 
 command

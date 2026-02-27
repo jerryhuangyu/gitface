@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, test } from "vitest";
 import simpleGit from "simple-git";
 import { ProfileService } from "../src/core/profile-service";
-import { newProfileCommand, rulesCommand } from "../src/commands/index";
+import { rulesCommand } from "../src/commands/index";
 import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
 
 describe("rules command e2e", () => {
@@ -15,29 +15,21 @@ describe("rules command e2e", () => {
 		const originalExitCode = process.exitCode;
 		const originalCwd = process.cwd();
 		const tmpRootRaw = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-rules-"));
-        const tmpRoot = await fs.realpath(tmpRootRaw);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
 		const homeDir = path.join(tmpRoot, "home");
 		const configDir = path.join(tmpRoot, "config");
 		const projectDir = path.join(homeDir, "project-a");
-		const logs: string[] = [];
-		// const restoreLog = spyConsole(logs);
 
-		// Setup directories
 		await fs.mkdir(homeDir, { recursive: true });
 		await fs.mkdir(configDir, { recursive: true });
 		await fs.mkdir(projectDir, { recursive: true });
 
-		// Setup environment
-		process.env.HOME = homeDir; // For global .gitconfig
-		process.env.XDG_CONFIG_HOME = configDir; // For gitface profiles
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
 
-		// Initialize global git config (needs to exist for simple-git sometimes?)
-		// simple-git will read/write to ~/.gitconfig
-		
 		try {
 			process.chdir(homeDir);
 
-			// 1. Create a profile
 			const service = ProfileService.create();
 			await service.createProfile({
 				name: "work-profile",
@@ -45,8 +37,7 @@ describe("rules command e2e", () => {
 				email: "work@example.com",
 			});
 
-			// 2. Add rule
-			await runCli([newProfileCommand.command, rulesCommand.command], [
+			await runCli([rulesCommand.command], [
 				"node",
 				"gitface",
 				"rules",
@@ -55,57 +46,116 @@ describe("rules command e2e", () => {
 				"work-profile",
 			]);
 
-			// expect(stripAnsi(logs.join("\n"))).toMatch(/Rule added/i);
-			logs.length = 0;
-
-			// 3. Verify global config has includeIf
-			const gitGlobal = simpleGit({ baseDir: homeDir }); 
-			// simpleGit picks up global config from HOME env var
+			const gitGlobal = simpleGit({ baseDir: homeDir });
 			const globalConfig = await gitGlobal.listConfig("global");
+			const includeIfKey = Object.keys(globalConfig.all).find((key) =>
+				key.toLowerCase().includes(projectDir.toLowerCase()),
+			);
+			expect(includeIfKey).toBeDefined();
 
-            // Note: simple-git listConfig keys are lowercased.
-            // But verify we can find the includeIf key.
-            // The key is complex: includeif.gitdir:/path/to/project-a/.path
-            // We'll iterate to find it because exact key might vary slightly by git version normalization
-            const configKeys = Object.keys(globalConfig.all);
-            const includeIfKey = configKeys.find(k => k.toLowerCase().includes(projectDir.toLowerCase()));
-            expect(includeIfKey).toBeDefined();
+			const gitProject = simpleGit({ baseDir: projectDir });
+			await gitProject.init();
+			const projectConfig = await gitProject.listConfig();
 
-            // 4. Verify inside projectDir
-            const gitProject = simpleGit({ baseDir: projectDir });
-            await gitProject.init();
-            const projectConfig = await gitProject.listConfig(); // Merges local, global, system
-            
-            expect(projectConfig.all["user.name"]).toBe("Work User");
-            expect(projectConfig.all["user.email"]).toBe("work@example.com");
+			expect(projectConfig.all["user.name"]).toBe("Work User");
+			expect(projectConfig.all["user.email"]).toBe("work@example.com");
 
-            // 5. Remove rule
-            await runCli([rulesCommand.command], [
+			await runCli([rulesCommand.command], [
 				"node",
 				"gitface",
 				"rules",
 				"remove",
 				projectDir,
 			]);
-            // expect(stripAnsi(logs.join("\n"))).toMatch(/Rule removed/i);
 
-            // 6. Verify removal
-            const globalConfigAfter = await gitGlobal.listConfig("global");
-            const includeIfKeyAfter = Object.keys(globalConfigAfter.all).find(k => k.toLowerCase().includes(projectDir.toLowerCase()));
-            expect(includeIfKeyAfter).toBeUndefined();
-
+			const globalConfigAfter = await gitGlobal.listConfig("global");
+			const includeIfKeyAfter = Object.keys(globalConfigAfter.all).find((key) =>
+				key.toLowerCase().includes(projectDir.toLowerCase()),
+			);
+			expect(includeIfKeyAfter).toBeUndefined();
 		} finally {
 			process.chdir(originalCwd);
 			process.argv = originalArgv;
 			process.env.HOME = originalHome;
-			
 			if (originalXdg === undefined) {
 				delete process.env.XDG_CONFIG_HOME;
 			} else {
 				process.env.XDG_CONFIG_HOME = originalXdg;
 			}
 			process.exitCode = originalExitCode;
-			// restoreLog();
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("lists rules as json with --json", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-rules-json-"));
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const projectDir = path.join(homeDir, "project-b");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(projectDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "ops-profile",
+				gitName: "Ops User",
+				email: "ops@example.com",
+			});
+
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				projectDir,
+				"ops-profile",
+			]);
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"list",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as Array<{
+				directory: string;
+				profileName: string;
+			}>;
+
+			expect(parsed).toContainEqual({
+				directory: `${projectDir}${path.sep}`,
+				profileName: "ops-profile",
+			});
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
 			await safeRemove(tmpRoot);
 		}
 	});
