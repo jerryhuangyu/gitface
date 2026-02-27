@@ -64,7 +64,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface current`        | Display active Git identity; use `current --json` for machine-readable output.                |
 | `gitface doctor`         | Run environment diagnostics; use `doctor --json` for machine-readable output.                  |
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file.                                                |
-| `gitface import <file>`  | Import profiles from JSON; use `--dry-run` to validate without writes.                          |
+| `gitface import <file>`  | Import profiles from JSON; supports `--dry-run` and `--json` for structured results.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name.                                                                |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`).                                                              |
 | `gitface rm <profile>`   | Remove a profile; add `--force` to ignore missing entries.                                    |
@@ -85,6 +85,8 @@ Run `gitface <command> --help` to see all flags and examples.
   `gitface edit <name> --unset-signing-key` to remove it.
 - `gitface import <file> --dry-run` validates payload and duplicate handling
   without changing local profile files.
+- `gitface import <file> --json` emits machine-readable summary:
+  `{ "dryRun": false, "total": 2, "imported": 2, "failed": 0, "results": [{ "name": "work", "status": "imported", "message": "Imported." }] }`.
 
 ### Example profile file
 

@@ -55,3 +55,7 @@ export const sendImportDryRunSummary = (
 		`${successIcon} Dry-run complete. ${successCount} profiles ready to import.${failureNote}`,
 	);
 };
+
+export const sendImportJsonSummary = (summary: unknown): void => {
+	console.log(JSON.stringify(summary, null, 2));
+};

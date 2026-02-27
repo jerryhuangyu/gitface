@@ -7,12 +7,14 @@ import {
 	sendImportDryRunSummary,
 	sendImportExistsWarning,
 	sendImportFailedMsg,
+	sendImportJsonSummary,
 	sendImportSummary,
 } from "./ui";
 
 interface Options {
 	overwrite?: boolean;
 	dryRun?: boolean;
+	json?: boolean;
 }
 
 interface ImportCandidate {
@@ -20,6 +22,22 @@ interface ImportCandidate {
 	gitName: string;
 	email: string;
 	signingKey: string | null;
+}
+
+type ImportResultStatus = "imported" | "failed";
+
+interface ImportResultItem {
+	name: string;
+	status: ImportResultStatus;
+	message: string;
+}
+
+interface ImportSummary {
+	dryRun: boolean;
+	total: number;
+	imported: number;
+	failed: number;
+	results: ImportResultItem[];
 }
 
 const action: (file: string, options: Options) => Promise<void> =
@@ -34,8 +52,7 @@ const action: (file: string, options: Options) => Promise<void> =
 			}
 
 			const service = ProfileService.create();
-			let successCount = 0;
-			let failCount = 0;
+			const results: ImportResultItem[] = [];
 			const isDryRun = options.dryRun ?? false;
 			const overwrite = options.overwrite ?? false;
 
@@ -53,23 +70,56 @@ const action: (file: string, options: Options) => Promise<void> =
 							force: overwrite,
 						});
 					}
-					successCount++;
+
+					results.push({
+						name: sourceName,
+						status: "imported",
+						message: isDryRun ? "Validated for import." : "Imported.",
+					});
 				} catch (error) {
 					if (error instanceof ProfileAlreadyExistsError) {
-						sendImportExistsWarning(sourceName, isDryRun);
+						if (!options.json) {
+							sendImportExistsWarning(sourceName, isDryRun);
+						}
+						results.push({
+							name: sourceName,
+							status: "failed",
+							message: "Profile already exists. Use --overwrite to replace.",
+						});
 					} else {
-						sendImportFailedMsg(sourceName, (error as Error).message, isDryRun);
+						const reason =
+							error instanceof Error ? error.message : "Unknown error";
+						if (!options.json) {
+							sendImportFailedMsg(sourceName, reason, isDryRun);
+						}
+						results.push({
+							name: sourceName,
+							status: "failed",
+							message: reason,
+						});
 					}
-					failCount++;
 				}
 			}
 
-			if (isDryRun) {
-				sendImportDryRunSummary(successCount, failCount);
+			const summary: ImportSummary = {
+				dryRun: isDryRun,
+				total: results.length,
+				imported: results.filter((item) => item.status === "imported").length,
+				failed: results.filter((item) => item.status === "failed").length,
+				results,
+			};
+
+			if (options.json) {
+				sendImportJsonSummary(summary);
 				return;
 			}
 
-			sendImportSummary(successCount, failCount);
+			if (isDryRun) {
+				sendImportDryRunSummary(summary.imported, summary.failed);
+				return;
+			}
+
+			sendImportSummary(summary.imported, summary.failed);
 		},
 	);
 

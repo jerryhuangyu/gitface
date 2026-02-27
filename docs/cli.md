@@ -68,6 +68,8 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 - `--overwrite` replaces existing profile names instead of skipping them.
 - `--dry-run` validates payload/duplicates and reports outcomes without writing
   any profile files.
+- `--json` emits machine-readable import results:
+  `{ "dryRun": false, "total": 2, "imported": 1, "failed": 1, "results": [{ "name": "work", "status": "failed", "message": "Profile already exists. Use --overwrite to replace." }] }`.
 - Import continues entry-by-entry: one bad profile does not stop the entire run.
 
 ## `gitface rm <name>`

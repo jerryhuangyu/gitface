@@ -7,6 +7,7 @@ const command: Command = new Command("import")
 	.argument("<file>", "input file path")
 	.option("--overwrite", "Overwrite existing profiles")
 	.option("--dry-run", "Validate import without writing profiles")
+	.option("--json", "Output machine-readable import results")
 	.action(action);
 
 const importProfileCommand: CliCommand = {
