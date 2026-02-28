@@ -32,6 +32,11 @@ export interface CreateProfileOptions {
 
 export interface UpdateProfileOptions extends ProfileUpdate {}
 
+export interface CreateProfilePlan {
+	profile: Profile;
+	overwrite: boolean;
+}
+
 export interface GitGateway {
 	getCurrentIdentity(): Promise<GitIdentity>;
 	getScopedIdentity(scope: ConfigScope): Promise<GitIdentity>;
@@ -127,6 +132,18 @@ export class ProfileService {
 	}
 
 	async createProfile(options: CreateProfileOptions): Promise<Profile> {
+		const plan = await this.planCreateProfile(options);
+		await this.store.save(plan.profile);
+		await this.ensureProfileConfig(plan.profile);
+		logger.info("profile-service:createProfile saved", {
+			name: plan.profile.name,
+		});
+		return plan.profile;
+	}
+
+	async planCreateProfile(
+		options: CreateProfileOptions,
+	): Promise<CreateProfilePlan> {
 		validateProfileName(options.name);
 		const force = options.force ?? false;
 		logger.info("profile-service:createProfile invoked", {
@@ -134,7 +151,8 @@ export class ProfileService {
 			force,
 		});
 
-		if (!force && (await this.store.exists(options.name))) {
+		const overwrite = await this.store.exists(options.name);
+		if (!force && overwrite) {
 			logger.warn("profile-service:createProfile profile exists", {
 				name: options.name,
 			});
@@ -143,12 +161,7 @@ export class ProfileService {
 
 		const profileInput = await this.buildProfileInput(options);
 		const profile = Profile.create(profileInput);
-		await this.store.save(profile);
-		await this.ensureProfileConfig(profile);
-		logger.info("profile-service:createProfile saved", {
-			name: profile.name,
-		});
-		return profile;
+		return { profile, overwrite };
 	}
 
 	async updateProfile(

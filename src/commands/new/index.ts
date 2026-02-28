@@ -9,6 +9,7 @@ const command: Command = new Command("new")
 	.option("-e, --email <value>", "Git user.email value to store")
 	.option("-s, --signing-key <value>", "Git signing key value to store")
 	.option("-f, --force", "Overwrite an existing profile")
+	.option("--dry-run", "Preview profile data without writing files")
 	.option("--json", "Output result as JSON")
 	.action(action);
 

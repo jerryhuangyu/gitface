@@ -1,6 +1,14 @@
 import { ProfileService } from "@/core/profile-service";
-import { withCommandHandling } from "../command-runner";
 import {
+	InvalidProfileError,
+	ProfileAlreadyExistsError,
+	ProfileNotFoundError,
+} from "@/errors";
+import { withCommandHandling } from "../command-runner";
+import { buildProfileNotFoundReason } from "../profile-not-found-reason";
+import {
+	sendProfileCreateDryRunJson,
+	sendProfileCreateDryRunMsg,
 	sendProfileCreateFailedJson,
 	sendProfileCreateSuccessJson,
 	sendProfileCreateSuccessMsg,
@@ -11,6 +19,7 @@ interface NewActionOptions {
 	email?: string;
 	signingKey?: string;
 	force?: boolean;
+	dryRun?: boolean;
 	json?: boolean;
 }
 
@@ -28,6 +37,21 @@ const action: (name: string, options: NewActionOptions) => Promise<void> =
 		const service = ProfileService.create();
 		if (hasNewProfileOptions(options)) {
 			try {
+				if (options.dryRun) {
+					const plan = await service.planCreateProfile({
+						name,
+						gitName: options.gitName,
+						email: options.email,
+						signingKey: options.signingKey ?? null,
+						force: Boolean(options.force),
+					});
+					if (options.json) {
+						sendProfileCreateDryRunJson(plan.profile, plan.overwrite);
+						return;
+					}
+					sendProfileCreateDryRunMsg(plan.profile, plan.overwrite);
+					return;
+				}
 				const profile = await service.createProfile({
 					name,
 					gitName: options.gitName,
@@ -43,8 +67,19 @@ const action: (name: string, options: NewActionOptions) => Promise<void> =
 
 				sendProfileCreateSuccessMsg(profile);
 			} catch (error) {
-				if (options.json && error instanceof Error) {
+				if (
+					options.json &&
+					(error instanceof ProfileAlreadyExistsError ||
+						error instanceof InvalidProfileError)
+				) {
 					sendProfileCreateFailedJson(name, error.message);
+					process.exitCode = 1;
+					return;
+				}
+
+				if (options.json && error instanceof ProfileNotFoundError) {
+					const reason = await buildProfileNotFoundReason(name, error.message);
+					sendProfileCreateFailedJson(name, reason);
 					process.exitCode = 1;
 					return;
 				}

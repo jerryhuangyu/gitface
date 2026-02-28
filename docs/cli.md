@@ -20,8 +20,11 @@ dot segments (`.`/`..`).
   - `--email <value>` / `-e`
   - `--signing-key <value>` / `-s`
   - `--force` overwrites an existing profile without prompting
+- `--dry-run` previews the final profile payload without writing profile files.
 - `--json` emits machine-readable output in non-interactive mode:
   `{ "status": "created", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `--dry-run --json` emits machine-readable preview output:
+  `{ "status": "dry-run", "name": "work", "overwrite": false, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `--json` without non-interactive field flags returns:
   `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }` with exit code `1`.
 - Non-interactive paths avoid loading Ink UI modules until interactive mode is needed.

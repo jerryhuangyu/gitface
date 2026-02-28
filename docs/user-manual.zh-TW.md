@@ -68,6 +68,7 @@ gitface new work
 
 ```bash
 gitface new work --git-name "Work User" --email "work@example.com"
+gitface new work --git-name "Work User" --email "work@example.com" --dry-run
 ```
 
 ### 步驟 2：確認已儲存
@@ -113,6 +114,15 @@ gitface use work --dry-run --json
 ```
 
 `--dry-run` 只顯示會改哪些 key，不會寫入 Git 設定。
+
+建立 profile 也支援 dry-run，可先確認最終欄位與覆蓋狀態：
+
+```bash
+gitface new work --git-name "Work User" --email "work@example.com" --dry-run
+gitface new work --git-name "Work User" --email "work@example.com" --dry-run --json
+```
+
+`new --dry-run` 不會建立或覆蓋 profile 檔案。
 
 ### 情境 C：切到全域設定
 

@@ -99,6 +99,119 @@ describe("new command e2e", () => {
 		}
 	});
 
+	test("returns dry-run json and does not create profile", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const logSpy = vi
+			.spyOn(console, "log")
+			.mockImplementation((...args: unknown[]) => {
+				logs.push(args.map(String).join(" "));
+			});
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+
+			await runCli([newProfileCommand.command], [
+				"node",
+				"gitface",
+				"new",
+				"work",
+				"--git-name",
+				"Work User",
+				"--email",
+				"work@example.com",
+				"--dry-run",
+				"--json",
+			]);
+
+			const payload = JSON.parse(logs.join("\n"));
+			expect(payload).toEqual({
+				status: "dry-run",
+				name: "work",
+				overwrite: false,
+				gitName: "Work User",
+				email: "work@example.com",
+				signingKey: null,
+			});
+
+			const service = ProfileService.create();
+			await expect(service.findProfile("work")).resolves.toBeNull();
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			logSpy.mockRestore();
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns dry-run overwrite=true with --force and keeps existing profile unchanged", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const logSpy = vi
+			.spyOn(console, "log")
+			.mockImplementation((...args: unknown[]) => {
+				logs.push(args.map(String).join(" "));
+			});
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Old Name",
+				email: "old@example.com",
+				signingKey: "OLDKEY",
+			});
+
+			await runCli([newProfileCommand.command], [
+				"node",
+				"gitface",
+				"new",
+				"work",
+				"--git-name",
+				"Work User",
+				"--email",
+				"work@example.com",
+				"--force",
+				"--dry-run",
+				"--json",
+			]);
+
+			const payload = JSON.parse(logs.join("\n"));
+			expect(payload).toEqual({
+				status: "dry-run",
+				name: "work",
+				overwrite: true,
+				gitName: "Work User",
+				email: "work@example.com",
+				signingKey: null,
+			});
+
+			const profile = await service.getProfile("work");
+			expect(profile.gitName).toBe("Old Name");
+			expect(profile.email).toBe("old@example.com");
+			expect(profile.signingKey).toBe("OLDKEY");
+		} finally {
+			logSpy.mockRestore();
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("returns json error when --json is used without non-interactive flags", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalArgv = process.argv.slice();

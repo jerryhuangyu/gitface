@@ -68,7 +68,7 @@ Run `gitface <command> --help` to see all flags and examples.
 
 | Command                  | Description                                                                                   |
 | ------------------------ | --------------------------------------------------------------------------------------------- |
-| `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--json`). |
+| `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--dry-run`, `--json`). |
 | `gitface edit <profile>` | Update a stored profile via flags or an interactive editor; supports `--json` output.         |
 | `gitface list`           | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, cap output with `--limit`, or use `list --json`. |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--dry-run`, and `use --json` output.      |
@@ -100,6 +100,8 @@ Run `gitface <command> --help` to see all flags and examples.
   `gitface edit <name> --unset-signing-key` to remove it.
 - `gitface new <name> --git-name <value> --email <value> --json` emits:
   `{ "status": "created", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface new <name> --git-name <value> --email <value> --dry-run --json` previews creation without writing:
+  `{ "status": "dry-run", "name": "work", "overwrite": false, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface new <name> --json` without non-interactive field flags emits:
   `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }`.
 - `gitface edit <name> --git-name <value> --json` emits:
