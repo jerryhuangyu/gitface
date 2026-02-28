@@ -218,6 +218,8 @@ gitface rules apply ~/code/work/monorepo
 gitface rules apply ~/code/work/monorepo --dry-run --json
 gitface rules apply ~/code/work/monorepo --scope global --json
 gitface rules apply ~/code/work/monorepo --strict --json
+gitface rules doctor --json
+gitface rules doctor --strict --json
 ```
 
 說明：
@@ -235,6 +237,8 @@ gitface rules apply ~/code/work/monorepo --strict --json
 - `rules apply [directory]` 會直接以命中的規則套用 profile（等同 resolve + use）。
 - `rules apply --dry-run` 只輸出預計變更，不會寫入 Git config。
 - `rules apply --strict` 會把 `unmatched` 視為失敗並回傳 exit code `1`。
+- `rules doctor` 可批次檢查規則健康度（profile 是否存在、目錄是否存在）。
+- `rules doctor --strict` 會把 `warn`/`fail` 都視為失敗並回傳 exit code `1`，適合 CI gate。
 
 ### 情境 H：啟用 Shell 補全（bash/zsh）
 
@@ -258,7 +262,7 @@ gitface completion profiles --prefix wo --limit 5 --json
 - `new`, `edit`, `list`, `use`, `current`, `doctor`
 - `clone`, `rename`, `rm/remove`
 - `export`, `import`
-- `rules list/add/remove/resolve/apply`
+- `rules list/add/remove/resolve/apply/doctor`
 - `completion profiles`
 
 注意兩個常見限制：

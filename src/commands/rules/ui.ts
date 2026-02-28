@@ -4,6 +4,25 @@ import type { FolderRule } from "@/core/rule-service";
 import type { Profile } from "@/domain/profile";
 import type { UseChangeStep } from "../use/output";
 
+export interface RuleDoctorResult {
+	directory: string;
+	profileName: string;
+	status: "pass" | "warn" | "fail";
+	profileExists: boolean;
+	directoryExists: boolean;
+}
+
+export interface RuleDoctorReport {
+	status: "ok" | "issues";
+	summary: {
+		total: number;
+		pass: number;
+		warn: number;
+		fail: number;
+	};
+	results: RuleDoctorResult[];
+}
+
 export function sendRuleAddSuccessMsg(
 	directory: string,
 	profileName: string,
@@ -405,6 +424,74 @@ export function sendRuleApplyFailedJson(
 		JSON.stringify({
 			status: "error",
 			directory,
+			reason,
+		}),
+	);
+}
+
+export function sendRuleDoctorReportMsg(
+	report: RuleDoctorReport,
+	strict: boolean,
+): void {
+	console.log(chalk.bold("Folder rule health report:"));
+	if (report.summary.total === 0) {
+		console.log(chalk.gray("No folder rules found."));
+		console.log(
+			chalk.gray(
+				`Summary: total=0 pass=0 warn=0 fail=0${strict ? " (strict mode)" : ""}`,
+			),
+		);
+		return;
+	}
+	for (const result of report.results) {
+		const label =
+			result.status === "pass"
+				? chalk.green("PASS")
+				: result.status === "warn"
+					? chalk.yellow("WARN")
+					: chalk.red("FAIL");
+		const details: string[] = [];
+		if (!result.profileExists) {
+			details.push("profile missing");
+		}
+		if (!result.directoryExists) {
+			details.push("directory missing");
+		}
+		const detailText =
+			details.length > 0 ? ` (${details.join(", ")})` : " (healthy)";
+		console.log(
+			`${label} ${chalk.cyan(result.directory)} -> ${chalk.bold(result.profileName)}${chalk.gray(detailText)}`,
+		);
+	}
+	console.log(
+		chalk.gray(
+			`Summary: total=${report.summary.total} pass=${report.summary.pass} warn=${report.summary.warn} fail=${report.summary.fail}${strict ? " (strict mode)" : ""}`,
+		),
+	);
+}
+
+export function sendRuleDoctorReportJson(
+	report: RuleDoctorReport,
+	strict: boolean,
+): void {
+	console.log(
+		JSON.stringify({
+			status: report.status,
+			strict,
+			summary: report.summary,
+			results: report.results,
+		}),
+	);
+}
+
+export function sendRuleDoctorFailedMsg(reason: string): void {
+	console.error(chalk.red(reason));
+}
+
+export function sendRuleDoctorFailedJson(reason: string): void {
+	console.log(
+		JSON.stringify({
+			status: "error",
 			reason,
 		}),
 	);

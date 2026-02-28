@@ -176,6 +176,7 @@ dot segments (`.`/`..`).
   - `gitface rules remove <directory>`
   - `gitface rules resolve [directory]`
   - `gitface rules apply [directory]`
+  - `gitface rules doctor`
   - `gitface rules list` (human-readable)
 - `rules add/remove --dry-run` previews mutation results without changing global Git config.
 - `gitface rules list --query <text>` filters by case-insensitive substring
@@ -224,6 +225,11 @@ dot segments (`.`/`..`).
   `{ "status": "unmatched", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null }`.
 - `gitface rules apply [directory] --strict` treats unmatched results as
   failures (`exit code 1`) for CI gating.
+- `gitface rules doctor` checks all folder rules for stale profile references
+  and missing directories.
+- `gitface rules doctor --json` emits:
+  `{ "status": "issues", "strict": false, "summary": { "total": 2, "pass": 1, "warn": 1, "fail": 0 }, "results": [{ "directory": "/abs/path/", "profileName": "work", "status": "warn", "profileExists": true, "directoryExists": false }] }`.
+- `gitface rules doctor --strict` treats `warn` and `fail` as failures (exit code `1`) for CI gating.
 - Empty JSON output is `[]`, which is safe for CI/script parsing.
 
 ## `gitface completion <topic>`

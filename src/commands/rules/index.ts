@@ -2,6 +2,7 @@ import { Command } from "commander";
 import type { CliCommand } from "../command";
 import { addRuleAction } from "./add";
 import { applyRuleAction } from "./apply";
+import doctorRuleAction from "./doctor";
 import { listRulesAction } from "./list";
 import { removeRuleAction } from "./remove";
 import { resolveRuleAction } from "./resolve";
@@ -72,6 +73,13 @@ command
 	)
 	.option("--json", "Output resolve result as JSON")
 	.action(resolveRuleAction);
+
+command
+	.command("doctor")
+	.description("Check folder rule health (profile/directory integrity)")
+	.option("--strict", "Treat warnings as failures (exit code 1) for CI gating")
+	.option("--json", "Output doctor report as JSON")
+	.action(doctorRuleAction);
 
 const rulesCommand: CliCommand = {
 	command,
