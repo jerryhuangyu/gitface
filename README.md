@@ -147,6 +147,9 @@ Run `gitface <command> --help` to see all flags and examples.
   the selected profile immediately.
 - `gitface current --scope global --json` inspects one scope and emits:
   `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }`.
+- Scoped identity reads (`current --scope`, `use` planning, and doctor global checks)
+  use a single `git config --list` snapshot per scope by default, with safe
+  fallback behavior when listing fails.
 - `gitface use <profile> --dry-run` previews planned scoped config updates and
   does not mutate `.git/config`; dry-run output only lists effective changes.
 - `gitface use` exits with code `1` and a guidance message when no profiles are

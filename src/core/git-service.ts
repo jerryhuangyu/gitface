@@ -49,6 +49,25 @@ export class GitService {
 			baseDir: this.baseDir,
 			scope,
 		});
+		try {
+			const config = await this.getAllConfig(scope);
+			const identity = {
+				gitName: normalizeOptional(config["user.name"]),
+				email: normalizeOptional(config["user.email"]),
+				signingKey: normalizeOptional(config["user.signingkey"]),
+			};
+			logger.debug("git-service:getScopedIdentity resolved from list", {
+				scope,
+				identity,
+			});
+			return identity;
+		} catch (error) {
+			logger.warn("git-service:getScopedIdentity list fallback", {
+				scope,
+				error,
+			});
+		}
+
 		const [gitName, email, signingKey] = await Promise.all([
 			this.getConfig("user.name", scope),
 			this.getConfig("user.email", scope),
@@ -56,11 +75,11 @@ export class GitService {
 		]);
 
 		const identity = {
-			gitName: gitName ?? undefined,
-			email: email ?? undefined,
-			signingKey: signingKey ?? undefined,
+			gitName: normalizeOptional(gitName),
+			email: normalizeOptional(email),
+			signingKey: normalizeOptional(signingKey),
 		};
-		logger.debug("git-service:getScopedIdentity resolved", {
+		logger.debug("git-service:getScopedIdentity resolved from key lookups", {
 			scope,
 			identity,
 		});
@@ -175,6 +194,12 @@ function normalize(value: string | string[] | undefined): string | undefined {
 		return value[value.length - 1];
 	}
 	return value ?? undefined;
+}
+
+function normalizeOptional(
+	value: string | null | undefined,
+): string | undefined {
+	return value?.trim() ? value : undefined;
 }
 
 function scopeArgs(scope: ConfigScope): string[] {

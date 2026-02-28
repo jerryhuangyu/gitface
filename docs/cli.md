@@ -91,6 +91,8 @@ dot segments (`.`/`..`).
 - Shows the identity resolved by Git in the active working directory (respects scope precedence).
 - Helpful as a pre-push check or for debugging environment setup scripts.
 - `--scope <local|global|system>` reads only that scope.
+- Scoped reads use a single `git config --list` pass and map identity keys from
+  that snapshot (with per-key fallback on list failures).
 - `gitface current --json` emits machine-readable output:
   `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123" }`.
 - `gitface current --scope global --json` emits:
