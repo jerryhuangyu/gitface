@@ -63,7 +63,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope` and `use --json` output.                    |
 | `gitface current`        | Display active Git identity; use `current --json` for machine-readable output.                |
 | `gitface doctor`         | Run environment diagnostics; use `doctor --json` for machine-readable output.                  |
-| `gitface export [file]`  | Export all profiles as JSON to stdout or a file.                                                |
+| `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports `--json` summary output.              |
 | `gitface import <file>`  | Import profiles from JSON; supports `--dry-run` and `--json` for structured results.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--json` output.                                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); use `rename --json` for machine-readable output.            |
@@ -93,6 +93,10 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "renamed", "oldName": "old", "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface clone <src> <tgt> --json` emits machine-readable status:
   `{ "status": "cloned", "sourceName": "work", "name": "work-copy", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface export --json` emits machine-readable summary:
+  `{ "status": "exported", "count": 2, "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }] }`.
+- `gitface export ./profiles.json --json` emits machine-readable file result:
+  `{ "status": "exported", "count": 2, "file": "./profiles.json" }`.
 
 ### Example profile file
 

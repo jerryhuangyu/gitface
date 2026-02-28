@@ -10,6 +10,168 @@ import { ProfileService } from "../src/core/profile-service";
 import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
 
 describe("export/import e2e", () => {
+	test("emits structured export summary with profiles for export --json", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-e2e-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await service.createProfile({
+				name: "personal",
+				gitName: "Personal User",
+				email: "me@example.com",
+			});
+
+			await runCli([exportProfileCommand.command], [
+				"node",
+				"gitface",
+				"export",
+				"--json",
+			]);
+
+			const summary = JSON.parse(logs.join("\n")) as {
+				status: string;
+				count: number;
+				profiles: Array<{
+					name: string;
+					gitName: string;
+					email: string;
+					signingKey: string | null;
+				}>;
+			};
+
+			expect(summary.status).toBe("exported");
+			expect(summary.count).toBe(2);
+			expect(summary.profiles).toHaveLength(2);
+			expect(summary.profiles.map((profile) => profile.name).sort()).toEqual([
+				"personal",
+				"work",
+			]);
+		} finally {
+			restoreLog();
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("emits structured export summary with file path for export <file> --json", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-e2e-"));
+		const configDir = path.join(tmpRoot, "config");
+		const exportFile = path.join(tmpRoot, "profiles.json");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await runCli([exportProfileCommand.command], [
+				"node",
+				"gitface",
+				"export",
+				exportFile,
+				"--json",
+			]);
+
+			const summary = JSON.parse(logs.join("\n")) as {
+				status: string;
+				count: number;
+				file: string;
+			};
+
+			expect(summary).toEqual({
+				status: "exported",
+				count: 1,
+				file: exportFile,
+			});
+
+			const exportedContent = JSON.parse(
+				await fs.readFile(exportFile, "utf8"),
+			) as Array<Record<string, unknown>>;
+			expect(exportedContent).toHaveLength(1);
+			expect(exportedContent[0]?.name).toBe("work");
+		} finally {
+			restoreLog();
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("emits JSON error and exit code when export --json write fails", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-e2e-"));
+		const configDir = path.join(tmpRoot, "config");
+		const invalidOutput = path.join(tmpRoot, "output-dir");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await fs.mkdir(invalidOutput, { recursive: true });
+
+			await runCli([exportProfileCommand.command], [
+				"node",
+				"gitface",
+				"export",
+				invalidOutput,
+				"--json",
+			]);
+
+			const summary = JSON.parse(logs.join("\n")) as {
+				status: string;
+				reason: string;
+				file: string;
+			};
+			expect(summary.status).toBe("error");
+			expect(summary.file).toBe(invalidOutput);
+			expect(summary.reason.length).toBeGreaterThan(0);
+			expect(process.exitCode).toBe(1);
+		} finally {
+			restoreLog();
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("exports profiles to a file and imports them into a fresh store", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;

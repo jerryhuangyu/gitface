@@ -80,6 +80,11 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 - When `file` is omitted, JSON is printed to stdout (useful for pipes/backups).
 - When `file` is provided, GitFace writes a prettified JSON array to disk and
   prints a success summary.
+- `--json` emits machine-readable output:
+  - stdout mode: `{ "status": "exported", "count": 2, "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }] }`
+  - file mode: `{ "status": "exported", "count": 2, "file": "./profiles.json" }`
+- JSON failures return:
+  `{ "status": "error", "reason": "..." }` (and include `file` when provided) with exit code `1`.
 
 ## `gitface import <file>`
 
