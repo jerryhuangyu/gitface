@@ -27,7 +27,7 @@ Prefer one-off use? Run `npx gitface --help`.
 ## Quick Start
 
 ```bash
-# Create a profile using the current repo identity as defaults
+# Create a profile interactively
 gitface new work
 
 # Non-interactive creation (useful for CI scripts)
@@ -44,6 +44,12 @@ gitface current
 ```
 
 Run `gitface <command> --help` to see all flags and examples.
+
+## Documentation
+
+- [User Manual (Traditional Chinese)](./docs/user-manual.zh-TW.md) – step-by-step onboarding and common workflows.
+- [CLI Reference](./docs/cli.md) – full command/flag behavior and JSON outputs.
+- [Profiles & Storage Notes](./docs/profiles.md) – persistence layout and implementation notes.
 
 ## Tab Completion
 

@@ -1,5 +1,7 @@
 # CLI Reference
 
+Need a task-oriented walkthrough first? See [GitFace 使用者手冊（繁體中文）](./user-manual.zh-TW.md).
+
 Each command inherits global flags from Commander (`--help`, `--version`). Unless stated, commands exit with status code `0` on success and `1` on validation or runtime errors.
 
 Profile names are validated across commands and storage paths: names must be
@@ -10,7 +12,7 @@ dot segments (`.`/`..`).
 
 - **Purpose** – create or overwrite a stored Git identity.
 - **Interactive mode** – `gitface new work` opens an Ink wizard that:
-  - seeds inputs from the current `git config` values,
+  - pre-fills fields from an existing profile with the same name (if present),
   - validates required fields with `zod`,
   - saves the profile after the last step.
 - **Non-interactive mode** – provide any of the following flags to skip the wizard:
