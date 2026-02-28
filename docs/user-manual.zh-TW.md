@@ -207,6 +207,7 @@ gitface rules remove ~/code/work --dry-run --json
 ```bash
 gitface rules resolve ~/code/work/monorepo
 gitface rules resolve ~/code/work/monorepo --json
+gitface rules resolve ~/code/work/monorepo --strict --json
 ```
 
 說明：
@@ -219,6 +220,8 @@ gitface rules resolve ~/code/work/monorepo --json
   與 `--limit`（正整數）縮小輸出範圍。
 - `rules resolve [directory]` 會回傳最具體（最長路徑前綴）命中的規則；
   未命中時會回傳 `unmatched`（不視為錯誤）。
+- `rules resolve --strict` 會把 `unmatched` 或命中不存在 profile
+  （`profileExists=false`）視為失敗並回傳 exit code `1`，適合 CI gate。
 
 ### 情境 H：啟用 Shell 補全（bash/zsh）
 

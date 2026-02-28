@@ -46,6 +46,10 @@ command
 		"Directory to resolve (defaults to current working directory)",
 	)
 	.description("Resolve the effective folder rule for a directory")
+	.option(
+		"--strict",
+		"Treat unmatched or missing-profile matches as failures (exit code 1)",
+	)
 	.option("--json", "Output resolve result as JSON")
 	.action(resolveRuleAction);
 

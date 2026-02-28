@@ -764,6 +764,159 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("returns exit code 1 in strict mode when no rule matches target directory", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-resolve-strict-unmatched-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const targetDir = path.join(homeDir, "personal");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(targetDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"resolve",
+				targetDir,
+				"--strict",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				directory: string;
+				matchedRule: null;
+				profileExists: null;
+			};
+			expect(parsed).toEqual({
+				status: "unmatched",
+				directory: `${targetDir}${path.sep}`,
+				matchedRule: null,
+				profileExists: null,
+			});
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns exit code 1 in strict mode when matched profile does not exist", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-resolve-strict-missing-profile-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const ruleDir = path.join(homeDir, "work");
+		const repoDir = path.join(ruleDir, "repo");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(ruleDir, { recursive: true });
+		await fs.mkdir(repoDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "stale-profile",
+				gitName: "Stale User",
+				email: "stale@example.com",
+			});
+
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				ruleDir,
+				"stale-profile",
+			]);
+			await service.removeProfile("stale-profile");
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"resolve",
+				repoDir,
+				"--strict",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				directory: string;
+				matchedRule: {
+					directory: string;
+					profileName: string;
+				};
+				profileExists: boolean;
+			};
+			expect(parsed).toEqual({
+				status: "matched",
+				directory: `${repoDir}${path.sep}`,
+				matchedRule: {
+					directory: `${ruleDir}${path.sep}`,
+					profileName: "stale-profile",
+				},
+				profileExists: false,
+			});
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("returns exit code 1 when rules list limit is invalid", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;

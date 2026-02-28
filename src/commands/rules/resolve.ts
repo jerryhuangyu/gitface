@@ -15,6 +15,7 @@ import {
 
 interface ResolveRuleOptions {
 	json?: boolean;
+	strict?: boolean;
 }
 
 const isMissingGlobalConfigError = (error: unknown): boolean => {
@@ -47,6 +48,7 @@ export const resolveRuleAction: (
 			directory ?? process.cwd(),
 			"dummy",
 		).directory;
+		const strictMode = options.strict ?? false;
 
 		try {
 			const matchedRule = await ruleService
@@ -61,18 +63,24 @@ export const resolveRuleAction: (
 			if (!matchedRule) {
 				if (options.json) {
 					sendRuleResolveUnmatchedJson(targetDirectory);
-					return;
+				} else {
+					sendRuleResolveUnmatchedMsg(targetDirectory);
 				}
-				sendRuleResolveUnmatchedMsg(targetDirectory);
+				if (strictMode) {
+					process.exitCode = 1;
+				}
 				return;
 			}
 
 			const hasProfile = await profileExists(matchedRule.profileName);
 			if (options.json) {
 				sendRuleResolveMatchedJson(targetDirectory, matchedRule, hasProfile);
-				return;
+			} else {
+				sendRuleResolveMatchedMsg(targetDirectory, matchedRule, hasProfile);
 			}
-			sendRuleResolveMatchedMsg(targetDirectory, matchedRule, hasProfile);
+			if (strictMode && !hasProfile) {
+				process.exitCode = 1;
+			}
 		} catch (error) {
 			const reason =
 				error instanceof Error
