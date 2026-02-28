@@ -9,6 +9,7 @@ const command: Command = new Command("edit")
 	.option("-e, --email <value>", "New Git user.email value")
 	.option("-s, --signing-key <value>", "New Git signing key value")
 	.option("--unset-signing-key", "Remove the stored signing key")
+	.option("--json", "Print machine-readable output")
 	.action(action);
 
 const editProfileCommand: CliCommand = {

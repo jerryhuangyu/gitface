@@ -59,7 +59,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | Command                  | Description                                                                                   |
 | ------------------------ | --------------------------------------------------------------------------------------------- |
 | `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--json`). |
-| `gitface edit <profile>` | Update a stored profile via flags or an interactive editor.                                   |
+| `gitface edit <profile>` | Update a stored profile via flags or an interactive editor; supports `--json` output.         |
 | `gitface list`           | Render saved profiles in an Ink table, or use `list --json` for machine-readable output.      |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope` and `use --json` output.                    |
 | `gitface current`        | Display active Git identity; use `current --json` for machine-readable output.                |
@@ -87,6 +87,10 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface new <name> --git-name <value> --email <value> --json` emits:
   `{ "status": "created", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface new <name> --json` without non-interactive field flags emits:
+  `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }`.
+- `gitface edit <name> --git-name <value> --json` emits:
+  `{ "status": "updated", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface edit <name> --json` without non-interactive field flags emits:
   `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }`.
 - `gitface import <file> --dry-run` validates payload and duplicate handling
   without changing local profile files.

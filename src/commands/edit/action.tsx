@@ -1,26 +1,58 @@
 import { render } from "ink";
 import { ProfileService } from "@/core/profile-service";
+import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
-import EditProfile, { sendProfileUpdateSuccessMsg } from "./ui";
+import EditProfile, {
+	sendProfileUpdateFailedJson,
+	sendProfileUpdateSuccessJson,
+	sendProfileUpdateSuccessMsg,
+} from "./ui";
 
 interface EditProfileOptions {
 	gitName?: string;
 	email?: string;
 	signingKey?: string;
 	unsetSigningKey?: boolean;
+	json?: boolean;
 }
 
 const action: (name: string, options: EditProfileOptions) => Promise<void> =
 	withCommandHandling("command:edit", async (name, options) => {
+		if (options.json && !hasUpdates(options)) {
+			sendProfileUpdateFailedJson(
+				name,
+				"Non-interactive flags are required when using --json output mode.",
+			);
+			process.exitCode = 1;
+			return;
+		}
+
 		if (hasUpdates(options)) {
 			const service = ProfileService.create();
-			const profile = await service.updateProfile(name, {
-				gitName: options.gitName,
-				email: options.email,
-				signingKey: options.unsetSigningKey ? null : options.signingKey,
-			});
+			try {
+				const profile = await service.updateProfile(name, {
+					gitName: options.gitName,
+					email: options.email,
+					signingKey: options.unsetSigningKey ? null : options.signingKey,
+				});
 
-			sendProfileUpdateSuccessMsg(profile.name);
+				if (options.json) {
+					sendProfileUpdateSuccessJson(profile);
+					return;
+				}
+				sendProfileUpdateSuccessMsg(profile.name);
+			} catch (error) {
+				if (
+					options.json &&
+					(error instanceof ProfileNotFoundError ||
+						error instanceof InvalidProfileError)
+				) {
+					sendProfileUpdateFailedJson(name, error.message);
+					process.exitCode = 1;
+					return;
+				}
+				throw error;
+			}
 			return;
 		}
 
