@@ -1,19 +1,44 @@
-import chalk from "chalk";
 import { RuleService } from "@/core/rule-service";
-import { logger } from "@/infra/logger";
+import { Rule } from "@/domain/rule";
+import { withCommandHandling } from "../command-runner";
+import {
+	sendRuleRemoveFailedJson,
+	sendRuleRemoveFailedMsg,
+	sendRuleRemoveSuccessJson,
+	sendRuleRemoveSuccessMsg,
+} from "./ui";
 
-export async function removeRuleAction(directory: string): Promise<void> {
-	const ruleService = RuleService.create();
-	try {
-		// We could verify if it exists first, or just try to remove it.
-		// removeRule implementation does not throw if missing, it's idempotent-ish (unset-all).
-		await ruleService.removeRule(directory);
-		console.log(
-			chalk.green(`Rule removed for directory: ${chalk.cyan(directory)}`),
-		);
-	} catch (error) {
-		logger.error("Failed to remove rule", { error });
-		console.error(chalk.red("Failed to remove rule:"), error);
-		process.exit(1);
-	}
+interface RemoveRuleOptions {
+	json?: boolean;
 }
+
+export const removeRuleAction: (
+	directory: string,
+	options: RemoveRuleOptions,
+) => Promise<void> = withCommandHandling(
+	"command:rules:remove",
+	async (directory, options) => {
+		const ruleService = RuleService.create();
+		const normalizedDirectory = Rule.create(directory, "dummy").directory;
+		try {
+			// removeRule is idempotent and silently ignores missing keys.
+			await ruleService.removeRule(directory);
+			if (options.json) {
+				sendRuleRemoveSuccessJson(normalizedDirectory);
+				return;
+			}
+			sendRuleRemoveSuccessMsg(directory);
+		} catch (error) {
+			const reason =
+				error instanceof Error
+					? error.message
+					: `Unexpected error ${JSON.stringify(error)}`;
+			if (options.json) {
+				sendRuleRemoveFailedJson(normalizedDirectory, reason);
+			} else {
+				sendRuleRemoveFailedMsg(`Failed to remove rule: ${reason}`);
+			}
+			process.exitCode = 1;
+		}
+	},
+);

@@ -69,7 +69,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--json` output.                                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); use `rename --json` for machine-readable output.            |
 | `gitface rm <profile>`   | Remove a profile; add `--force` to ignore missing entries, or `--json` for structured output. |
-| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`) with optional `rules list --json` output.      |
+| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`) with optional `--json` output for all subcommands. |
 
 ## Profiles & Storage
 
@@ -90,6 +90,10 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "dryRun": false, "total": 2, "imported": 2, "failed": 0, "results": [{ "name": "work", "status": "imported", "message": "Imported." }] }`.
 - `gitface remove <name> --json` emits machine-readable status:
   `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface rules add <dir> <profile> --json` emits machine-readable status:
+  `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
+- `gitface rules remove <dir> --json` emits machine-readable status:
+  `{ "status": "removed", "directory": "/abs/path/" }`.
 - `gitface rename <old> <new> --json` emits machine-readable status:
   `{ "status": "renamed", "oldName": "old", "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface clone <src> <tgt> --json` emits machine-readable status:

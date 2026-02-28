@@ -1,28 +1,47 @@
-import chalk from "chalk";
 import { RuleService } from "@/core/rule-service";
+import { Rule } from "@/domain/rule";
 import { ProfileNotFoundError } from "@/errors";
-import { logger } from "@/infra/logger";
+import { withCommandHandling } from "../command-runner";
+import {
+	sendRuleAddFailedJson,
+	sendRuleAddFailedMsg,
+	sendRuleAddSuccessJson,
+	sendRuleAddSuccessMsg,
+} from "./ui";
 
-export async function addRuleAction(
+interface AddRuleOptions {
+	json?: boolean;
+}
+
+export const addRuleAction: (
 	directory: string,
 	profileName: string,
-): Promise<void> {
-	const ruleService = RuleService.create();
-	try {
-		await ruleService.addRule(directory, profileName);
-		console.log(
-			chalk.green(
-				`Rule added: ${chalk.cyan(directory)} matches profile ${chalk.bold(profileName)}`,
-			),
-		);
-	} catch (error) {
-		if (error instanceof ProfileNotFoundError) {
-			console.error(chalk.red(`Profile '${profileName}' not found.`));
-			process.exit(1);
+	options: AddRuleOptions,
+) => Promise<void> = withCommandHandling(
+	"command:rules:add",
+	async (directory, profileName, options) => {
+		const ruleService = RuleService.create();
+		const normalizedDirectory = Rule.create(directory, profileName).directory;
+		try {
+			await ruleService.addRule(directory, profileName);
+			if (options.json) {
+				sendRuleAddSuccessJson(normalizedDirectory, profileName);
+				return;
+			}
+			sendRuleAddSuccessMsg(directory, profileName);
+		} catch (error) {
+			const reason =
+				error instanceof ProfileNotFoundError
+					? `Profile '${profileName}' not found.`
+					: error instanceof Error
+						? error.message
+						: `Unexpected error ${JSON.stringify(error)}`;
+			if (options.json) {
+				sendRuleAddFailedJson(normalizedDirectory, profileName, reason);
+			} else {
+				sendRuleAddFailedMsg(`Failed to add rule: ${reason}`);
+			}
+			process.exitCode = 1;
 		}
-
-		logger.error("Failed to add rule", { error });
-		console.error(chalk.red("Failed to add rule:"), error);
-		process.exit(1);
-	}
-}
+	},
+);

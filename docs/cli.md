@@ -110,6 +110,14 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
   - `gitface rules add <directory> <profile>`
   - `gitface rules remove <directory>`
   - `gitface rules list` (human-readable)
+- `gitface rules add <directory> <profile> --json` emits:
+  `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
+- `gitface rules add <directory> <profile> --json` failures emit:
+  `{ "status": "error", "directory": "/abs/path/", "profileName": "work", "reason": "..." }` with exit code `1`.
+- `gitface rules remove <directory> --json` emits:
+  `{ "status": "removed", "directory": "/abs/path/" }`.
+- `gitface rules remove <directory> --json` failures emit:
+  `{ "status": "error", "directory": "/abs/path/", "reason": "..." }` with exit code `1`.
 - `gitface rules list --json` emits a machine-readable JSON array:
   `[{ "directory": "/abs/path/", "profileName": "work" }]`.
 - Empty JSON output is `[]`, which is safe for CI/script parsing.

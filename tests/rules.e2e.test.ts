@@ -159,4 +159,155 @@ describe("rules command e2e", () => {
 			await safeRemove(tmpRoot);
 		}
 	});
+
+	test("adds and removes rules with --json payloads", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-rules-mutation-json-"));
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const projectDir = path.join(homeDir, "project-c");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(projectDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "eng-profile",
+				gitName: "Eng User",
+				email: "eng@example.com",
+			});
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				projectDir,
+				"eng-profile",
+				"--json",
+			]);
+			restoreLog();
+
+			const addOutput = stripAnsi(logs.join("\n")).trim();
+			const addParsed = JSON.parse(addOutput) as {
+				status: string;
+				directory: string;
+				profileName: string;
+			};
+			expect(addParsed).toEqual({
+				status: "added",
+				directory: `${projectDir}${path.sep}`,
+				profileName: "eng-profile",
+			});
+
+			logs.length = 0;
+			const restoreLog2 = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"remove",
+				projectDir,
+				"--json",
+			]);
+			restoreLog2();
+
+			const removeOutput = stripAnsi(logs.join("\n")).trim();
+			const removeParsed = JSON.parse(removeOutput) as {
+				status: string;
+				directory: string;
+			};
+			expect(removeParsed).toEqual({
+				status: "removed",
+				directory: `${projectDir}${path.sep}`,
+			});
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns json error when adding rule with missing profile", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-rules-add-error-json-"));
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const projectDir = path.join(homeDir, "project-d");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(projectDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				projectDir,
+				"missing-profile",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				directory: string;
+				profileName: string;
+				reason: string;
+			};
+
+			expect(parsed.status).toBe("error");
+			expect(parsed.profileName).toBe("missing-profile");
+			expect(parsed.directory).toBe(`${projectDir}${path.sep}`);
+			expect(parsed.reason).toContain("not found");
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
 });
