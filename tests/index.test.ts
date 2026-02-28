@@ -13,6 +13,10 @@ import type { ProfileRecord, ProfileStore } from "../src/infra/profile-store";
 class InMemoryProfileStore implements ProfileStore {
 	private readonly store = new Map<string, ProfileRecord>();
 
+	async listNames(): Promise<string[]> {
+		return Array.from(this.store.keys()).sort((a, b) => a.localeCompare(b));
+	}
+
 	async list(): Promise<ProfileRecord[]> {
 		return Array.from(this.store.values()).map((snapshot) => ({ ...snapshot }));
 	}

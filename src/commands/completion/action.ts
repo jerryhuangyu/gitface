@@ -41,8 +41,7 @@ const action: (
 		}
 
 		const service = ProfileService.create();
-		const profiles = await service.listProfiles();
-		const names = profiles.map((profile) => profile.name);
+		const names = await service.listProfileNames();
 
 		const filteredNames = (
 			options.prefix === undefined

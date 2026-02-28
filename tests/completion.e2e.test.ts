@@ -167,6 +167,51 @@ describe("completion command e2e", () => {
 		}
 	});
 
+	test("returns filtered profile names even when unrelated profile JSON is malformed", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const configDir = path.join(tmpRoot, "config");
+		const output: string[] = [];
+		const restoreStdout = captureStdout(output);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			const profilesDir = path.join(configDir, "gitface", "profiles");
+			await fs.writeFile(path.join(profilesDir, "oops.json"), "{not-valid-json");
+
+			await runCli([completionCommand.command], [
+				"node",
+				"gitface",
+				"completion",
+				"profiles",
+				"--prefix",
+				"wo",
+			]);
+
+			expect(output.join("")).toBe("work\n");
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreStdout();
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("sets exit code for unsupported completion topic", async () => {
 		const originalExitCode = process.exitCode;
 		const output: string[] = [];

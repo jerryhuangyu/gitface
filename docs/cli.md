@@ -188,6 +188,8 @@ dot segments (`.`/`..`).
   names filtered by prefix.
 - `gitface completion profiles --prefix <value> --limit <number>` caps returned
   suggestions to a positive integer.
+- Completion suggestions are derived from local profile filenames (name index),
+  so unrelated malformed profile JSON content does not block completion output.
 - `gitface completion snippet --shell <bash|zsh>` prints a shell script that
   completes source-profile arguments for:
   - `use`

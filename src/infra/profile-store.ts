@@ -17,6 +17,7 @@ const PROFILE_FILE_EXTENSION = ".json";
 export interface ProfileRecord extends ProfileSnapshot {}
 
 export interface ProfileStore {
+	listNames(): Promise<string[]>;
 	list(): Promise<ProfileRecord[]>;
 	load(name: string): Promise<ProfileRecord>;
 	save(profile: Profile): Promise<void>;
@@ -35,17 +36,32 @@ export class FileProfileStore implements ProfileStore {
 		this.ready = this.ensureDirectories();
 	}
 
-	async list(): Promise<ProfileRecord[]> {
+	async listNames(): Promise<string[]> {
 		await this.ready;
-		logger.debug("profile-store:list entries", { baseDir: this.profilesDir });
+		logger.debug("profile-store:listNames entries", {
+			baseDir: this.profilesDir,
+		});
 		const entries = await readdir(this.profilesDir, { withFileTypes: true });
+
 		const names = entries
 			.filter(
 				(entry) =>
 					entry.isFile() && entry.name.endsWith(PROFILE_FILE_EXTENSION),
 			)
-			.map((entry) => entry.name.slice(0, -PROFILE_FILE_EXTENSION.length));
+			.map((entry) => entry.name.slice(0, -PROFILE_FILE_EXTENSION.length))
+			.filter((name) => isValidProfileName(name))
+			.sort((a, b) => a.localeCompare(b));
 
+		logger.debug("profile-store:listNames result", {
+			total: entries.length,
+			valid: names.length,
+		});
+		return names;
+	}
+
+	async list(): Promise<ProfileRecord[]> {
+		logger.debug("profile-store:list invoked", { baseDir: this.profilesDir });
+		const names = await this.listNames();
 		const snapshots = await Promise.all(
 			names.map((name) => this.safeLoad(name)),
 		);
@@ -53,7 +69,7 @@ export class FileProfileStore implements ProfileStore {
 			(snapshot): snapshot is ProfileRecord => snapshot !== null,
 		);
 		logger.debug("profile-store:list result", {
-			total: entries.length,
+			total: names.length,
 			valid: records.length,
 		});
 		return records;
@@ -185,4 +201,13 @@ function isNotFound(error: unknown): boolean {
 		"code" in error &&
 		(error as NodeJS.ErrnoException).code === "ENOENT"
 	);
+}
+
+function isValidProfileName(name: string): boolean {
+	try {
+		validateProfileName(name);
+		return true;
+	} catch {
+		return false;
+	}
 }

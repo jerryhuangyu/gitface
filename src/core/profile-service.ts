@@ -81,6 +81,15 @@ export class ProfileService {
 		return profiles;
 	}
 
+	async listProfileNames(): Promise<string[]> {
+		logger.debug("profile-service:listProfileNames invoked");
+		const names = await this.store.listNames();
+		logger.debug("profile-service:listProfileNames completed", {
+			count: names.length,
+		});
+		return names;
+	}
+
 	async suggestProfileNames(name: string, limit = 3): Promise<string[]> {
 		validateProfileName(name);
 		const profiles = await this.listProfiles();
