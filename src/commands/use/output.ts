@@ -40,19 +40,37 @@ export const sendProfileUseDryRunMsg = (
 		signingKey: string | null;
 	},
 ): void => {
-	const plan = buildDryRunPlan(profile, current);
+	const plan = buildUseChangePlan(profile, current);
+	const effectiveChanges = getEffectiveChanges(plan);
 	console.log();
 	console.log(`${infoIcon} Dry run: no Git config changes were written.`);
 	console.log(`${infoIcon} Scope  ${chalk.green(scope)}`);
 	console.log(`${infoIcon} Profile ${chalk.green(`'${profile.name}'`)}`);
 	console.log();
-	for (const step of plan) {
+	if (effectiveChanges.length === 0) {
+		console.log(
+			`${checkIcon} No changes detected. Profile already matches ${chalk.green(scope)} scope.`,
+		);
+		return;
+	}
+
+	for (const step of effectiveChanges) {
 		const actionLabel =
 			step.action === "set" ? chalk.green("SET") : chalk.yellow("UNSET");
 		console.log(
 			`${infoIcon} ${step.key} ${actionLabel} ${formatValue(step.before)} -> ${formatValue(step.after)}`,
 		);
 	}
+};
+
+export const sendProfileUseNoopMsg = (
+	profile: Profile,
+	scope: ConfigScope,
+): void => {
+	console.log();
+	console.log(
+		`${checkIcon} Profile ${chalk.green(`'${profile.name}'`)} is already active for ${chalk.green(scope)} scope. No changes were written.`,
+	);
 };
 
 export const sendProfileUseSuccessJson = (
@@ -95,7 +113,8 @@ export const sendProfileUseDryRunJson = (
 		signingKey: string | null;
 	},
 ): void => {
-	const plan = buildDryRunPlan(profile, current);
+	const plan = buildUseChangePlan(profile, current);
+	const effectiveChanges = getEffectiveChanges(plan);
 	console.log(
 		JSON.stringify(
 			{
@@ -108,7 +127,8 @@ export const sendProfileUseDryRunJson = (
 					signingKey: profile.signingKey ?? null,
 				},
 				current,
-				changes: plan.map((item) => ({
+				hasChanges: effectiveChanges.length > 0,
+				changes: effectiveChanges.map((item) => ({
 					key: item.key,
 					action: item.action,
 					before: item.before,
@@ -121,43 +141,74 @@ export const sendProfileUseDryRunJson = (
 	);
 };
 
-type DryRunAction = "set" | "unset";
+export const sendProfileUseNoopJson = (
+	profile: Profile,
+	scope: ConfigScope,
+): void => {
+	console.log(
+		JSON.stringify(
+			{
+				status: "unchanged",
+				name: profile.name,
+				gitName: profile.gitName,
+				email: profile.email,
+				signingKey: profile.signingKey ?? null,
+				scope,
+				changes: [],
+			},
+			null,
+			2,
+		),
+	);
+};
 
-interface DryRunStep {
+type UseChangeAction = "set" | "unset" | "unchanged";
+
+export interface UseChangeStep {
 	key: "user.name" | "user.email" | "user.signingkey";
-	action: DryRunAction;
+	action: UseChangeAction;
 	before: string | null;
 	after: string | null;
 }
 
-function buildDryRunPlan(
+export function buildUseChangePlan(
 	profile: Profile,
 	current: {
 		gitName: string | null;
 		email: string | null;
 		signingKey: string | null;
 	},
-): DryRunStep[] {
+): UseChangeStep[] {
+	const nextSigningKey = profile.signingKey ?? null;
 	return [
 		{
 			key: "user.name",
-			action: "set",
+			action: current.gitName === profile.gitName ? "unchanged" : "set",
 			before: current.gitName,
 			after: profile.gitName,
 		},
 		{
 			key: "user.email",
-			action: "set",
+			action: current.email === profile.email ? "unchanged" : "set",
 			before: current.email,
 			after: profile.email,
 		},
 		{
 			key: "user.signingkey",
-			action: profile.signingKey ? "set" : "unset",
+			action:
+				current.signingKey === nextSigningKey
+					? "unchanged"
+					: nextSigningKey === null
+						? "unset"
+						: "set",
 			before: current.signingKey,
-			after: profile.signingKey ?? null,
+			after: nextSigningKey,
 		},
 	];
+}
+
+export function getEffectiveChanges(plan: UseChangeStep[]): UseChangeStep[] {
+	return plan.filter((step) => step.action !== "unchanged");
 }
 
 function formatValue(value: string | null): string {

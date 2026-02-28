@@ -67,7 +67,11 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 - `--json` emits machine-readable output:
   `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
 - `--dry-run --json` emits a machine-readable change plan:
-  `{ "status": "dry-run", "scope": "local", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+  `{ "status": "dry-run", "scope": "local", "hasChanges": true, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+- When the selected profile already matches the target scope, `use --json`
+  returns:
+  `{ "status": "unchanged", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "changes": [] }`.
+- Dry-run output only lists effective changes; unchanged keys are omitted.
 - When `<name>` is provided (including JSON mode), GitFace avoids loading the interactive selector UI.
 - Successful runs log the applied values so you can double-check before committing.
 - Invalid scopes short-circuit the command with an error banner and status `1`.

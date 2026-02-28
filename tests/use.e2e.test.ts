@@ -231,6 +231,7 @@ describe("use command e2e", () => {
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as {
 				status: string;
 				scope: string;
+				hasChanges: boolean;
 				profile: {
 					name: string;
 					gitName: string;
@@ -252,6 +253,7 @@ describe("use command e2e", () => {
 
 			expect(parsed.status).toBe("dry-run");
 			expect(parsed.scope).toBe("local");
+			expect(parsed.hasChanges).toBe(true);
 			expect(parsed.profile).toEqual({
 				name: "work",
 				gitName: "Work User",
@@ -276,17 +278,148 @@ describe("use command e2e", () => {
 					before: "current@example.com",
 					after: "work@example.com",
 				},
-				{
-					key: "user.signingkey",
-					action: "unset",
-					before: null,
-					after: null,
-				},
 			]);
 
 			const config = await git.listConfig();
 			expect(config.all["user.name"]).toBe("Current User");
 			expect(config.all["user.email"]).toBe("current@example.com");
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreLog();
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns unchanged status when profile already matches local scope", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
+		const repoDir = path.join(tmpRoot, "repo");
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		await fs.mkdir(repoDir);
+		const git = simpleGit({ baseDir: repoDir });
+		await git.init();
+
+		try {
+			process.chdir(repoDir);
+			process.env.XDG_CONFIG_HOME = configDir;
+
+			await git.addConfig("user.name", "Work User");
+			await git.addConfig("user.email", "work@example.com");
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			const gitConfigPath = path.join(repoDir, ".git", "config");
+			const beforeStat = await fs.stat(gitConfigPath);
+			const beforeContent = await fs.readFile(gitConfigPath, "utf8");
+			await new Promise((resolve) => setTimeout(resolve, 1100));
+
+			await runCli([useProfileCommand.command], [
+				"node",
+				"gitface",
+				"use",
+				"work",
+				"--json",
+			]);
+
+			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as {
+				status: string;
+				name: string;
+				scope: string;
+				changes: unknown[];
+			};
+
+			expect(parsed.status).toBe("unchanged");
+			expect(parsed.name).toBe("work");
+			expect(parsed.scope).toBe("local");
+			expect(parsed.changes).toEqual([]);
+
+			const afterStat = await fs.stat(gitConfigPath);
+			const afterContent = await fs.readFile(gitConfigPath, "utf8");
+			expect(afterContent).toBe(beforeContent);
+			expect(afterStat.mtimeMs).toBe(beforeStat.mtimeMs);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreLog();
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("emits empty dry-run change list when profile already matches local scope", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
+		const repoDir = path.join(tmpRoot, "repo");
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		await fs.mkdir(repoDir);
+		const git = simpleGit({ baseDir: repoDir });
+		await git.init();
+
+		try {
+			process.chdir(repoDir);
+			process.env.XDG_CONFIG_HOME = configDir;
+
+			await git.addConfig("user.name", "Work User");
+			await git.addConfig("user.email", "work@example.com");
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await runCli([useProfileCommand.command], [
+				"node",
+				"gitface",
+				"use",
+				"work",
+				"--dry-run",
+				"--json",
+			]);
+
+			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as {
+				status: string;
+				hasChanges: boolean;
+				changes: unknown[];
+			};
+
+			expect(parsed.status).toBe("dry-run");
+			expect(parsed.hasChanges).toBe(false);
+			expect(parsed.changes).toEqual([]);
+
+			const config = await git.listConfig();
+			expect(config.all["user.name"]).toBe("Work User");
+			expect(config.all["user.email"]).toBe("work@example.com");
 		} finally {
 			process.chdir(originalCwd);
 			process.argv = originalArgv;

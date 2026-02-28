@@ -99,7 +99,10 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface remove <name> --json` emits machine-readable status:
   `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface use <profile> --dry-run --json` previews scope-specific git config changes without writing:
-  `{ "status": "dry-run", "scope": "local", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+  `{ "status": "dry-run", "scope": "local", "hasChanges": true, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+- `gitface use <profile> --json` returns an explicit no-op payload when the
+  active scope already matches the profile:
+  `{ "status": "unchanged", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "changes": [] }`.
 - `gitface rules add <dir> <profile> --json` emits machine-readable status:
   `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
 - `gitface rules remove <dir> --json` emits machine-readable status:
@@ -137,7 +140,7 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface use <profile> --json` emits machine-readable output:
   `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
 - `gitface use <profile> --dry-run` previews planned scoped config updates and
-  does not mutate `.git/config`.
+  does not mutate `.git/config`; dry-run output only lists effective changes.
 
 Set `GITFACE_LOG_LEVEL=debug` (or `GITFACE_DEBUG=1`) to print stack traces and
 additional diagnostics. Supported levels: `critical`, `error`, `warn`, `info`,

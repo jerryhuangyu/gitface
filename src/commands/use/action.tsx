@@ -3,10 +3,14 @@ import { GitService } from "@/core/git-service";
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
 import {
+	buildUseChangePlan,
+	getEffectiveChanges,
 	sendProfileUseDryRunJson,
 	sendProfileUseDryRunMsg,
 	sendProfileUseFailedJson,
 	sendProfileUseFailedMsg,
+	sendProfileUseNoopJson,
+	sendProfileUseNoopMsg,
 	sendProfileUseSuccessJson,
 	sendProfileUseSuccessMsg,
 } from "./output";
@@ -64,9 +68,12 @@ const action: (
 		}
 
 		const service = ProfileService.create();
+		const profile = await service.getProfile(profileName);
+		const currentIdentity = await getScopedIdentity(scope);
+		const plan = buildUseChangePlan(profile, currentIdentity);
+		const effectiveChanges = getEffectiveChanges(plan);
+
 		if (options.dryRun) {
-			const profile = await service.getProfile(profileName);
-			const currentIdentity = await getScopedIdentity(scope);
 			if (options.json) {
 				sendProfileUseDryRunJson(profile, scope, currentIdentity);
 				return;
@@ -76,7 +83,16 @@ const action: (
 			return;
 		}
 
-		const profile = await service.applyProfile(profileName, scope);
+		if (effectiveChanges.length === 0) {
+			if (options.json) {
+				sendProfileUseNoopJson(profile, scope);
+				return;
+			}
+			sendProfileUseNoopMsg(profile, scope);
+			return;
+		}
+
+		await service.applyProfile(profileName, scope);
 
 		if (options.json) {
 			sendProfileUseSuccessJson(profile, scope);
