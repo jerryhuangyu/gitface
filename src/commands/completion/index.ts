@@ -8,6 +8,10 @@ const command: Command = new Command("completion")
 	.argument("<topic>", "completion topic (profiles)")
 	.option("-p, --prefix <prefix>", "filter suggestions by prefix")
 	.option(
+		"-l, --limit <number>",
+		"limit returned suggestions to a positive integer",
+	)
+	.option(
 		"-d, --delimiter <delimiter>",
 		"delimiter between suggestions (default: newline)",
 	)

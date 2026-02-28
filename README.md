@@ -57,6 +57,8 @@ Run `gitface <command> --help` to see all flags and examples.
   - Zsh: `gitface completion snippet --shell zsh`
   - Bash: `gitface completion snippet --shell bash`
 - Append the snippet to your shell rc (or source it) and reload your terminal.
+- Generated snippets use `gitface completion profiles --limit 50` to keep
+  completion responsive for large profile sets.
 - Completion is scoped to source-profile arguments for `use`, `rm/remove`,
   `edit`, `clone`, and `rename/mv`, plus `rules add` profile argument.
 

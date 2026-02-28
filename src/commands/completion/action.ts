@@ -5,9 +5,28 @@ import { withCommandHandling } from "../command-runner";
 interface CompletionOptions {
 	prefix?: string;
 	delimiter?: string;
+	limit?: string;
 }
 
 type CompletionTopic = "profiles";
+
+function parseLimit(value: string | undefined): number | undefined {
+	if (value === undefined) {
+		return undefined;
+	}
+
+	const normalized = value.trim();
+	if (!/^\d+$/.test(normalized)) {
+		throw new Error("Limit must be a positive integer.");
+	}
+
+	const limit = Number.parseInt(normalized, 10);
+	if (limit < 1) {
+		throw new Error("Limit must be a positive integer.");
+	}
+
+	return limit;
+}
 
 const action: (
 	topic: CompletionTopic,
@@ -25,10 +44,11 @@ const action: (
 		const profiles = await service.listProfiles();
 		const names = profiles.map((profile) => profile.name);
 
-		const filteredNames =
+		const filteredNames = (
 			options.prefix === undefined
 				? names
-				: names.filter((name) => name.startsWith(options.prefix as string));
+				: names.filter((name) => name.startsWith(options.prefix as string))
+		).slice(0, parseLimit(options.limit));
 
 		if (filteredNames.length === 0) {
 			return;

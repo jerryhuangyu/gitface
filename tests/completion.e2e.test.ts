@@ -69,6 +69,104 @@ describe("completion command e2e", () => {
 		}
 	});
 
+	test("limits returned profile names with --limit", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const configDir = path.join(tmpRoot, "config");
+		const output: string[] = [];
+		const restoreStdout = captureStdout(output);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "alpha",
+				gitName: "Alpha User",
+				email: "alpha@example.com",
+			});
+			await service.createProfile({
+				name: "alpine",
+				gitName: "Alpine User",
+				email: "alpine@example.com",
+			});
+			await service.createProfile({
+				name: "alps",
+				gitName: "Alps User",
+				email: "alps@example.com",
+			});
+
+			await runCli([completionCommand.command], [
+				"node",
+				"gitface",
+				"completion",
+				"profiles",
+				"--prefix",
+				"al",
+				"--limit",
+				"2",
+			]);
+
+			expect(output.join("")).toBe("alpha\nalpine\n");
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreStdout();
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("sets exit code and writes no output for invalid --limit", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const configDir = path.join(tmpRoot, "config");
+		const output: string[] = [];
+		const restoreStdout = captureStdout(output);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await runCli([completionCommand.command], [
+				"node",
+				"gitface",
+				"completion",
+				"profiles",
+				"--prefix",
+				"wo",
+				"--limit",
+				"0",
+			]);
+
+			expect(process.exitCode).toBe(1);
+			expect(output.join("")).toBe("");
+		} finally {
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreStdout();
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("sets exit code for unsupported completion topic", async () => {
 		const originalExitCode = process.exitCode;
 		const output: string[] = [];
@@ -117,6 +215,7 @@ describe("completion command e2e", () => {
 			expect(snippet).toContain('$COMP_CWORD -eq 4');
 			expect(snippet).toContain('"$sub" == "rules"');
 			expect(snippet).toContain('"$nested" == "add"');
+			expect(snippet).toContain("--limit 50");
 		} finally {
 			restoreStdout();
 		}
@@ -142,6 +241,7 @@ describe("completion command e2e", () => {
 			expect(snippet).toContain("rm|remove|use|edit|clone|rename|mv");
 			expect(snippet).toContain("rules) [[ $nested == add ]] && ok=1 ;;");
 			expect(snippet).toContain('compadd -- "${names[@]}"');
+			expect(snippet).toContain("--limit 50");
 		} finally {
 			restoreStdout();
 		}

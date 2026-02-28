@@ -24,7 +24,7 @@ _gitface_profile_complete() {
   (( ok )) || return 1
 
   local -a names
-  names=("\${(@f)$(gitface completion profiles --prefix "$PREFIX")}")
+  names=("\${(@f)$(gitface completion profiles --prefix "$PREFIX" --limit 50)}")
   compadd -- "\${names[@]}"
 }
 compdef _gitface_profile_complete gitface
@@ -38,7 +38,7 @@ _gitface_profile_complete() {
   nested="\${COMP_WORDS[2]}"
 
   if [[ ( $COMP_CWORD -eq 2 && ( "$sub" == "rm" || "$sub" == "remove" || "$sub" == "use" || "$sub" == "edit" || "$sub" == "clone" || "$sub" == "rename" || "$sub" == "mv" ) ) || ( $COMP_CWORD -eq 4 && "$sub" == "rules" && "$nested" == "add" ) ]]; then
-    COMPREPLY=( $(compgen -W "$(gitface completion profiles --prefix "$cur")" -- "$cur") )
+    COMPREPLY=( $(compgen -W "$(gitface completion profiles --prefix "$cur" --limit 50)" -- "$cur") )
   fi
 }
 complete -F _gitface_profile_complete gitface

@@ -186,6 +186,8 @@ dot segments (`.`/`..`).
 - Internal helper used by shell snippets.
 - `gitface completion profiles --prefix <value>` emits newline-delimited profile
   names filtered by prefix.
+- `gitface completion profiles --prefix <value> --limit <number>` caps returned
+  suggestions to a positive integer.
 - `gitface completion snippet --shell <bash|zsh>` prints a shell script that
   completes source-profile arguments for:
   - `use`
