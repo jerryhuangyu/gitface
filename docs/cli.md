@@ -80,8 +80,13 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 
 - Shows the identity resolved by Git in the active working directory (respects scope precedence).
 - Helpful as a pre-push check or for debugging environment setup scripts.
+- `--scope <local|global|system>` reads only that scope.
 - `gitface current --json` emits machine-readable output:
   `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123" }`.
+- `gitface current --scope global --json` emits:
+  `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }`.
+- Invalid scopes return JSON with exit code `1` in JSON mode:
+  `{ "status": "error", "reason": "Scope must be one of: local, global, system." }`.
 
 ## `gitface doctor`
 

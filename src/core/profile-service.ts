@@ -32,6 +32,7 @@ export interface UpdateProfileOptions extends ProfileUpdate {}
 
 export interface GitGateway {
 	getCurrentIdentity(): Promise<GitIdentity>;
+	getScopedIdentity(scope: ConfigScope): Promise<GitIdentity>;
 	applyIdentity(
 		identity: { gitName: string; email: string; signingKey?: string | null },
 		scope: ConfigScope,
@@ -246,6 +247,16 @@ export class ProfileService {
 		logger.debug("profile-service:getCurrentIdentity invoked");
 		const identity = await this.gitGateway.getCurrentIdentity();
 		logger.debug("profile-service:getCurrentIdentity resolved", identity);
+		return identity;
+	}
+
+	async getScopedIdentity(scope: ConfigScope): Promise<GitIdentity> {
+		logger.debug("profile-service:getScopedIdentity invoked", { scope });
+		const identity = await this.gitGateway.getScopedIdentity(scope);
+		logger.debug("profile-service:getScopedIdentity resolved", {
+			scope,
+			identity,
+		});
 		return identity;
 	}
 

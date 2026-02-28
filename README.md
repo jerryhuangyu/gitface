@@ -62,7 +62,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface edit <profile>` | Update a stored profile via flags or an interactive editor; supports `--json` output.         |
 | `gitface list`           | Render saved profiles in an Ink table, or use `list --json` for machine-readable output.      |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--dry-run`, and `use --json` output.      |
-| `gitface current`        | Display active Git identity; use `current --json` for machine-readable output.                |
+| `gitface current`        | Display active Git identity; supports `--scope` and `current --json` for machine-readable output. |
 | `gitface doctor`         | Run environment diagnostics; use `doctor --json` for machine-readable output.                  |
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports `--json` summary output.              |
 | `gitface import <file>`  | Import profiles from JSON; supports `--dry-run` and `--json` for structured results.            |
@@ -139,6 +139,8 @@ Run `gitface <command> --help` to see all flags and examples.
   key.
 - `gitface use <profile> --json` emits machine-readable output:
   `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
+- `gitface current --scope global --json` inspects one scope and emits:
+  `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }`.
 - `gitface use <profile> --dry-run` previews planned scoped config updates and
   does not mutate `.git/config`; dry-run output only lists effective changes.
 

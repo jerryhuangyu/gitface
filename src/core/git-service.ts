@@ -44,6 +44,29 @@ export class GitService {
 		return identity;
 	}
 
+	async getScopedIdentity(scope: ConfigScope): Promise<GitIdentity> {
+		logger.debug("git-service:getScopedIdentity invoked", {
+			baseDir: this.baseDir,
+			scope,
+		});
+		const [gitName, email, signingKey] = await Promise.all([
+			this.getConfig("user.name", scope),
+			this.getConfig("user.email", scope),
+			this.getConfig("user.signingkey", scope),
+		]);
+
+		const identity = {
+			gitName: gitName ?? undefined,
+			email: email ?? undefined,
+			signingKey: signingKey ?? undefined,
+		};
+		logger.debug("git-service:getScopedIdentity resolved", {
+			scope,
+			identity,
+		});
+		return identity;
+	}
+
 	async applyIdentity(
 		identity: RequiredPick<GitIdentity, "gitName" | "email"> & {
 			signingKey?: string | null;
