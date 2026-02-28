@@ -14,6 +14,10 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
   - `--email <value>` / `-e`
   - `--signing-key <value>` / `-s`
   - `--force` overwrites an existing profile without prompting
+- `--json` emits machine-readable output in non-interactive mode:
+  `{ "status": "created", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `--json` without non-interactive field flags returns:
+  `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }` with exit code `1`.
 - **Fallbacks** – missing `--git-name` or `--email` values pick up the current Git identity. Missing signing keys default to `null`.
 
 ## `gitface edit <name>`

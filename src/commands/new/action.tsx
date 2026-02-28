@@ -1,28 +1,57 @@
 import { render } from "ink";
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
-import CreateProfile, { sendProfileCreateSuccessMsg } from "./ui";
+import CreateProfile, {
+	sendProfileCreateFailedJson,
+	sendProfileCreateSuccessJson,
+	sendProfileCreateSuccessMsg,
+} from "./ui";
 
 interface NewActionOptions {
 	gitName?: string;
 	email?: string;
 	signingKey?: string;
 	force?: boolean;
+	json?: boolean;
 }
 
 const action: (name: string, options: NewActionOptions) => Promise<void> =
 	withCommandHandling("command:new", async (name, options) => {
+		if (options.json && !hasNewProfileOptions(options)) {
+			sendProfileCreateFailedJson(
+				name,
+				"Non-interactive flags are required when using --json output mode.",
+			);
+			process.exitCode = 1;
+			return;
+		}
+
 		const service = ProfileService.create();
 		if (hasNewProfileOptions(options)) {
-			const profile = await service.createProfile({
-				name,
-				gitName: options.gitName,
-				email: options.email,
-				signingKey: options.signingKey ?? null,
-				force: Boolean(options.force),
-			});
+			try {
+				const profile = await service.createProfile({
+					name,
+					gitName: options.gitName,
+					email: options.email,
+					signingKey: options.signingKey ?? null,
+					force: Boolean(options.force),
+				});
 
-			sendProfileCreateSuccessMsg(profile);
+				if (options.json) {
+					sendProfileCreateSuccessJson(profile);
+					return;
+				}
+
+				sendProfileCreateSuccessMsg(profile);
+			} catch (error) {
+				if (options.json && error instanceof Error) {
+					sendProfileCreateFailedJson(name, error.message);
+					process.exitCode = 1;
+					return;
+				}
+
+				throw error;
+			}
 			return;
 		}
 

@@ -58,7 +58,7 @@ Run `gitface <command> --help` to see all flags and examples.
 
 | Command                  | Description                                                                                   |
 | ------------------------ | --------------------------------------------------------------------------------------------- |
-| `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`). |
+| `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--json`). |
 | `gitface edit <profile>` | Update a stored profile via flags or an interactive editor.                                   |
 | `gitface list`           | Render saved profiles in an Ink table, or use `list --json` for machine-readable output.      |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope` and `use --json` output.                    |
@@ -84,6 +84,10 @@ Run `gitface <command> --help` to see all flags and examples.
   auditing.
 - `--signing-key` values map to `user.signingkey`; use
   `gitface edit <name> --unset-signing-key` to remove it.
+- `gitface new <name> --git-name <value> --email <value> --json` emits:
+  `{ "status": "created", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface new <name> --json` without non-interactive field flags emits:
+  `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }`.
 - `gitface import <file> --dry-run` validates payload and duplicate handling
   without changing local profile files.
 - `gitface import <file> --json` emits machine-readable summary:
