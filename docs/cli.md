@@ -42,8 +42,11 @@ dot segments (`.`/`..`).
 
 - Clones an existing profile to a new profile name.
 - `--force` allows overwriting an existing target profile.
+- `--dry-run` previews clone metadata without modifying profile files.
 - `--json` emits machine-readable output:
   `{ "status": "cloned", "sourceName": "source", "name": "target", "gitName": "Source User", "email": "source@example.com", "signingKey": null }`.
+- `--dry-run --json` emits machine-readable preview output:
+  `{ "status": "dry-run", "sourceName": "source", "targetName": "target", "overwrite": false, "gitName": "Source User", "email": "source@example.com", "signingKey": null }`.
 - JSON failures return:
   `{ "status": "error", "sourceName": "source", "targetName": "target", "reason": "..." }` with exit code `1`.
 - When source profile is missing, failure text appends up to 3 suggestions (for example `Did you mean 'work', 'work-admin'?`).

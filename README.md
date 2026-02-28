@@ -76,7 +76,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--strict` available). |
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports `--json` summary output.              |
 | `gitface import <file>`  | Import profiles from JSON; supports `--dry-run` and `--json` for structured results.            |
-| `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--json` output.                                     |
+| `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
 | `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`) with optional `--json`; `rules list` supports `--query` and `--limit`. |
@@ -138,6 +138,8 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "dry-run", "oldName": "old", "newName": "new", "overwrite": false, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface clone <src> <tgt> --json` emits machine-readable status:
   `{ "status": "cloned", "sourceName": "work", "name": "work-copy", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface clone <src> <tgt> --dry-run --json` previews clone metadata without writing:
+  `{ "status": "dry-run", "sourceName": "work", "targetName": "work-copy", "overwrite": false, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface export --json` emits machine-readable summary:
   `{ "status": "exported", "count": 2, "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }] }`.
 - `gitface export ./profiles.json --json` emits machine-readable file result:

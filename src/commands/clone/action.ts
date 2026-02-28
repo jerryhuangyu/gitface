@@ -7,6 +7,8 @@ import {
 import { withCommandHandling } from "../command-runner";
 import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
+	sendProfileCloneDryRunJson,
+	sendProfileCloneDryRunMsg,
 	sendProfileCloneFailedJson,
 	sendProfileCloneFailedMsg,
 	sendProfileCloneSuccessJson,
@@ -15,6 +17,7 @@ import {
 
 interface Options {
 	force?: boolean;
+	dryRun?: boolean;
 	json?: boolean;
 }
 
@@ -27,6 +30,21 @@ const action: (
 	async (source: string, target: string, options: Options) => {
 		const service = ProfileService.create();
 		try {
+			if (options.dryRun) {
+				const sourceProfile = await service.getProfile(source);
+				const targetProfile = await service.findProfile(target);
+				if (!options.force && targetProfile !== null) {
+					throw new ProfileAlreadyExistsError(target);
+				}
+				const overwrite = targetProfile !== null;
+				if (options.json) {
+					sendProfileCloneDryRunJson(source, target, sourceProfile, overwrite);
+					return;
+				}
+				sendProfileCloneDryRunMsg(source, target, sourceProfile, overwrite);
+				return;
+			}
+
 			const profile = await service.cloneProfile(source, target, options.force);
 			if (options.json) {
 				sendProfileCloneSuccessJson(source, profile);
