@@ -83,7 +83,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
-| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query` and `--limit`. |
+| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query` and `--limit`. |
 
 ## Profiles & Storage
 
@@ -144,6 +144,10 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface rules list --query work --limit 10 --json` filters by
   directory/profile substring, returns deterministic directory-sorted rows, and
   caps output size for scripts.
+- `gitface rules resolve [dir] --json` resolves the most specific matching rule for a target directory:
+  `{ "status": "matched", "directory": "/abs/path/repo/", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profileExists": true }`.
+- `gitface rules resolve [dir] --json` when no rule matches:
+  `{ "status": "unmatched", "directory": "/abs/path/repo/", "matchedRule": null, "profileExists": null }`.
 - `gitface rename <old> <new> --json` emits machine-readable status:
   `{ "status": "renamed", "oldName": "old", "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface rename <old> <new> --dry-run --json` previews rename metadata without writing:

@@ -3,6 +3,7 @@ import type { CliCommand } from "../command";
 import { addRuleAction } from "./add";
 import { listRulesAction } from "./list";
 import { removeRuleAction } from "./remove";
+import { resolveRuleAction } from "./resolve";
 
 const command = new Command("rules").description(
 	"Manage folder-based profile rules",
@@ -37,6 +38,16 @@ command
 	.option("--dry-run", "Preview rule removal without changing git config")
 	.option("--json", "Output remove result as JSON")
 	.action(removeRuleAction);
+
+command
+	.command("resolve")
+	.argument(
+		"[directory]",
+		"Directory to resolve (defaults to current working directory)",
+	)
+	.description("Resolve the effective folder rule for a directory")
+	.option("--json", "Output resolve result as JSON")
+	.action(resolveRuleAction);
 
 const rulesCommand: CliCommand = {
 	command,

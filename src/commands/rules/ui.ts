@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import type { FolderRule } from "@/core/rule-service";
 
 export function sendRuleAddSuccessMsg(
 	directory: string,
@@ -130,6 +131,73 @@ export function sendRuleRemoveFailedMsg(reason: string): void {
 }
 
 export function sendRuleRemoveFailedJson(
+	directory: string,
+	reason: string,
+): void {
+	console.log(
+		JSON.stringify({
+			status: "error",
+			directory,
+			reason,
+		}),
+	);
+}
+
+export function sendRuleResolveMatchedMsg(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	profileExists: boolean,
+): void {
+	console.log(chalk.bold("Resolved folder rule:"));
+	console.log(
+		`${chalk.cyan(targetDirectory)} ${chalk.gray("=>")} ${chalk.green(matchedRule.profileName)} ${chalk.gray(`(${matchedRule.directory})`)}`,
+	);
+	if (!profileExists) {
+		console.log(
+			chalk.yellow(
+				`Warning: matched profile '${matchedRule.profileName}' does not exist in local profile store.`,
+			),
+		);
+	}
+}
+
+export function sendRuleResolveMatchedJson(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	profileExists: boolean,
+): void {
+	console.log(
+		JSON.stringify({
+			status: "matched",
+			directory: targetDirectory,
+			matchedRule,
+			profileExists,
+		}),
+	);
+}
+
+export function sendRuleResolveUnmatchedMsg(targetDirectory: string): void {
+	console.log(
+		chalk.gray(`No folder rule matched target directory: ${targetDirectory}`),
+	);
+}
+
+export function sendRuleResolveUnmatchedJson(targetDirectory: string): void {
+	console.log(
+		JSON.stringify({
+			status: "unmatched",
+			directory: targetDirectory,
+			matchedRule: null,
+			profileExists: null,
+		}),
+	);
+}
+
+export function sendRuleResolveFailedMsg(reason: string): void {
+	console.error(chalk.red(reason));
+}
+
+export function sendRuleResolveFailedJson(
 	directory: string,
 	reason: string,
 ): void {

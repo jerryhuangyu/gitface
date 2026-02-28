@@ -173,6 +173,7 @@ dot segments (`.`/`..`).
 - Manage folder-based profile rules through:
   - `gitface rules add <directory> <profile>`
   - `gitface rules remove <directory>`
+  - `gitface rules resolve [directory]`
   - `gitface rules list` (human-readable)
 - `rules add/remove --dry-run` previews mutation results without changing global Git config.
 - `gitface rules list --query <text>` filters by case-insensitive substring
@@ -196,6 +197,13 @@ dot segments (`.`/`..`).
   `[{ "directory": "/abs/path/", "profileName": "work" }]`.
 - `gitface rules list --query work --limit 2 --json` applies filter + cap and
   returns the same JSON object shape.
+- `gitface rules resolve [directory]` resolves the most specific matching
+  directory rule (longest prefix wins). `directory` defaults to current working
+  directory.
+- `gitface rules resolve [directory] --json` emits:
+  `{ "status": "matched", "directory": "/abs/path/repo/", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profileExists": true }`.
+- No-match output remains successful and emits:
+  `{ "status": "unmatched", "directory": "/abs/path/repo/", "matchedRule": null, "profileExists": null }`.
 - Empty JSON output is `[]`, which is safe for CI/script parsing.
 
 ## `gitface completion <topic>`

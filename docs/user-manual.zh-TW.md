@@ -202,6 +202,13 @@ gitface rules remove ~/code/work --dry-run
 gitface rules remove ~/code/work --dry-run --json
 ```
 
+解析某個目錄最終會命中的規則：
+
+```bash
+gitface rules resolve ~/code/work/monorepo
+gitface rules resolve ~/code/work/monorepo --json
+```
+
 說明：
 
 - rules 透過 Git `includeIf.gitdir` 寫在 global config。
@@ -210,6 +217,8 @@ gitface rules remove ~/code/work --dry-run --json
 - `rules add/remove --dry-run` 可先預覽結果，不會修改 global git config。
 - `rules list` 會依目錄路徑排序；可用 `--query`（目錄或 profile 子字串）
   與 `--limit`（正整數）縮小輸出範圍。
+- `rules resolve [directory]` 會回傳最具體（最長路徑前綴）命中的規則；
+  未命中時會回傳 `unmatched`（不視為錯誤）。
 
 ### 情境 H：啟用 Shell 補全（bash/zsh）
 
@@ -233,7 +242,7 @@ gitface completion profiles --prefix wo --limit 5 --json
 - `new`, `edit`, `list`, `use`, `current`, `doctor`
 - `clone`, `rename`, `rm/remove`
 - `export`, `import`
-- `rules list/add/remove`
+- `rules list/add/remove/resolve`
 - `completion profiles`
 
 注意兩個常見限制：

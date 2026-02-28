@@ -580,6 +580,190 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("resolves most specific matching rule with --json", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-resolve-match-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const workDir = path.join(homeDir, "work");
+		const monorepoDir = path.join(workDir, "monorepo");
+		const packageDir = path.join(monorepoDir, "packages", "api");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(workDir, { recursive: true });
+		await fs.mkdir(monorepoDir, { recursive: true });
+		await fs.mkdir(packageDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-profile",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await service.createProfile({
+				name: "mono-profile",
+				gitName: "Monorepo User",
+				email: "mono@example.com",
+			});
+
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				workDir,
+				"work-profile",
+			]);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				monorepoDir,
+				"mono-profile",
+			]);
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"resolve",
+				packageDir,
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				directory: string;
+				matchedRule: {
+					directory: string;
+					profileName: string;
+				};
+				profileExists: boolean;
+			};
+
+			expect(parsed).toEqual({
+				status: "matched",
+				directory: `${packageDir}${path.sep}`,
+				matchedRule: {
+					directory: `${monorepoDir}${path.sep}`,
+					profileName: "mono-profile",
+				},
+				profileExists: true,
+			});
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns unmatched status when no rule matches target directory", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-resolve-unmatched-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const ruleDir = path.join(homeDir, "work");
+		const targetDir = path.join(homeDir, "personal");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(ruleDir, { recursive: true });
+		await fs.mkdir(targetDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-profile",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				ruleDir,
+				"work-profile",
+			]);
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"resolve",
+				targetDir,
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				directory: string;
+				matchedRule: null;
+				profileExists: null;
+			};
+			expect(parsed).toEqual({
+				status: "unmatched",
+				directory: `${targetDir}${path.sep}`,
+				matchedRule: null,
+				profileExists: null,
+			});
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("returns exit code 1 when rules list limit is invalid", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;

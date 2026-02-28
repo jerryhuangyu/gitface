@@ -30,6 +30,21 @@ export class RuleService {
 		return rules;
 	}
 
+	async resolveRuleForDirectory(directory: string): Promise<FolderRule | null> {
+		const normalizedDirectory = Rule.create(directory, "dummy").directory;
+		const rules = await this.listRules();
+		const matchedRules = rules.filter((rule) =>
+			normalizedDirectory.startsWith(rule.directory),
+		);
+
+		if (matchedRules.length === 0) {
+			return null;
+		}
+
+		matchedRules.sort((a, b) => b.directory.length - a.directory.length);
+		return matchedRules[0] ?? null;
+	}
+
 	async addRule(directory: string, profileName: string): Promise<void> {
 		const rule = Rule.create(directory, profileName);
 
