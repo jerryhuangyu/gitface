@@ -208,6 +208,18 @@ gitface rules remove ~/code/work --dry-run --json
 - `rules list` 會依目錄路徑排序；可用 `--query`（目錄或 profile 子字串）
   與 `--limit`（正整數）縮小輸出範圍。
 
+### 情境 H：啟用 Shell 補全（bash/zsh）
+
+```bash
+gitface completion snippet --shell zsh
+gitface completion profiles --prefix wo --limit 5
+```
+
+說明：
+
+- `completion profiles --prefix` 採不分大小寫前綴比對（例如 `wo` 可命中 `WorkAdmin`）。
+- 預設 snippet 會帶 `--limit 50`，避免 profile 很多時補全輸出過大。
+
 ## JSON 模式（給自動化/CI）
 
 以下命令支援 `--json`：

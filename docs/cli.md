@@ -199,7 +199,7 @@ dot segments (`.`/`..`).
 
 - Internal helper used by shell snippets.
 - `gitface completion profiles --prefix <value>` emits newline-delimited profile
-  names filtered by prefix.
+  names filtered by case-insensitive prefix.
 - `gitface completion profiles --prefix <value> --limit <number>` caps returned
   suggestions to a positive integer.
 - Completion suggestions are derived from local profile filenames (name index),

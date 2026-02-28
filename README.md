@@ -59,6 +59,8 @@ Run `gitface <command> --help` to see all flags and examples.
 - Append the snippet to your shell rc (or source it) and reload your terminal.
 - Generated snippets use `gitface completion profiles --limit 50` to keep
   completion responsive for large profile sets.
+- `gitface completion profiles --prefix <value>` uses case-insensitive prefix
+  matching, so `wo` can match `Work` / `work-admin`.
 - `gitface completion profiles` reads profile names from local profile filenames,
   so unrelated malformed profile JSON payloads do not block tab completion.
 - Completion is scoped to source-profile arguments for `use`, `rm/remove`,

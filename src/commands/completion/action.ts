@@ -10,6 +10,17 @@ interface CompletionOptions {
 
 type CompletionTopic = "profiles";
 
+function filterByPrefix(names: string[], prefix: string | undefined): string[] {
+	if (prefix === undefined) {
+		return names;
+	}
+
+	const normalizedPrefix = prefix.toLowerCase();
+	return names.filter((name) =>
+		name.toLowerCase().startsWith(normalizedPrefix),
+	);
+}
+
 function parseLimit(value: string | undefined): number | undefined {
 	if (value === undefined) {
 		return undefined;
@@ -42,12 +53,10 @@ const action: (
 
 		const service = ProfileService.create();
 		const names = await service.listProfileNames();
-
-		const filteredNames = (
-			options.prefix === undefined
-				? names
-				: names.filter((name) => name.startsWith(options.prefix as string))
-		).slice(0, parseLimit(options.limit));
+		const filteredNames = filterByPrefix(names, options.prefix).slice(
+			0,
+			parseLimit(options.limit),
+		);
 
 		if (filteredNames.length === 0) {
 			return;

@@ -69,6 +69,48 @@ describe("completion command e2e", () => {
 		}
 	});
 
+	test("matches --prefix case-insensitively", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const configDir = path.join(tmpRoot, "config");
+		const output: string[] = [];
+		const restoreStdout = captureStdout(output);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "WorkAdmin",
+				gitName: "Work Admin",
+				email: "work-admin@example.com",
+			});
+
+			await runCli([completionCommand.command], [
+				"node",
+				"gitface",
+				"completion",
+				"profiles",
+				"--prefix",
+				"wo",
+			]);
+
+			expect(output.join("")).toBe("WorkAdmin\n");
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreStdout();
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("limits returned profile names with --limit", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
