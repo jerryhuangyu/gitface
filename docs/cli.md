@@ -114,6 +114,19 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
   `[{ "directory": "/abs/path/", "profileName": "work" }]`.
 - Empty JSON output is `[]`, which is safe for CI/script parsing.
 
+## `gitface completion <topic>`
+
+- Internal helper used by shell snippets.
+- `gitface completion profiles --prefix <value>` emits newline-delimited profile
+  names filtered by prefix.
+- `gitface completion snippet --shell <bash|zsh>` prints a shell script that
+  completes source-profile arguments for:
+  - `use`
+  - `rm` / `remove`
+  - `edit`
+  - `clone` (source argument only)
+  - `rename` / `mv` (source argument only)
+
 ## Exit Codes & Troubleshooting
 
 - Profile validation failures (`InvalidProfileError`) set `process.exitCode = 1`.

@@ -6,7 +6,14 @@ type SupportedShell = "zsh" | "bash";
 const PROFILE_COMPLETION_SNIPPETS: Record<SupportedShell, string> = {
 	zsh: `# gitface completion (zsh)
 _gitface_profile_complete() {
-  if [[ "\${words[2]}" != "rm" && "\${words[2]}" != "remove" && "\${words[2]}" != "use" ]]; then
+  local sub
+  sub="\${words[2]}"
+
+  if [[ $CURRENT -ne 3 ]]; then
+    return 1
+  fi
+
+  if [[ "$sub" != "rm" && "$sub" != "remove" && "$sub" != "use" && "$sub" != "edit" && "$sub" != "clone" && "$sub" != "rename" && "$sub" != "mv" ]]; then
     return 1
   fi
 
@@ -23,7 +30,7 @@ _gitface_profile_complete() {
   cur="\${COMP_WORDS[COMP_CWORD]}"
   sub="\${COMP_WORDS[1]}"
 
-  if [[ "$sub" == "rm" || "$sub" == "remove" || "$sub" == "use" ]]; then
+  if [[ $COMP_CWORD -eq 2 && ( "$sub" == "rm" || "$sub" == "remove" || "$sub" == "use" || "$sub" == "edit" || "$sub" == "clone" || "$sub" == "rename" || "$sub" == "mv" ) ]]; then
     COMPREPLY=( $(compgen -W "$(gitface completion profiles --prefix "$cur")" -- "$cur") )
   fi
 }

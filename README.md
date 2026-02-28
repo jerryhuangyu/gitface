@@ -51,7 +51,8 @@ Run `gitface <command> --help` to see all flags and examples.
   - Zsh: `gitface completion snippet --shell zsh`
   - Bash: `gitface completion snippet --shell bash`
 - Append the snippet to your shell rc (or source it) and reload your terminal.
-- Completion is scoped to profile-taking commands: `gitface use <Tab>` and `gitface rm/remove <Tab>` suggest saved profile names.
+- Completion is scoped to source-profile arguments for `use`, `rm/remove`,
+  `edit`, `clone`, and `rename/mv`.
 
 ## Command Reference
 

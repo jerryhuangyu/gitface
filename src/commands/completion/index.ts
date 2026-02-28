@@ -5,7 +5,7 @@ import snippetAction from "./snippet";
 
 const command: Command = new Command("completion")
 	.description("Internal helper to provide shell completions")
-	.argument("<topic>", "completion topic (profiles|rm|remove)")
+	.argument("<topic>", "completion topic (profiles)")
 	.option("-p, --prefix <prefix>", "filter suggestions by prefix")
 	.option(
 		"-d, --delimiter <delimiter>",
