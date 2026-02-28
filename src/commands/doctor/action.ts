@@ -1,5 +1,6 @@
 import path from "node:path";
 import simpleGit from "simple-git";
+import { GitService } from "@/core/git-service";
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
 import type { DoctorCheckResult, DoctorReport } from "./ui";
@@ -91,14 +92,13 @@ async function checkProfileStore(): Promise<DoctorCheckResult> {
 
 async function checkGlobalConfig(): Promise<DoctorCheckResult> {
 	try {
-		const git = simpleGit();
-		const name = await git.getConfig("user.name");
-		const email = await git.getConfig("user.email");
+		const gitService = new GitService();
+		const identity = await gitService.getScopedIdentity("global");
 
-		if (name.value && email.value) {
+		if (identity.gitName && identity.email) {
 			return {
 				status: "pass",
-				message: `Global Git identity is set: ${name.value} <${email.value}>`,
+				message: `Global Git identity is set: ${identity.gitName} <${identity.email}>`,
 			};
 		}
 

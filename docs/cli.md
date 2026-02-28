@@ -102,6 +102,8 @@ dot segments (`.`/`..`).
 
 - Runs health checks for common setup issues (Git availability, profile store access, global identity hints).
 - Human mode prints pass/warn/fail lines plus a summary.
+- The global identity check reads `user.name` and `user.email` from explicit
+  global scope (`git config --global`) instead of local repository scope.
 - `gitface doctor --json` emits machine-readable output:
   `{ "checks": [{ "status": "pass", "message": "..." }], "hasFailures": false }`.
 - Exit behavior is unchanged: if any check fails, command exit code is `1`.
