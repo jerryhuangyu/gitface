@@ -8,6 +8,7 @@ const command: Command = new Command("rename")
 	.argument("<old-name>", "current profile identifier")
 	.argument("<new-name>", "new profile identifier")
 	.option("-f, --force", "Overwrite target profile if it exists")
+	.option("--json", "Output machine-readable JSON")
 	.action(action);
 
 const renameProfileCommand: CliCommand = {

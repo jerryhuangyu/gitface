@@ -1,9 +1,16 @@
-import chalk from "chalk";
 import { ProfileService } from "@/core/profile-service";
+import { ProfileAlreadyExistsError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
+import {
+	sendProfileRenameFailedJson,
+	sendProfileRenameFailedMsg,
+	sendProfileRenameSuccessJson,
+	sendProfileRenameSuccessMsg,
+} from "./ui";
 
 interface Options {
 	force?: boolean;
+	json?: boolean;
 }
 
 const action: (
@@ -14,15 +21,42 @@ const action: (
 	"command:rename",
 	async (oldName: string, newName: string, options: Options) => {
 		const service = ProfileService.create();
-		const profile = await service.renameProfile(
-			oldName,
-			newName,
-			options.force,
-		);
+		try {
+			const profile = await service.renameProfile(
+				oldName,
+				newName,
+				options.force,
+			);
+			if (options.json) {
+				sendProfileRenameSuccessJson(oldName, profile);
+				return;
+			}
+			sendProfileRenameSuccessMsg(oldName, profile.name);
+		} catch (error) {
+			if (error instanceof ProfileNotFoundError) {
+				const reason = `'${oldName}' does not exist.`;
+				if (options.json) {
+					sendProfileRenameFailedJson(oldName, newName, reason);
+				} else {
+					sendProfileRenameFailedMsg(reason);
+				}
+				process.exitCode = 1;
+				return;
+			}
 
-		console.log(
-			`\n${chalk.green("✔")} Renamed profile '${oldName}' to '${profile.name}'.`,
-		);
+			if (error instanceof ProfileAlreadyExistsError) {
+				const reason = error.message;
+				if (options.json) {
+					sendProfileRenameFailedJson(oldName, newName, reason);
+				} else {
+					sendProfileRenameFailedMsg(reason);
+				}
+				process.exitCode = 1;
+				return;
+			}
+
+			throw error;
+		}
 	},
 );
 

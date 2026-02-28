@@ -66,7 +66,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file.                                                |
 | `gitface import <file>`  | Import profiles from JSON; supports `--dry-run` and `--json` for structured results.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name.                                                                |
-| `gitface rename <old> <new>` | Rename a profile (alias: `mv`).                                                              |
+| `gitface rename <old> <new>` | Rename a profile (alias: `mv`); use `rename --json` for machine-readable output.            |
 | `gitface rm <profile>`   | Remove a profile; add `--force` to ignore missing entries, or `--json` for structured output. |
 | `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`) with optional `rules list --json` output.      |
 
@@ -89,6 +89,8 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "dryRun": false, "total": 2, "imported": 2, "failed": 0, "results": [{ "name": "work", "status": "imported", "message": "Imported." }] }`.
 - `gitface remove <name> --json` emits machine-readable status:
   `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface rename <old> <new> --json` emits machine-readable status:
+  `{ "status": "renamed", "oldName": "old", "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 
 ### Example profile file
 

@@ -22,6 +22,16 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 - Flags (`--git-name`, `--email`, `--signing-key`, `--unset-signing-key`) bypass the UI and perform immediate updates.
 - Emits a friendly message if the profile does not exist, reminding the user to `gitface list`.
 
+## `gitface rename <old-name> <new-name>`
+
+- Alias: `gitface mv <old-name> <new-name>`.
+- Renames an existing profile while keeping identity fields (`gitName`, `email`, `signingKey`) unchanged.
+- `--force` allows overwriting an existing target profile.
+- `--json` emits machine-readable output:
+  `{ "status": "renamed", "oldName": "old", "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- JSON failures return:
+  `{ "status": "error", "oldName": "old", "newName": "new", "reason": "..." }` with exit code `1`.
+
 ## `gitface list`
 
 - Fetches all profile snapshots, sorts them by `updatedAt`, and renders a table using box-drawing characters for clarity.
