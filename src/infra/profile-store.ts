@@ -1,12 +1,5 @@
 import { constants as fsConstants } from "node:fs";
-import {
-	access,
-	mkdir,
-	readdir,
-	readFile,
-	unlink,
-	writeFile,
-} from "node:fs/promises";
+import { access, mkdir, readdir, readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import {
 	type Profile,
@@ -15,6 +8,7 @@ import {
 	validateProfileName,
 } from "@/domain/profile";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
+import { writeFileAtomic } from "@/infra/atomic-write";
 import { logger } from "@/infra/logger";
 import { osPaths } from "@/infra/os-path";
 
@@ -92,7 +86,7 @@ export class FileProfileStore implements ProfileStore {
 			name: profile.name,
 			filePath,
 		});
-		await writeFile(filePath, `${payload}\n`, "utf8");
+		await writeFileAtomic(filePath, `${payload}\n`);
 	}
 
 	async remove(name: string): Promise<void> {

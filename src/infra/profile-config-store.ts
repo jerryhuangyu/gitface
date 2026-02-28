@@ -1,6 +1,7 @@
-import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { mkdir, unlink } from "node:fs/promises";
 import path from "node:path";
 import { type Profile, validateProfileName } from "@/domain/profile";
+import { writeFileAtomic } from "@/infra/atomic-write";
 import { logger } from "@/infra/logger";
 import { osPaths } from "@/infra/os-path";
 
@@ -34,7 +35,7 @@ export class FileProfileConfigStore implements ProfileConfigStore {
 			content += `\tsigningkey = ${profile.signingKey}\n`;
 		}
 
-		await writeFile(filePath, content, "utf8");
+		await writeFileAtomic(filePath, content);
 		logger.debug("profile-config-store:save", {
 			name: profile.name,
 			filePath,
