@@ -148,9 +148,12 @@ dot segments (`.`/`..`).
 
 - Alias: `gitface remove <name>`.
 - Deletes the JSON file for a profile and echoes the removed values.
+- `--dry-run` previews which profile would be removed and does not delete files.
 - `--force` turns missing-profile errors into informational messages, making it safe to run in automation loops.
 - `--json` emits machine-readable output:
   `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `--dry-run --json` emits machine-readable preview output:
+  `{ "status": "dry-run", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - Missing-profile failures (except `--force`) append best-effort suggestions in the `reason` message.
 
 ## `gitface rules <subcommand>`

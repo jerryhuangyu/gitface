@@ -74,7 +74,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface import <file>`  | Import profiles from JSON; supports `--dry-run` and `--json` for structured results.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--json` output.                                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); use `rename --json` for machine-readable output.            |
-| `gitface rm <profile>`   | Remove a profile; add `--force` to ignore missing entries, or `--json` for structured output. |
+| `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
 | `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`) with optional `--json`; `rules list` supports `--query` and `--limit`. |
 
 ## Profiles & Storage
@@ -108,6 +108,8 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "dryRun": false, "total": 2, "imported": 2, "failed": 0, "results": [{ "name": "work", "status": "imported", "message": "Imported." }] }`.
 - `gitface remove <name> --json` emits machine-readable status:
   `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface remove <name> --dry-run --json` previews deletion without writing:
+  `{ "status": "dry-run", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - Missing-profile failures in `use`/`clone`/`rename`/`remove`/`rules add` now include best-effort `Did you mean ...` suggestions.
 - `gitface use <profile> --dry-run --json` previews scope-specific git config changes without writing:
   `{ "status": "dry-run", "scope": "local", "hasChanges": true, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
@@ -169,6 +171,8 @@ Run `gitface <command> --help` to see all flags and examples.
   while keeping default doctor behavior unchanged.
 - `gitface use <profile> --dry-run` previews planned scoped config updates and
   does not mutate `.git/config`; dry-run output only lists effective changes.
+- `gitface remove <name> --dry-run` previews profile deletion and does not
+  mutate `~/.config/gitface/profiles/*.json`.
 - `gitface use` exits with code `1` and a guidance message when no profiles are
   available to select.
 

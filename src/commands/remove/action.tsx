@@ -3,6 +3,8 @@ import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
 import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
+	sendProfileRemoveDryRunJson,
+	sendProfileRemoveDryRunMsg,
 	sendProfileRemoveFailedJson,
 	sendProfileRemoveFailedMsg,
 	sendProfileRemoveSkippedJson,
@@ -13,6 +15,7 @@ import {
 
 interface RemoveProfileOptions {
 	force?: boolean;
+	dryRun?: boolean;
 	json?: boolean;
 }
 
@@ -21,6 +24,16 @@ const action: (name: string, options: RemoveProfileOptions) => Promise<void> =
 		const service = ProfileService.create();
 
 		try {
+			if (options.dryRun) {
+				const profile = await service.getProfile(name);
+				if (options.json) {
+					sendProfileRemoveDryRunJson(profile);
+					return;
+				}
+				sendProfileRemoveDryRunMsg(profile);
+				return;
+			}
+
 			const profile = await service.removeProfile(name);
 			if (options.json) {
 				sendProfileRemoveSuccessJson(profile);
