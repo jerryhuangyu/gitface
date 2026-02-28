@@ -91,6 +91,8 @@ export class Profile {
 	}
 
 	private ensureValid(): void {
+		validateProfileName(this.state.name);
+
 		if (!this.state.gitName?.trim()) {
 			throw new InvalidProfileError("Profile must define a Git user.name.");
 		}
@@ -98,5 +100,23 @@ export class Profile {
 		if (!this.state.email?.trim()) {
 			throw new InvalidProfileError("Profile must define a Git user.email.");
 		}
+	}
+}
+
+export function validateProfileName(name: string): void {
+	if (!name.trim()) {
+		throw new InvalidProfileError("Profile name must not be empty.");
+	}
+
+	if (name === "." || name === "..") {
+		throw new InvalidProfileError(
+			"Profile name must not be '.' or '..' to avoid unsafe paths.",
+		);
+	}
+
+	if (name.includes("/") || name.includes("\\") || name.includes("\0")) {
+		throw new InvalidProfileError(
+			"Profile name must not contain path separators or NUL characters.",
+		);
 	}
 }

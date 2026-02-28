@@ -1,6 +1,7 @@
 import type { ConfigScope } from "@/core/git-service";
 import { GitService } from "@/core/git-service";
 import { ProfileService } from "@/core/profile-service";
+import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
 import {
 	buildUseChangePlan,
@@ -67,39 +68,52 @@ const action: (
 			return;
 		}
 
-		const service = ProfileService.create();
-		const profile = await service.getProfile(profileName);
-		const currentIdentity = await getScopedIdentity(scope);
-		const plan = buildUseChangePlan(profile, currentIdentity);
-		const effectiveChanges = getEffectiveChanges(plan);
+		try {
+			const service = ProfileService.create();
+			const profile = await service.getProfile(profileName);
+			const currentIdentity = await getScopedIdentity(scope);
+			const plan = buildUseChangePlan(profile, currentIdentity);
+			const effectiveChanges = getEffectiveChanges(plan);
 
-		if (options.dryRun) {
-			if (options.json) {
-				sendProfileUseDryRunJson(profile, scope, currentIdentity);
+			if (options.dryRun) {
+				if (options.json) {
+					sendProfileUseDryRunJson(profile, scope, currentIdentity);
+					return;
+				}
+
+				sendProfileUseDryRunMsg(profile, scope, currentIdentity);
 				return;
 			}
 
-			sendProfileUseDryRunMsg(profile, scope, currentIdentity);
-			return;
-		}
-
-		if (effectiveChanges.length === 0) {
-			if (options.json) {
-				sendProfileUseNoopJson(profile, scope);
+			if (effectiveChanges.length === 0) {
+				if (options.json) {
+					sendProfileUseNoopJson(profile, scope);
+					return;
+				}
+				sendProfileUseNoopMsg(profile, scope);
 				return;
 			}
-			sendProfileUseNoopMsg(profile, scope);
-			return;
+
+			await service.applyProfile(profileName, scope);
+
+			if (options.json) {
+				sendProfileUseSuccessJson(profile, scope);
+				return;
+			}
+
+			sendProfileUseSuccessMsg(profile, scope);
+		} catch (error) {
+			if (
+				options.json &&
+				(error instanceof ProfileNotFoundError ||
+					error instanceof InvalidProfileError)
+			) {
+				sendProfileUseFailedJson(error.message);
+				process.exitCode = 1;
+				return;
+			}
+			throw error;
 		}
-
-		await service.applyProfile(profileName, scope);
-
-		if (options.json) {
-			sendProfileUseSuccessJson(profile, scope);
-			return;
-		}
-
-		sendProfileUseSuccessMsg(profile, scope);
 	},
 );
 

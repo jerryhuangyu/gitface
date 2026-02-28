@@ -78,6 +78,8 @@ Run `gitface <command> --help` to see all flags and examples.
 - Git include files are generated in
   `~/.config/gitface/identities/<profile>.gitconfig` for folder rules and
   advanced git config workflows.
+- Profile names must be non-empty and must not contain path separators (`/`,
+  `\`), NUL, or reserved dot segments (`.`/`..`).
 - When you omit `--git-name` or `--email`, GitFace falls back to the identity
   reported by `git config`.
 - Created profiles capture `createdAt` and `updatedAt` ISO timestamps for

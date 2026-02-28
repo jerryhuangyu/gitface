@@ -2,7 +2,11 @@ import { describe, expect, test, vi } from "vitest";
 import type { ConfigScope, GitIdentity } from "../src/core/git-service";
 import type { Profile } from "../src/domain/profile";
 import { type GitGateway, ProfileService } from "../src/core/profile-service";
-import { ProfileAlreadyExistsError, ProfileNotFoundError } from "../src/errors";
+import {
+	InvalidProfileError,
+	ProfileAlreadyExistsError,
+	ProfileNotFoundError,
+} from "../src/errors";
 import type { ProfileConfigStore } from "../src/infra/profile-config-store";
 import type { ProfileRecord, ProfileStore } from "../src/infra/profile-store";
 
@@ -131,6 +135,18 @@ describe("ProfileService", () => {
 
 		const profile = await service.createProfile({ name: "work", force: true });
 		expect(profile.name).toBe("work");
+	});
+
+	test("rejects path-traversal style profile names", async () => {
+		const git = new FakeGitGateway({
+			gitName: "Jane",
+			email: "jane@example.com",
+		});
+		const service = createService({ git });
+
+		await expect(
+			service.createProfile({ name: "../unsafe" }),
+		).rejects.toBeInstanceOf(InvalidProfileError);
 	});
 
 	test("applies a profile to the requested Git scope", async () => {

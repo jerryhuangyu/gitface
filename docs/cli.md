@@ -2,6 +2,10 @@
 
 Each command inherits global flags from Commander (`--help`, `--version`). Unless stated, commands exit with status code `0` on success and `1` on validation or runtime errors.
 
+Profile names are validated across commands and storage paths: names must be
+non-empty and must not contain path separators (`/`, `\`), NUL, or reserved
+dot segments (`.`/`..`).
+
 ## `gitface new <name>`
 
 - **Purpose** – create or overwrite a stored Git identity.

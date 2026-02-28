@@ -7,6 +7,7 @@ import {
 	Profile,
 	type ProfileInput,
 	type ProfileUpdate,
+	validateProfileName,
 } from "@/domain/profile";
 import {
 	InvalidProfileError,
@@ -55,6 +56,7 @@ export class ProfileService {
 	}
 
 	getProfileConfigPath(name: string): string {
+		validateProfileName(name);
 		return this.profileConfigStore.getProfileConfigPath(name);
 	}
 
@@ -79,6 +81,7 @@ export class ProfileService {
 	}
 
 	async findProfile(name: string): Promise<Profile | null> {
+		validateProfileName(name);
 		logger.debug("profile-service:findProfile invoked", { name });
 		if (!(await this.store.exists(name))) {
 			logger.debug("profile-service:findProfile missing profile", { name });
@@ -91,6 +94,7 @@ export class ProfileService {
 	}
 
 	async getProfile(name: string): Promise<Profile> {
+		validateProfileName(name);
 		logger.debug("profile-service:getProfile invoked", { name });
 		if (!(await this.store.exists(name))) {
 			logger.warn("profile-service:getProfile profile not found", { name });
@@ -103,6 +107,7 @@ export class ProfileService {
 	}
 
 	async createProfile(options: CreateProfileOptions): Promise<Profile> {
+		validateProfileName(options.name);
 		const force = options.force ?? false;
 		logger.info("profile-service:createProfile invoked", {
 			name: options.name,
@@ -130,6 +135,7 @@ export class ProfileService {
 		name: string,
 		update: UpdateProfileOptions,
 	): Promise<Profile> {
+		validateProfileName(name);
 		logger.info("profile-service:updateProfile invoked", {
 			name,
 			fields: Object.keys(update).filter(
@@ -145,10 +151,12 @@ export class ProfileService {
 	}
 
 	async deleteProfile(name: string): Promise<void> {
+		validateProfileName(name);
 		await this.removeProfile(name);
 	}
 
 	async removeProfile(name: string): Promise<Profile> {
+		validateProfileName(name);
 		logger.info("profile-service:deleteProfile invoked", { name });
 		const profile = await this.getProfile(name);
 		await this.store.remove(name);
@@ -162,6 +170,8 @@ export class ProfileService {
 		targetName: string,
 		force = false,
 	): Promise<Profile> {
+		validateProfileName(sourceName);
+		validateProfileName(targetName);
 		logger.info("profile-service:cloneProfile invoked", {
 			sourceName,
 			targetName,
@@ -194,6 +204,8 @@ export class ProfileService {
 		newName: string,
 		force = false,
 	): Promise<Profile> {
+		validateProfileName(oldName);
+		validateProfileName(newName);
 		logger.info("profile-service:renameProfile invoked", {
 			oldName,
 			newName,
@@ -229,6 +241,7 @@ export class ProfileService {
 		name: string,
 		scope: ConfigScope = "local",
 	): Promise<Profile> {
+		validateProfileName(name);
 		logger.info("profile-service:applyProfile invoked", { name, scope });
 		const profile = await this.getProfile(name);
 		await this.gitGateway.applyIdentity(

@@ -8,7 +8,12 @@ import {
 	writeFile,
 } from "node:fs/promises";
 import path from "node:path";
-import type { Profile, ProfileInput, ProfileSnapshot } from "@/domain/profile";
+import {
+	type Profile,
+	type ProfileInput,
+	type ProfileSnapshot,
+	validateProfileName,
+} from "@/domain/profile";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { logger } from "@/infra/logger";
 import { osPaths } from "@/infra/os-path";
@@ -133,6 +138,7 @@ export class FileProfileStore implements ProfileStore {
 	}
 
 	private profilePath(name: string): string {
+		validateProfileName(name);
 		return path.join(this.profilesDir, `${name}${PROFILE_FILE_EXTENSION}`);
 	}
 

@@ -1,6 +1,6 @@
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { Profile } from "@/domain/profile";
+import { type Profile, validateProfileName } from "@/domain/profile";
 import { logger } from "@/infra/logger";
 import { osPaths } from "@/infra/os-path";
 
@@ -20,6 +20,7 @@ export class FileProfileConfigStore implements ProfileConfigStore {
 	}
 
 	getProfileConfigPath(name: string): string {
+		validateProfileName(name);
 		return path.join(this.identitiesDir, `${name}.gitconfig`);
 	}
 

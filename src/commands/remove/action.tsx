@@ -1,5 +1,5 @@
 import { ProfileService } from "@/core/profile-service";
-import { ProfileNotFoundError } from "@/errors";
+import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
 import {
 	sendProfileRemoveFailedJson,
@@ -37,6 +37,16 @@ const action: (name: string, options: RemoveProfileOptions) => Promise<void> =
 			}
 			if (error instanceof ProfileNotFoundError) {
 				const reason = `'${name}' does not exist.`;
+				if (options.json) {
+					sendProfileRemoveFailedJson(name, reason);
+				} else {
+					sendProfileRemoveFailedMsg(reason);
+				}
+				process.exitCode = 1;
+				return;
+			}
+			if (error instanceof InvalidProfileError) {
+				const reason = error.message;
 				if (options.json) {
 					sendProfileRemoveFailedJson(name, reason);
 				} else {

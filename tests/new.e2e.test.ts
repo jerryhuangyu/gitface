@@ -140,4 +140,49 @@ describe("new command e2e", () => {
 			await safeRemove(tmpRoot);
 		}
 	});
+
+	test("rejects unsafe profile names in json mode", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const logSpy = vi
+			.spyOn(console, "log")
+			.mockImplementation((...args: unknown[]) => {
+				logs.push(args.map(String).join(" "));
+			});
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+
+			await runCli([newProfileCommand.command], [
+				"node",
+				"gitface",
+				"new",
+				"../unsafe",
+				"--git-name",
+				"Work User",
+				"--email",
+				"work@example.com",
+				"--json",
+			]);
+
+			const payload = JSON.parse(logs.join("\n"));
+			expect(payload).toEqual({
+				status: "error",
+				name: "../unsafe",
+				reason: "Profile name must not contain path separators or NUL characters.",
+			});
+			expect(process.exitCode).toBe(1);
+		} finally {
+			logSpy.mockRestore();
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
 });

@@ -1,5 +1,9 @@
 import { ProfileService } from "@/core/profile-service";
-import { ProfileAlreadyExistsError, ProfileNotFoundError } from "@/errors";
+import {
+	InvalidProfileError,
+	ProfileAlreadyExistsError,
+	ProfileNotFoundError,
+} from "@/errors";
 import { withCommandHandling } from "../command-runner";
 import {
 	sendProfileRenameFailedJson,
@@ -45,6 +49,17 @@ const action: (
 			}
 
 			if (error instanceof ProfileAlreadyExistsError) {
+				const reason = error.message;
+				if (options.json) {
+					sendProfileRenameFailedJson(oldName, newName, reason);
+				} else {
+					sendProfileRenameFailedMsg(reason);
+				}
+				process.exitCode = 1;
+				return;
+			}
+
+			if (error instanceof InvalidProfileError) {
 				const reason = error.message;
 				if (options.json) {
 					sendProfileRenameFailedJson(oldName, newName, reason);
