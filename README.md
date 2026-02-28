@@ -143,10 +143,14 @@ Run `gitface <command> --help` to see all flags and examples.
   key.
 - `gitface use <profile> --json` emits machine-readable output:
   `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
+- `gitface use` (without `<profile>`) opens an interactive selector and applies
+  the selected profile immediately.
 - `gitface current --scope global --json` inspects one scope and emits:
   `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }`.
 - `gitface use <profile> --dry-run` previews planned scoped config updates and
   does not mutate `.git/config`; dry-run output only lists effective changes.
+- `gitface use` exits with code `1` and a guidance message when no profiles are
+  available to select.
 
 Set `GITFACE_LOG_LEVEL=debug` (or `GITFACE_DEBUG=1`) to print stack traces and
 additional diagnostics. Supported levels: `critical`, `error`, `warn`, `info`,

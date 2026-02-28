@@ -5,9 +5,10 @@ import { ProfileService } from "@/core/profile-service";
 
 interface Props {
 	onSelect: (profileName: string) => void;
+	onEmpty?: () => void;
 }
 
-export const SelectProfile: React.FC<Props> = ({ onSelect }) => {
+export const SelectProfile: React.FC<Props> = ({ onSelect, onEmpty }) => {
 	const { exit } = useApp();
 	const [items, setItems] = useState<Array<{ label: string; value: string }>>(
 		[],
@@ -28,6 +29,13 @@ export const SelectProfile: React.FC<Props> = ({ onSelect }) => {
 		};
 		fetchProfiles();
 	}, []);
+
+	useEffect(() => {
+		if (!loading && items.length === 0) {
+			onEmpty?.();
+			exit();
+		}
+	}, [exit, items.length, loading, onEmpty]);
 
 	if (loading) {
 		return <Text>Loading profiles...</Text>;

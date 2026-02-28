@@ -67,6 +67,8 @@ dot segments (`.`/`..`).
 ## `gitface use <name>`
 
 - Applies a profile to Git configuration using `simple-git addConfig`.
+- Running `gitface use` without `<name>` opens an interactive selector; after
+  selection GitFace applies the chosen profile immediately.
 - Options:
   - `--scope <local|global|system>` / `-s` (defaults to `local`).
   - `--dry-run` previews planned writes/unsets for the target scope without mutating Git config.
@@ -79,6 +81,8 @@ dot segments (`.`/`..`).
   `{ "status": "unchanged", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "changes": [] }`.
 - Dry-run output only lists effective changes; unchanged keys are omitted.
 - When `<name>` is provided (including JSON mode), GitFace avoids loading the interactive selector UI.
+- If no profiles exist in interactive mode, GitFace exits with code `1` and
+  prints guidance to create one via `gitface new <name>`.
 - Successful runs log the applied values so you can double-check before committing.
 - Invalid scopes short-circuit the command with an error banner and status `1`.
 

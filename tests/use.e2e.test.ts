@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, test } from "vitest";
 import simpleGit from "simple-git";
 import { ProfileService } from "../src/core/profile-service";
+import { runUseAction } from "../src/commands/use/action";
 import { useProfileCommand } from "../src/commands/index";
 import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
 
@@ -179,6 +180,90 @@ describe("use command e2e", () => {
 		} finally {
 			process.chdir(originalCwd);
 			process.argv = originalArgv;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreLog();
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("interactive selection applies chosen profile", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
+		const repoDir = path.join(tmpRoot, "repo");
+		const configDir = path.join(tmpRoot, "config");
+
+		await fs.mkdir(repoDir);
+		const git = simpleGit({ baseDir: repoDir });
+		await git.init();
+
+		try {
+			process.chdir(repoDir);
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await runUseAction(undefined, {}, async () => "work");
+
+			const config = await git.listConfig();
+			expect(config.all["user.name"]).toBe("Work User");
+			expect(config.all["user.email"]).toBe("work@example.com");
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			process.chdir(originalCwd);
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("interactive mode fails fast when no profiles exist", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
+		const repoDir = path.join(tmpRoot, "repo");
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		await fs.mkdir(repoDir);
+		const git = simpleGit({ baseDir: repoDir });
+		await git.init();
+
+		try {
+			process.chdir(repoDir);
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			await runUseAction(undefined, {}, async () => null);
+
+			const localConfig = await fs.readFile(
+				path.join(repoDir, ".git", "config"),
+				"utf8",
+			);
+			expect(localConfig.includes("name =")).toBe(false);
+			expect(localConfig.includes("email =")).toBe(false);
+			expect(process.exitCode).toBe(1);
+			expect(stripAnsi(logs.join("\n"))).toContain("No profiles found");
+		} finally {
+			process.chdir(originalCwd);
 			if (originalXdg === undefined) {
 				delete process.env.XDG_CONFIG_HOME;
 			} else {
