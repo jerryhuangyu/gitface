@@ -61,6 +61,8 @@ Run `gitface <command> --help` to see all flags and examples.
   completion responsive for large profile sets.
 - `gitface completion profiles --prefix <value>` uses case-insensitive prefix
   matching, so `wo` can match `Work` / `work-admin`.
+- `gitface completion profiles --json` emits machine-readable payload:
+  `{ "topic": "profiles", "prefix": "wo", "limit": 5, "count": 1, "names": ["work-admin"] }`.
 - `gitface completion profiles` reads profile names from local profile filenames,
   so unrelated malformed profile JSON payloads do not block tab completion.
 - Completion is scoped to source-profile arguments for `use`, `rm/remove`,

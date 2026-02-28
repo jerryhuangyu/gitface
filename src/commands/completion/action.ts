@@ -6,9 +6,18 @@ interface CompletionOptions {
 	prefix?: string;
 	delimiter?: string;
 	limit?: string;
+	json?: boolean;
 }
 
 type CompletionTopic = "profiles";
+
+interface CompletionProfilesJsonOutput {
+	topic: CompletionTopic;
+	prefix: string | null;
+	limit: number | null;
+	count: number;
+	names: string[];
+}
 
 function filterByPrefix(names: string[], prefix: string | undefined): string[] {
 	if (prefix === undefined) {
@@ -53,10 +62,20 @@ const action: (
 
 		const service = ProfileService.create();
 		const names = await service.listProfileNames();
-		const filteredNames = filterByPrefix(names, options.prefix).slice(
-			0,
-			parseLimit(options.limit),
-		);
+		const limit = parseLimit(options.limit);
+		const filteredNames = filterByPrefix(names, options.prefix).slice(0, limit);
+
+		if (options.json) {
+			const payload: CompletionProfilesJsonOutput = {
+				topic: normalizedTopic,
+				prefix: options.prefix ?? null,
+				limit: limit ?? null,
+				count: filteredNames.length,
+				names: filteredNames,
+			};
+			process.stdout.write(`${JSON.stringify(payload)}\n`);
+			return;
+		}
 
 		if (filteredNames.length === 0) {
 			return;

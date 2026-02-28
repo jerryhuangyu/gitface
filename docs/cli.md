@@ -205,6 +205,10 @@ dot segments (`.`/`..`).
   names filtered by case-insensitive prefix.
 - `gitface completion profiles --prefix <value> --limit <number>` caps returned
   suggestions to a positive integer.
+- `gitface completion profiles --json` emits machine-readable output:
+  `{ "topic": "profiles", "prefix": "wo", "limit": 5, "count": 1, "names": ["work-admin"] }`.
+- `--json` mode always prints valid JSON (including no-match case as
+  `{ "topic": "profiles", "prefix": "none", "limit": null, "count": 0, "names": [] }`).
 - Completion suggestions are derived from local profile filenames (name index),
   so unrelated malformed profile JSON content does not block completion output.
 - `gitface completion snippet --shell <bash|zsh>` prints a shell script that

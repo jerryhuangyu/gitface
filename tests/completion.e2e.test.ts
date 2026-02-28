@@ -165,6 +165,111 @@ describe("completion command e2e", () => {
 		}
 	});
 
+	test("emits machine-readable payload with --json", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const configDir = path.join(tmpRoot, "config");
+		const output: string[] = [];
+		const restoreStdout = captureStdout(output);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-admin",
+				gitName: "Work Admin",
+				email: "work-admin@example.com",
+			});
+			await service.createProfile({
+				name: "home",
+				gitName: "Home User",
+				email: "home@example.com",
+			});
+
+			await runCli([completionCommand.command], [
+				"node",
+				"gitface",
+				"completion",
+				"profiles",
+				"--prefix",
+				"wo",
+				"--limit",
+				"1",
+				"--json",
+			]);
+
+			expect(JSON.parse(output.join(""))).toEqual({
+				topic: "profiles",
+				prefix: "wo",
+				limit: 1,
+				count: 1,
+				names: ["work-admin"],
+			});
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreStdout();
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("emits empty json payload when no completion matches", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const configDir = path.join(tmpRoot, "config");
+		const output: string[] = [];
+		const restoreStdout = captureStdout(output);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "home",
+				gitName: "Home User",
+				email: "home@example.com",
+			});
+
+			await runCli([completionCommand.command], [
+				"node",
+				"gitface",
+				"completion",
+				"profiles",
+				"--prefix",
+				"wo",
+				"--json",
+			]);
+
+			expect(JSON.parse(output.join(""))).toEqual({
+				topic: "profiles",
+				prefix: "wo",
+				limit: null,
+				count: 0,
+				names: [],
+			});
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreStdout();
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("sets exit code and writes no output for invalid --limit", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;

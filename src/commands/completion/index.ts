@@ -15,6 +15,7 @@ const command: Command = new Command("completion")
 		"-d, --delimiter <delimiter>",
 		"delimiter between suggestions (default: newline)",
 	)
+	.option("--json", "emit machine-readable JSON output")
 	.action(action);
 
 command

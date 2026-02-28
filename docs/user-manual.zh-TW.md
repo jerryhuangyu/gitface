@@ -216,12 +216,15 @@ gitface rules remove ~/code/work --dry-run --json
 ```bash
 gitface completion snippet --shell zsh
 gitface completion profiles --prefix wo --limit 5
+gitface completion profiles --prefix wo --limit 5 --json
 ```
 
 說明：
 
 - `completion profiles --prefix` 採不分大小寫前綴比對（例如 `wo` 可命中 `WorkAdmin`）。
 - 預設 snippet 會帶 `--limit 50`，避免 profile 很多時補全輸出過大。
+- `completion profiles --json` 會輸出結構化結果，方便 CI/agent 腳本：
+  `{ "topic": "profiles", "prefix": "wo", "limit": 5, "count": 1, "names": ["work-admin"] }`。
 
 ## JSON 模式（給自動化/CI）
 
@@ -231,6 +234,7 @@ gitface completion profiles --prefix wo --limit 5
 - `clone`, `rename`, `rm/remove`
 - `export`, `import`
 - `rules list/add/remove`
+- `completion profiles`
 
 注意兩個常見限制：
 
