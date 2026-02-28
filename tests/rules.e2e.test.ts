@@ -917,6 +917,345 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("applies matched rule profile to local scope with --json", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-apply-json-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const ruleDir = path.join(homeDir, "work");
+		const repoDir = path.join(ruleDir, "repo");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(ruleDir, { recursive: true });
+		await fs.mkdir(repoDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "rule-profile",
+				gitName: "Rule User",
+				email: "rule@example.com",
+			});
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				ruleDir,
+				"rule-profile",
+			]);
+
+			const git = simpleGit({ baseDir: repoDir });
+			await git.init();
+			await git.addConfig("user.name", "Legacy User");
+			await git.addConfig("user.email", "legacy@example.com");
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"apply",
+				repoDir,
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				directory: string;
+				scope: string;
+				matchedRule: {
+					directory: string;
+					profileName: string;
+				};
+				profile: {
+					name: string;
+					gitName: string;
+					email: string;
+					signingKey: string | null;
+				};
+			};
+			expect(parsed).toEqual({
+				status: "applied",
+				directory: `${repoDir}${path.sep}`,
+				scope: "local",
+				matchedRule: {
+					directory: `${ruleDir}${path.sep}`,
+					profileName: "rule-profile",
+				},
+				profile: {
+					name: "rule-profile",
+					gitName: "Rule User",
+					email: "rule@example.com",
+					signingKey: null,
+				},
+			});
+
+			const localConfig = await git.listConfig();
+			expect(localConfig.all["user.name"]).toBe("Rule User");
+			expect(localConfig.all["user.email"]).toBe("rule@example.com");
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("previews apply with --dry-run --json without mutating local git config", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-apply-dry-run-json-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const ruleDir = path.join(homeDir, "work");
+		const repoDir = path.join(ruleDir, "repo");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(ruleDir, { recursive: true });
+		await fs.mkdir(repoDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "rule-profile",
+				gitName: "Rule User",
+				email: "rule@example.com",
+			});
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				ruleDir,
+				"rule-profile",
+			]);
+
+			const git = simpleGit({ baseDir: repoDir });
+			await git.init();
+			await git.addConfig("user.name", "Current User");
+			await git.addConfig("user.email", "current@example.com");
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"apply",
+				repoDir,
+				"--dry-run",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				scope: string;
+				hasChanges: boolean;
+				changes: Array<{ key: string; action: string }>;
+			};
+			expect(parsed.status).toBe("dry-run");
+			expect(parsed.scope).toBe("local");
+			expect(parsed.hasChanges).toBe(true);
+			expect(parsed.changes.some((item) => item.key === "user.name")).toBe(true);
+			expect(
+				parsed.changes.some(
+					(item) => item.key === "user.signingkey" && item.action === "unchanged",
+				),
+			).toBe(false);
+
+			const localConfig = await git.listConfig();
+			expect(localConfig.all["user.name"]).toBe("Current User");
+			expect(localConfig.all["user.email"]).toBe("current@example.com");
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns unmatched and exit code 1 for rules apply --strict when no rule matches", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-apply-strict-unmatched-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const targetDir = path.join(homeDir, "personal");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(targetDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"apply",
+				targetDir,
+				"--strict",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				directory: string;
+				scope: string;
+				matchedRule: null;
+			};
+			expect(parsed).toEqual({
+				status: "unmatched",
+				directory: `${targetDir}${path.sep}`,
+				scope: "local",
+				matchedRule: null,
+			});
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns error when rules apply matches missing profile", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-apply-missing-profile-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const ruleDir = path.join(homeDir, "work");
+		const repoDir = path.join(ruleDir, "repo");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(ruleDir, { recursive: true });
+		await fs.mkdir(repoDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "stale-profile",
+				gitName: "Stale User",
+				email: "stale@example.com",
+			});
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				ruleDir,
+				"stale-profile",
+			]);
+			await service.removeProfile("stale-profile");
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"apply",
+				repoDir,
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				directory: string;
+				reason: string;
+			};
+			expect(parsed.status).toBe("error");
+			expect(parsed.directory).toBe(`${repoDir}${path.sep}`);
+			expect(parsed.reason).toContain("stale-profile");
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("returns exit code 1 when rules list limit is invalid", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;

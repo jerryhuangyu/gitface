@@ -83,7 +83,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
-| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query` and `--limit`; `rules resolve --strict` supports CI gating. |
+| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query` and `--limit`; `rules resolve/apply --strict` support CI gating. |
 
 ## Profiles & Storage
 
@@ -149,6 +149,13 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface rules resolve [dir] --json` when no rule matches:
   `{ "status": "unmatched", "directory": "/abs/path/repo/", "matchedRule": null, "profileExists": null }`.
 - `gitface rules resolve [dir] --strict` treats `unmatched` and `matched + profileExists=false` as non-zero exit results for CI gating.
+- `gitface rules apply [dir] --json` resolves and applies matched profile in one step:
+  `{ "status": "applied", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }`.
+- `gitface rules apply [dir] --dry-run --json` previews scope-specific changes without writing:
+  `{ "status": "dry-run", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+- `gitface rules apply [dir] --json` when no rule matches:
+  `{ "status": "unmatched", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null }`.
+- `gitface rules apply [dir] --strict` treats `unmatched` as non-zero exit results for CI gating.
 - `gitface rename <old> <new> --json` emits machine-readable status:
   `{ "status": "renamed", "oldName": "old", "name": "new", "rulesUpdated": 2, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface rename <old> <new> --dry-run --json` previews rename metadata without writing:

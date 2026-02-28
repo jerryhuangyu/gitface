@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import type { CliCommand } from "../command";
 import { addRuleAction } from "./add";
+import { applyRuleAction } from "./apply";
 import { listRulesAction } from "./list";
 import { removeRuleAction } from "./remove";
 import { resolveRuleAction } from "./resolve";
@@ -8,6 +9,25 @@ import { resolveRuleAction } from "./resolve";
 const command = new Command("rules").description(
 	"Manage folder-based profile rules",
 );
+
+command
+	.command("apply")
+	.argument(
+		"[directory]",
+		"Directory to resolve and apply (defaults to current working directory)",
+	)
+	.description("Resolve matched folder rule and apply profile")
+	.option("-s, --scope <scope>", "local (default), global, or system", "local")
+	.option(
+		"--dry-run",
+		"Preview profile application without changing git config",
+	)
+	.option(
+		"--strict",
+		"Treat unmatched rules as failures (exit code 1) for CI gating",
+	)
+	.option("--json", "Output apply result as JSON")
+	.action(applyRuleAction);
 
 command
 	.command("list")

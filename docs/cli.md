@@ -175,6 +175,7 @@ dot segments (`.`/`..`).
   - `gitface rules add <directory> <profile>`
   - `gitface rules remove <directory>`
   - `gitface rules resolve [directory]`
+  - `gitface rules apply [directory]`
   - `gitface rules list` (human-readable)
 - `rules add/remove --dry-run` previews mutation results without changing global Git config.
 - `gitface rules list --query <text>` filters by case-insensitive substring
@@ -208,6 +209,21 @@ dot segments (`.`/`..`).
   while keeping the same output shape.
 - No-match output remains successful and emits:
   `{ "status": "unmatched", "directory": "/abs/path/repo/", "matchedRule": null, "profileExists": null }`.
+- `gitface rules apply [directory]` resolves the most specific matching rule and
+  applies the matched profile to Git config in one step. `directory` defaults
+  to current working directory.
+- `gitface rules apply [directory] --scope <local|global|system>` controls
+  target scope (`local` default).
+- `gitface rules apply [directory] --dry-run` previews planned writes/unsets and
+  does not mutate Git config.
+- `gitface rules apply [directory] --json` emits:
+  `{ "status": "applied", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }`.
+- `gitface rules apply [directory] --dry-run --json` emits:
+  `{ "status": "dry-run", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+- `gitface rules apply [directory] --json` when no rule matches emits:
+  `{ "status": "unmatched", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null }`.
+- `gitface rules apply [directory] --strict` treats unmatched results as
+  failures (`exit code 1`) for CI gating.
 - Empty JSON output is `[]`, which is safe for CI/script parsing.
 
 ## `gitface completion <topic>`

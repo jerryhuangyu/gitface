@@ -1,5 +1,8 @@
 import chalk from "chalk";
+import type { ConfigScope } from "@/core/git-service";
 import type { FolderRule } from "@/core/rule-service";
+import type { Profile } from "@/domain/profile";
+import type { UseChangeStep } from "../use/output";
 
 export function sendRuleAddSuccessMsg(
 	directory: string,
@@ -208,4 +211,205 @@ export function sendRuleResolveFailedJson(
 			reason,
 		}),
 	);
+}
+
+export function sendRuleApplyAppliedMsg(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	scope: ConfigScope,
+	profile: Profile,
+): void {
+	console.log(chalk.bold("Applied folder rule profile:"));
+	console.log(
+		`${chalk.cyan(targetDirectory)} ${chalk.gray("=>")} ${chalk.green(profile.name)} ${chalk.gray(`(${matchedRule.directory})`)}`,
+	);
+	console.log(
+		chalk.green(
+			`Applied to ${chalk.bold(scope)} scope with profile '${profile.name}'.`,
+		),
+	);
+}
+
+export function sendRuleApplyAppliedJson(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	scope: ConfigScope,
+	profile: Profile,
+): void {
+	console.log(
+		JSON.stringify({
+			status: "applied",
+			directory: targetDirectory,
+			scope,
+			matchedRule,
+			profile: {
+				name: profile.name,
+				gitName: profile.gitName,
+				email: profile.email,
+				signingKey: profile.signingKey ?? null,
+			},
+		}),
+	);
+}
+
+export function sendRuleApplyUnchangedMsg(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	scope: ConfigScope,
+	profile: Profile,
+): void {
+	console.log(chalk.bold("Folder rule resolved:"));
+	console.log(
+		`${chalk.cyan(targetDirectory)} ${chalk.gray("=>")} ${chalk.green(profile.name)} ${chalk.gray(`(${matchedRule.directory})`)}`,
+	);
+	console.log(
+		chalk.green(
+			`Profile '${profile.name}' is already active for ${chalk.bold(scope)} scope. No changes were written.`,
+		),
+	);
+}
+
+export function sendRuleApplyUnchangedJson(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	scope: ConfigScope,
+	profile: Profile,
+): void {
+	console.log(
+		JSON.stringify({
+			status: "unchanged",
+			directory: targetDirectory,
+			scope,
+			matchedRule,
+			profile: {
+				name: profile.name,
+				gitName: profile.gitName,
+				email: profile.email,
+				signingKey: profile.signingKey ?? null,
+			},
+			changes: [],
+		}),
+	);
+}
+
+export function sendRuleApplyDryRunMsg(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	scope: ConfigScope,
+	profile: Profile,
+	current: {
+		gitName: string | null;
+		email: string | null;
+		signingKey: string | null;
+	},
+	changes: UseChangeStep[],
+): void {
+	console.log(chalk.blue("Dry run: no git config was changed."));
+	console.log(
+		`Resolved ${chalk.cyan(targetDirectory)} ${chalk.gray("=>")} ${chalk.green(profile.name)} ${chalk.gray(`(${matchedRule.directory})`)}`,
+	);
+	console.log(`${chalk.gray("Scope:")} ${chalk.green(scope)}`);
+	if (changes.length === 0) {
+		console.log(
+			chalk.green(
+				`No changes detected. Profile '${profile.name}' already matches ${scope} scope.`,
+			),
+		);
+		return;
+	}
+	for (const change of changes) {
+		const actionLabel = change.action === "unset" ? "UNSET" : "SET";
+		console.log(
+			`${chalk.gray(change.key)} ${chalk.yellow(actionLabel)} ${formatValue(change.before)} -> ${formatValue(change.after)}`,
+		);
+	}
+	if (
+		current.gitName === null &&
+		current.email === null &&
+		current.signingKey === null
+	) {
+		console.log(chalk.gray("Current identity is empty in target scope."));
+	}
+}
+
+export function sendRuleApplyDryRunJson(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	scope: ConfigScope,
+	profile: Profile,
+	current: {
+		gitName: string | null;
+		email: string | null;
+		signingKey: string | null;
+	},
+	changes: UseChangeStep[],
+): void {
+	console.log(
+		JSON.stringify({
+			status: "dry-run",
+			directory: targetDirectory,
+			scope,
+			matchedRule,
+			profile: {
+				name: profile.name,
+				gitName: profile.gitName,
+				email: profile.email,
+				signingKey: profile.signingKey ?? null,
+			},
+			current,
+			hasChanges: changes.length > 0,
+			changes: changes.map((change) => ({
+				key: change.key,
+				action: change.action,
+				before: change.before,
+				after: change.after,
+			})),
+		}),
+	);
+}
+
+export function sendRuleApplyUnmatchedMsg(
+	targetDirectory: string,
+	scope: ConfigScope,
+): void {
+	console.log(
+		chalk.gray(
+			`No folder rule matched target directory: ${targetDirectory} (scope: ${scope}).`,
+		),
+	);
+}
+
+export function sendRuleApplyUnmatchedJson(
+	targetDirectory: string,
+	scope: ConfigScope,
+): void {
+	console.log(
+		JSON.stringify({
+			status: "unmatched",
+			directory: targetDirectory,
+			scope,
+			matchedRule: null,
+		}),
+	);
+}
+
+export function sendRuleApplyFailedMsg(reason: string): void {
+	console.error(chalk.red(reason));
+}
+
+export function sendRuleApplyFailedJson(
+	directory: string,
+	reason: string,
+): void {
+	console.log(
+		JSON.stringify({
+			status: "error",
+			directory,
+			reason,
+		}),
+	);
+}
+
+function formatValue(value: string | null): string {
+	return value === null ? chalk.dim("<unset>") : chalk.white(value);
 }

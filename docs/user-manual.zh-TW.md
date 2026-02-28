@@ -211,6 +211,15 @@ gitface rules resolve ~/code/work/monorepo --json
 gitface rules resolve ~/code/work/monorepo --strict --json
 ```
 
+依規則直接套用到目前（或指定）目錄：
+
+```bash
+gitface rules apply ~/code/work/monorepo
+gitface rules apply ~/code/work/monorepo --dry-run --json
+gitface rules apply ~/code/work/monorepo --scope global --json
+gitface rules apply ~/code/work/monorepo --strict --json
+```
+
 說明：
 
 - rules 透過 Git `includeIf.gitdir` 寫在 global config。
@@ -223,6 +232,9 @@ gitface rules resolve ~/code/work/monorepo --strict --json
   未命中時會回傳 `unmatched`（不視為錯誤）。
 - `rules resolve --strict` 會把 `unmatched` 或命中不存在 profile
   （`profileExists=false`）視為失敗並回傳 exit code `1`，適合 CI gate。
+- `rules apply [directory]` 會直接以命中的規則套用 profile（等同 resolve + use）。
+- `rules apply --dry-run` 只輸出預計變更，不會寫入 Git config。
+- `rules apply --strict` 會把 `unmatched` 視為失敗並回傳 exit code `1`。
 
 ### 情境 H：啟用 Shell 補全（bash/zsh）
 
@@ -246,7 +258,7 @@ gitface completion profiles --prefix wo --limit 5 --json
 - `new`, `edit`, `list`, `use`, `current`, `doctor`
 - `clone`, `rename`, `rm/remove`
 - `export`, `import`
-- `rules list/add/remove/resolve`
+- `rules list/add/remove/resolve/apply`
 - `completion profiles`
 
 注意兩個常見限制：
