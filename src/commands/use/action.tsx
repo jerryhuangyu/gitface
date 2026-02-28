@@ -1,5 +1,4 @@
 import type { ConfigScope } from "@/core/git-service";
-import { GitService } from "@/core/git-service";
 import { ProfileService } from "@/core/profile-service";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
@@ -30,8 +29,8 @@ export const runUseAction = async (
 	options: UseProfileOptions,
 	promptForSelection: PromptForProfileSelection = promptForProfileSelection,
 ): Promise<void> => {
-	const scope = (options.scope ?? "local").toLowerCase();
-	if (!isValidScope(scope)) {
+	const normalizedScope = (options.scope ?? "local").toLowerCase();
+	if (!isValidScope(normalizedScope)) {
 		const reason = "Scope must be one of: local, global, system.";
 		if (options.json) {
 			sendProfileUseFailedJson(reason);
@@ -41,6 +40,7 @@ export const runUseAction = async (
 		process.exitCode = 1;
 		return;
 	}
+	const scope = normalizedScope as ConfigScope;
 
 	let profileName = name;
 	if (options.json && !profileName) {
@@ -65,7 +65,12 @@ export const runUseAction = async (
 	try {
 		const service = ProfileService.create();
 		const profile = await service.getProfile(profileName);
-		const currentIdentity = await getScopedIdentity(scope);
+		const scopedIdentity = await service.getScopedIdentity(scope);
+		const currentIdentity = {
+			gitName: scopedIdentity.gitName ?? null,
+			email: scopedIdentity.email ?? null,
+			signingKey: scopedIdentity.signingKey ?? null,
+		};
 		const plan = buildUseChangePlan(profile, currentIdentity);
 		const effectiveChanges = getEffectiveChanges(plan);
 
@@ -151,23 +156,4 @@ export const promptForProfileSelection: PromptForProfileSelection =
 function isValidScope(value: string): value is ConfigScope {
 	const VALID_SCOPES = new Set<ConfigScope>(["local", "global", "system"]);
 	return VALID_SCOPES.has(value as ConfigScope);
-}
-
-async function getScopedIdentity(scope: ConfigScope): Promise<{
-	gitName: string | null;
-	email: string | null;
-	signingKey: string | null;
-}> {
-	const gitService = new GitService();
-	const [gitName, email, signingKey] = await Promise.all([
-		gitService.getConfig("user.name", scope),
-		gitService.getConfig("user.email", scope),
-		gitService.getConfig("user.signingkey", scope),
-	]);
-
-	return {
-		gitName,
-		email,
-		signingKey,
-	};
 }
