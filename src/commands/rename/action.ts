@@ -1,4 +1,5 @@
 import { ProfileService } from "@/core/profile-service";
+import { RuleService } from "@/core/rule-service";
 import {
 	InvalidProfileError,
 	ProfileAlreadyExistsError,
@@ -21,6 +22,46 @@ interface Options {
 	json?: boolean;
 }
 
+const isMissingGlobalConfigError = (error: unknown): boolean => {
+	return (
+		error instanceof Error &&
+		error.message.toLowerCase().includes("unable to read config file")
+	);
+};
+
+async function countRulesUsingProfile(profileName: string): Promise<number> {
+	try {
+		const ruleService = RuleService.create();
+		const rules = await ruleService.listRules();
+		return rules.filter((rule) => rule.profileName === profileName).length;
+	} catch (error) {
+		if (isMissingGlobalConfigError(error)) {
+			return 0;
+		}
+		throw error;
+	}
+}
+
+async function migrateRulesToRenamedProfile(
+	oldName: string,
+	newName: string,
+): Promise<number> {
+	try {
+		const ruleService = RuleService.create();
+		const rules = await ruleService.listRules();
+		const impactedRules = rules.filter((rule) => rule.profileName === oldName);
+		for (const rule of impactedRules) {
+			await ruleService.addRule(rule.directory, newName);
+		}
+		return impactedRules.length;
+	} catch (error) {
+		if (isMissingGlobalConfigError(error)) {
+			return 0;
+		}
+		throw error;
+	}
+}
+
 const action: (
 	oldName: string,
 	newName: string,
@@ -33,15 +74,28 @@ const action: (
 			if (options.dryRun) {
 				const profile = await service.getProfile(oldName);
 				const targetProfile = await service.findProfile(newName);
+				const rulesToUpdate = await countRulesUsingProfile(oldName);
 				if (!options.force && targetProfile !== null) {
 					throw new ProfileAlreadyExistsError(newName);
 				}
 				const overwrite = targetProfile !== null;
 				if (options.json) {
-					sendProfileRenameDryRunJson(oldName, newName, profile, overwrite);
+					sendProfileRenameDryRunJson(
+						oldName,
+						newName,
+						profile,
+						overwrite,
+						rulesToUpdate,
+					);
 					return;
 				}
-				sendProfileRenameDryRunMsg(oldName, newName, profile, overwrite);
+				sendProfileRenameDryRunMsg(
+					oldName,
+					newName,
+					profile,
+					overwrite,
+					rulesToUpdate,
+				);
 				return;
 			}
 
@@ -50,11 +104,12 @@ const action: (
 				newName,
 				options.force,
 			);
+			const rulesUpdated = await migrateRulesToRenamedProfile(oldName, newName);
 			if (options.json) {
-				sendProfileRenameSuccessJson(oldName, profile);
+				sendProfileRenameSuccessJson(oldName, profile, rulesUpdated);
 				return;
 			}
-			sendProfileRenameSuccessMsg(oldName, profile.name);
+			sendProfileRenameSuccessMsg(oldName, profile.name, rulesUpdated);
 		} catch (error) {
 			if (error instanceof ProfileNotFoundError) {
 				const reason = await buildProfileNotFoundReason(

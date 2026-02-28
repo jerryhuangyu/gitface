@@ -150,9 +150,10 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "unmatched", "directory": "/abs/path/repo/", "matchedRule": null, "profileExists": null }`.
 - `gitface rules resolve [dir] --strict` treats `unmatched` and `matched + profileExists=false` as non-zero exit results for CI gating.
 - `gitface rename <old> <new> --json` emits machine-readable status:
-  `{ "status": "renamed", "oldName": "old", "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+  `{ "status": "renamed", "oldName": "old", "name": "new", "rulesUpdated": 2, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface rename <old> <new> --dry-run --json` previews rename metadata without writing:
-  `{ "status": "dry-run", "oldName": "old", "newName": "new", "overwrite": false, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+  `{ "status": "dry-run", "oldName": "old", "newName": "new", "overwrite": false, "rulesToUpdate": 2, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface rename` automatically migrates folder rules that reference the old profile name.
 - `gitface clone <src> <tgt> --json` emits machine-readable status:
   `{ "status": "cloned", "sourceName": "work", "name": "work-copy", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface clone <src> <tgt> --dry-run --json` previews clone metadata without writing:

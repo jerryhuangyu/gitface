@@ -8,9 +8,11 @@ const infoIcon = chalk.blue("ℹ");
 export const sendProfileRenameSuccessMsg = (
 	oldName: string,
 	newName: string,
+	rulesUpdated: number,
 ): void => {
 	console.log();
 	console.log(`${checkIcon} Renamed profile '${oldName}' to '${newName}'.`);
+	console.log(`${infoIcon} ${chalk.dim("rules updated")}  ${rulesUpdated}`);
 };
 
 export const sendProfileRenameFailedMsg = (reason: string): void => {
@@ -23,6 +25,7 @@ export const sendProfileRenameDryRunMsg = (
 	newName: string,
 	profile: Profile,
 	overwrite: boolean,
+	rulesToUpdate: number,
 ): void => {
 	const signingKey = profile.signingKey ?? chalk.dim("<unset>");
 	console.log();
@@ -32,6 +35,7 @@ export const sendProfileRenameDryRunMsg = (
 	console.log(
 		`${infoIcon} ${chalk.dim("overwrite")}  ${overwrite ? "yes" : "no"}`,
 	);
+	console.log(`${infoIcon} ${chalk.dim("rules to update")}  ${rulesToUpdate}`);
 	console.log(`${infoIcon} ${chalk.dim("user.name")}  ${profile.gitName}`);
 	console.log(`${infoIcon} ${chalk.dim("user.email")}  ${profile.email}`);
 	console.log(`${infoIcon} ${chalk.dim("signingKey")}  ${signingKey}`);
@@ -44,12 +48,14 @@ export const sendProfileRenameDryRunMsg = (
 export const sendProfileRenameSuccessJson = (
 	oldName: string,
 	profile: Profile,
+	rulesUpdated: number,
 ): void => {
 	console.log(
 		JSON.stringify({
 			status: "renamed",
 			oldName,
 			name: profile.name,
+			rulesUpdated,
 			gitName: profile.gitName,
 			email: profile.email,
 			signingKey: profile.signingKey ?? null,
@@ -77,6 +83,7 @@ export const sendProfileRenameDryRunJson = (
 	newName: string,
 	profile: Profile,
 	overwrite: boolean,
+	rulesToUpdate: number,
 ): void => {
 	console.log(
 		JSON.stringify({
@@ -84,6 +91,7 @@ export const sendProfileRenameDryRunJson = (
 			oldName,
 			newName,
 			overwrite,
+			rulesToUpdate,
 			gitName: profile.gitName,
 			email: profile.email,
 			signingKey: profile.signingKey ?? null,

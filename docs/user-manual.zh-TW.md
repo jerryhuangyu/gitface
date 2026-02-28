@@ -158,6 +158,7 @@ gitface rm work-archive
 - `gitface rm` 也可用 `gitface remove`
 - `gitface list` 也可用 `gitface ls`
 - `gitface rename --dry-run --json` 可先預覽是否會覆蓋目標 profile，再決定是否正式執行
+- `gitface rename` 正式執行時會自動把參照舊名稱的 folder rules 遷移到新名稱
 
 ### 情境 F：備份與還原 profiles
 
