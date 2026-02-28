@@ -209,4 +209,121 @@ describe("rename command e2e", () => {
 			await safeRemove(tmpRoot);
 		}
 	});
+
+	test("supports --dry-run --json without mutating profile files", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreConsole = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "old",
+				gitName: "Old User",
+				email: "old@example.com",
+			});
+
+			await runCli([renameProfileCommand.command], [
+				"node",
+				"gitface",
+				"rename",
+				"old",
+				"new",
+				"--dry-run",
+				"--json",
+			]);
+
+			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
+				string,
+				unknown
+			>;
+			expect(parsed).toEqual({
+				status: "dry-run",
+				oldName: "old",
+				newName: "new",
+				overwrite: false,
+				gitName: "Old User",
+				email: "old@example.com",
+				signingKey: null,
+			});
+
+			const oldProfile = await service.getProfile("old");
+			expect(oldProfile.gitName).toBe("Old User");
+			await expect(service.getProfile("new")).rejects.toThrow();
+		} finally {
+			restoreConsole();
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("reports overwrite=true for --dry-run --force when target exists", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreConsole = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "old",
+				gitName: "Old User",
+				email: "old@example.com",
+			});
+			await service.createProfile({
+				name: "new",
+				gitName: "New User",
+				email: "new@example.com",
+			});
+
+			await runCli([renameProfileCommand.command], [
+				"node",
+				"gitface",
+				"rename",
+				"old",
+				"new",
+				"--dry-run",
+				"--force",
+				"--json",
+			]);
+
+			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
+				string,
+				unknown
+			>;
+			expect(parsed).toEqual({
+				status: "dry-run",
+				oldName: "old",
+				newName: "new",
+				overwrite: true,
+				gitName: "Old User",
+				email: "old@example.com",
+				signingKey: null,
+			});
+
+			const oldProfile = await service.getProfile("old");
+			expect(oldProfile.gitName).toBe("Old User");
+			const newProfile = await service.getProfile("new");
+			expect(newProfile.gitName).toBe("New User");
+		} finally {
+			restoreConsole();
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
 });

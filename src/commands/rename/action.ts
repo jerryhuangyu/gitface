@@ -7,6 +7,8 @@ import {
 import { withCommandHandling } from "../command-runner";
 import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
+	sendProfileRenameDryRunJson,
+	sendProfileRenameDryRunMsg,
 	sendProfileRenameFailedJson,
 	sendProfileRenameFailedMsg,
 	sendProfileRenameSuccessJson,
@@ -15,6 +17,7 @@ import {
 
 interface Options {
 	force?: boolean;
+	dryRun?: boolean;
 	json?: boolean;
 }
 
@@ -27,6 +30,21 @@ const action: (
 	async (oldName: string, newName: string, options: Options) => {
 		const service = ProfileService.create();
 		try {
+			if (options.dryRun) {
+				const profile = await service.getProfile(oldName);
+				const targetProfile = await service.findProfile(newName);
+				if (!options.force && targetProfile !== null) {
+					throw new ProfileAlreadyExistsError(newName);
+				}
+				const overwrite = targetProfile !== null;
+				if (options.json) {
+					sendProfileRenameDryRunJson(oldName, newName, profile, overwrite);
+					return;
+				}
+				sendProfileRenameDryRunMsg(oldName, newName, profile, overwrite);
+				return;
+			}
+
 			const profile = await service.renameProfile(
 				oldName,
 				newName,

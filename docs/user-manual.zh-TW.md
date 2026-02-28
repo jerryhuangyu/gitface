@@ -134,6 +134,7 @@ gitface edit work --unset-signing-key
 
 ```bash
 gitface clone work work-copy
+gitface rename work-copy work-archive --dry-run
 gitface rename work-copy work-archive
 gitface rm work-archive
 ```
@@ -143,6 +144,7 @@ gitface rm work-archive
 - `gitface rename` 也可用 `gitface mv`
 - `gitface rm` 也可用 `gitface remove`
 - `gitface list` 也可用 `gitface ls`
+- `gitface rename --dry-run --json` 可先預覽是否會覆蓋目標 profile，再決定是否正式執行
 
 ### 情境 F：備份與還原 profiles
 

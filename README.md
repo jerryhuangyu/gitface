@@ -77,7 +77,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports `--json` summary output.              |
 | `gitface import <file>`  | Import profiles from JSON; supports `--dry-run` and `--json` for structured results.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--json` output.                                     |
-| `gitface rename <old> <new>` | Rename a profile (alias: `mv`); use `rename --json` for machine-readable output.            |
+| `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
 | `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`) with optional `--json`; `rules list` supports `--query` and `--limit`. |
 
@@ -134,6 +134,8 @@ Run `gitface <command> --help` to see all flags and examples.
   caps output size for scripts.
 - `gitface rename <old> <new> --json` emits machine-readable status:
   `{ "status": "renamed", "oldName": "old", "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface rename <old> <new> --dry-run --json` previews rename metadata without writing:
+  `{ "status": "dry-run", "oldName": "old", "newName": "new", "overwrite": false, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface clone <src> <tgt> --json` emits machine-readable status:
   `{ "status": "cloned", "sourceName": "work", "name": "work-copy", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface export --json` emits machine-readable summary:

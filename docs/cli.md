@@ -53,8 +53,11 @@ dot segments (`.`/`..`).
 - Alias: `gitface mv <old-name> <new-name>`.
 - Renames an existing profile while keeping identity fields (`gitName`, `email`, `signingKey`) unchanged.
 - `--force` allows overwriting an existing target profile.
+- `--dry-run` previews rename metadata without modifying profile files.
 - `--json` emits machine-readable output:
   `{ "status": "renamed", "oldName": "old", "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `--dry-run --json` emits machine-readable preview output:
+  `{ "status": "dry-run", "oldName": "old", "newName": "new", "overwrite": false, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - JSON failures return:
   `{ "status": "error", "oldName": "old", "newName": "new", "reason": "..." }` with exit code `1`.
 - When source profile is missing, failure text appends up to 3 suggestions.
