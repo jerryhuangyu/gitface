@@ -124,6 +124,108 @@ describe("list command e2e", () => {
 			await safeRemove(tmpRoot);
 		}
 	});
+
+	test("filters profiles by name with --json --query", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-cli-list-query-"),
+		);
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await service.createProfile({
+				name: "personal",
+				gitName: "Personal User",
+				email: "me@example.com",
+			});
+
+			const restoreLog = spyConsole(logs);
+			await runCli([listProfilesCommand.command], [
+				"node",
+				"gitface",
+				"list",
+				"--json",
+				"--query",
+				"wor",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as Array<{ name: string }>;
+			expect(parsed).toHaveLength(1);
+			expect(parsed[0].name).toBe("work");
+		} finally {
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("falls back to plain output when stdout is non-tty", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-cli-list-plain-"),
+		);
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const originalIsTTY = process.stdout.isTTY;
+
+		try {
+			Object.defineProperty(process.stdout, "isTTY", {
+				value: false,
+				configurable: true,
+			});
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await service.createProfile({
+				name: "personal",
+				gitName: "Personal User",
+				email: "me@example.com",
+			});
+
+			const restoreLog = spyConsole(logs);
+			await runCli([listProfilesCommand.command], [
+				"node",
+				"gitface",
+				"list",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n"));
+			expect(output).toContain("Saved Profiles:");
+			expect(output).toContain("- work:");
+			expect(output).toContain("- personal:");
+		} finally {
+			Object.defineProperty(process.stdout, "isTTY", {
+				value: originalIsTTY,
+				configurable: true,
+			});
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
 });
 
 function createWritableCapture(): {

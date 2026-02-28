@@ -60,7 +60,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | ------------------------ | --------------------------------------------------------------------------------------------- |
 | `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--json`). |
 | `gitface edit <profile>` | Update a stored profile via flags or an interactive editor; supports `--json` output.         |
-| `gitface list`           | Render saved profiles in an Ink table, or use `list --json` for machine-readable output.      |
+| `gitface list`           | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, or use `list --json`. |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--dry-run`, and `use --json` output.      |
 | `gitface current`        | Display active Git identity; supports `--scope` and `current --json` for machine-readable output. |
 | `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json` available). |
@@ -107,6 +107,10 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface use <profile> --json` returns an explicit no-op payload when the
   active scope already matches the profile:
   `{ "status": "unchanged", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "changes": [] }`.
+- `gitface list --query wor` filters profiles by case-insensitive name
+  substring matching (works in both human and JSON modes).
+- `gitface list` automatically falls back to deterministic plain-text output
+  when stdout is not a TTY (for example when piped in scripts).
 - `gitface rules add <dir> <profile> --json` emits machine-readable status:
   `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
 - `gitface rules remove <dir> --json` emits machine-readable status:
