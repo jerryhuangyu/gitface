@@ -71,7 +71,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | Command                  | Description                                                                                   |
 | ------------------------ | --------------------------------------------------------------------------------------------- |
 | `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--dry-run`, `--json`). |
-| `gitface edit <profile>` | Update a stored profile via flags or an interactive editor; supports `--json` output.         |
+| `gitface edit <profile>` | Update a stored profile via flags or an interactive editor; supports `--dry-run` and `--json` output. |
 | `gitface list`           | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, cap output with `--limit`, or use `list --json`. |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--dry-run`, and `use --json` output.      |
 | `gitface current`        | Display active Git identity; supports `--scope` and `current --json` for machine-readable output. |
@@ -108,6 +108,8 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }`.
 - `gitface edit <name> --git-name <value> --json` emits:
   `{ "status": "updated", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface edit <name> --git-name <value> --dry-run --json` previews updates without writing:
+  `{ "status": "dry-run", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface edit <name> --json` without non-interactive field flags emits:
   `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }`.
 - `gitface import <file> --dry-run` validates payload and duplicate handling

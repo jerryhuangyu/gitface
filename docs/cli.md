@@ -34,8 +34,11 @@ dot segments (`.`/`..`).
 
 - Launches an Ink interface that lets you update individual fields and toggle signing-key storage.
 - Flags (`--git-name`, `--email`, `--signing-key`, `--unset-signing-key`) bypass the UI and perform immediate updates.
+- `--dry-run` previews the final edited profile fields without modifying files.
 - `--json` emits machine-readable output in non-interactive mode:
   `{ "status": "updated", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `--dry-run --json` emits machine-readable preview output:
+  `{ "status": "dry-run", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `--json` without non-interactive field flags returns:
   `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }` with exit code `1`.
 - Non-interactive paths avoid loading Ink UI modules until interactive mode is needed.

@@ -117,6 +117,117 @@ describe("edit command e2e", () => {
 		}
 	});
 
+	test("supports --dry-run --json without mutating profile fields", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Old Name",
+				email: "old@example.com",
+				signingKey: "OLDKEY",
+			});
+
+			await runCli([editProfileCommand.command], [
+				"node",
+				"gitface",
+				"edit",
+				"work",
+				"--git-name",
+				"Dry Name",
+				"--email",
+				"dry@example.com",
+				"--dry-run",
+				"--json",
+			]);
+
+			const profile = await service.getProfile("work");
+			expect(profile.gitName).toBe("Old Name");
+			expect(profile.email).toBe("old@example.com");
+			expect(profile.signingKey).toBe("OLDKEY");
+
+			const payload = JSON.parse(stripAnsi(logs.join("\n")));
+			expect(payload).toEqual({
+				status: "dry-run",
+				name: "work",
+				gitName: "Dry Name",
+				email: "dry@example.com",
+				signingKey: "OLDKEY",
+			});
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			restoreLog();
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("supports --dry-run --json with --unset-signing-key preview", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Old Name",
+				email: "old@example.com",
+				signingKey: "OLDKEY",
+			});
+
+			await runCli([editProfileCommand.command], [
+				"node",
+				"gitface",
+				"edit",
+				"work",
+				"--git-name",
+				"Old Name",
+				"--unset-signing-key",
+				"--dry-run",
+				"--json",
+			]);
+
+			const profile = await service.getProfile("work");
+			expect(profile.signingKey).toBe("OLDKEY");
+
+			const payload = JSON.parse(stripAnsi(logs.join("\n")));
+			expect(payload).toEqual({
+				status: "dry-run",
+				name: "work",
+				gitName: "Old Name",
+				email: "old@example.com",
+				signingKey: null,
+			});
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			restoreLog();
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("returns json error with --json when profile is missing", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalArgv = process.argv.slice();

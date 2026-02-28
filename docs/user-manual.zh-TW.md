@@ -136,9 +136,12 @@ gitface current --scope global
 ```bash
 gitface edit work --email "new-work@example.com"
 gitface edit work --unset-signing-key
+gitface edit work --email "new-work@example.com" --dry-run
+gitface edit work --email "new-work@example.com" --dry-run --json
 ```
 
 如果不帶更新旗標，`gitface edit work` 會進入互動式編輯 UI。
+`edit --dry-run` 只預覽最終欄位，不會修改 profile 檔案。
 
 ### 情境 E：複製、改名、刪除 profile
 

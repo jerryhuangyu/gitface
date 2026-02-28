@@ -3,6 +3,8 @@ import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
 import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
+	sendProfileUpdateDryRunJson,
+	sendProfileUpdateDryRunMsg,
 	sendProfileUpdateFailedJson,
 	sendProfileUpdateSuccessJson,
 	sendProfileUpdateSuccessMsg,
@@ -13,6 +15,7 @@ interface EditProfileOptions {
 	email?: string;
 	signingKey?: string;
 	unsetSigningKey?: boolean;
+	dryRun?: boolean;
 	json?: boolean;
 }
 
@@ -30,11 +33,21 @@ const action: (name: string, options: EditProfileOptions) => Promise<void> =
 		if (hasUpdates(options)) {
 			const service = ProfileService.create();
 			try {
-				const profile = await service.updateProfile(name, {
+				const update = {
 					gitName: options.gitName,
 					email: options.email,
 					signingKey: options.unsetSigningKey ? null : options.signingKey,
-				});
+				};
+				if (options.dryRun) {
+					const plan = await service.planUpdateProfile(name, update);
+					if (options.json) {
+						sendProfileUpdateDryRunJson(plan.profile);
+						return;
+					}
+					sendProfileUpdateDryRunMsg(plan.profile.name);
+					return;
+				}
+				const profile = await service.updateProfile(name, update);
 
 				if (options.json) {
 					sendProfileUpdateSuccessJson(profile);

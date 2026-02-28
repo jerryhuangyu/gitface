@@ -37,6 +37,10 @@ export interface CreateProfilePlan {
 	overwrite: boolean;
 }
 
+export interface UpdateProfilePlan {
+	profile: Profile;
+}
+
 export interface GitGateway {
 	getCurrentIdentity(): Promise<GitIdentity>;
 	getScopedIdentity(scope: ConfigScope): Promise<GitIdentity>;
@@ -168,6 +172,19 @@ export class ProfileService {
 		name: string,
 		update: UpdateProfileOptions,
 	): Promise<Profile> {
+		const plan = await this.planUpdateProfile(name, update);
+		await this.store.save(plan.profile);
+		await this.ensureProfileConfig(plan.profile);
+		logger.info("profile-service:updateProfile saved", {
+			name: plan.profile.name,
+		});
+		return plan.profile;
+	}
+
+	async planUpdateProfile(
+		name: string,
+		update: UpdateProfileOptions,
+	): Promise<UpdateProfilePlan> {
 		validateProfileName(name);
 		logger.info("profile-service:updateProfile invoked", {
 			name,
@@ -175,12 +192,10 @@ export class ProfileService {
 				(key) => (update as Record<string, unknown>)[key] !== undefined,
 			),
 		});
-		const profile = await this.getProfile(name);
+		const existing = await this.getProfile(name);
+		const profile = Profile.fromSnapshot(existing.snapshot());
 		profile.update(update);
-		await this.store.save(profile);
-		await this.ensureProfileConfig(profile);
-		logger.info("profile-service:updateProfile saved", { name: profile.name });
-		return profile;
+		return { profile };
 	}
 
 	async deleteProfile(name: string): Promise<void> {
