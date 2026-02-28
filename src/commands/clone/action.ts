@@ -5,6 +5,7 @@ import {
 	ProfileNotFoundError,
 } from "@/errors";
 import { withCommandHandling } from "../command-runner";
+import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
 	sendProfileCloneFailedJson,
 	sendProfileCloneFailedMsg,
@@ -34,7 +35,10 @@ const action: (
 			sendProfileCloneSuccessMsg(source, profile.name);
 		} catch (error) {
 			if (error instanceof ProfileNotFoundError) {
-				const reason = `'${source}' does not exist.`;
+				const reason = await buildProfileNotFoundReason(
+					source,
+					`'${source}' does not exist.`,
+				);
 				if (options.json) {
 					sendProfileCloneFailedJson(source, target, reason);
 				} else {

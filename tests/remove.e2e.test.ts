@@ -104,6 +104,12 @@ describe("remove command e2e", () => {
 
 		try {
 			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
 			process.exitCode = undefined;
 
 			await runCli([removeProfileCommand.command], [
@@ -118,11 +124,12 @@ describe("remove command e2e", () => {
 				string,
 				unknown
 			>;
-			expect(parsed).toEqual({
-				status: "error",
-				name: "missing",
-				reason: "'missing' does not exist.",
-			});
+			expect(parsed.status).toBe("error");
+			expect(parsed.name).toBe("missing");
+			expect(parsed.reason).toBeTypeOf("string");
+			expect(String(parsed.reason)).toContain("'missing' does not exist.");
+			expect(String(parsed.reason)).toContain("Did you mean");
+			expect(String(parsed.reason)).toContain("'work'");
 			expect(process.exitCode).toBe(1);
 		} finally {
 			restoreConsole();

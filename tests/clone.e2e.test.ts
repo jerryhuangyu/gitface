@@ -121,6 +121,12 @@ describe("clone command e2e", () => {
 
 		try {
 			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "source",
+				gitName: "Source User",
+				email: "source@example.com",
+			});
 			process.exitCode = undefined;
 
 			await runCli([cloneProfileCommand.command], [
@@ -136,12 +142,13 @@ describe("clone command e2e", () => {
 				string,
 				unknown
 			>;
-			expect(parsed).toEqual({
-				status: "error",
-				sourceName: "missing",
-				targetName: "target",
-				reason: "'missing' does not exist.",
-			});
+			expect(parsed.status).toBe("error");
+			expect(parsed.sourceName).toBe("missing");
+			expect(parsed.targetName).toBe("target");
+			expect(parsed.reason).toBeTypeOf("string");
+			expect(String(parsed.reason)).toContain("'missing' does not exist.");
+			expect(String(parsed.reason)).toContain("Did you mean");
+			expect(String(parsed.reason)).toContain("'source'");
 			expect(process.exitCode).toBe(1);
 		} finally {
 			restoreConsole();

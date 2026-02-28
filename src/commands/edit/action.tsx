@@ -1,6 +1,7 @@
 import { ProfileService } from "@/core/profile-service";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
+import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
 	sendProfileUpdateFailedJson,
 	sendProfileUpdateSuccessJson,
@@ -46,7 +47,11 @@ const action: (name: string, options: EditProfileOptions) => Promise<void> =
 					(error instanceof ProfileNotFoundError ||
 						error instanceof InvalidProfileError)
 				) {
-					sendProfileUpdateFailedJson(name, error.message);
+					const reason =
+						error instanceof ProfileNotFoundError
+							? await buildProfileNotFoundReason(name, error.message)
+							: error.message;
+					sendProfileUpdateFailedJson(name, reason);
 					process.exitCode = 1;
 					return;
 				}

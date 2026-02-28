@@ -271,6 +271,12 @@ describe("rules command e2e", () => {
 
 		try {
 			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-profile",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
 
 			const restoreLog = spyConsole(logs);
 			await runCli([rulesCommand.command], [
@@ -279,7 +285,7 @@ describe("rules command e2e", () => {
 				"rules",
 				"add",
 				projectDir,
-				"missing-profile",
+				"missing",
 				"--json",
 			]);
 			restoreLog();
@@ -293,9 +299,11 @@ describe("rules command e2e", () => {
 			};
 
 			expect(parsed.status).toBe("error");
-			expect(parsed.profileName).toBe("missing-profile");
+			expect(parsed.profileName).toBe("missing");
 			expect(parsed.directory).toBe(`${projectDir}${path.sep}`);
 			expect(parsed.reason).toContain("not found");
+			expect(parsed.reason).toContain("Did you mean");
+			expect(parsed.reason).toContain("'work-profile'");
 			expect(process.exitCode).toBe(1);
 		} finally {
 			process.chdir(originalCwd);

@@ -3,6 +3,7 @@ import { GitService } from "@/core/git-service";
 import { ProfileService } from "@/core/profile-service";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
+import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
 	buildUseChangePlan,
 	getEffectiveChanges,
@@ -96,11 +97,21 @@ export const runUseAction = async (
 
 		sendProfileUseSuccessMsg(profile, scope);
 	} catch (error) {
-		if (
-			options.json &&
-			(error instanceof ProfileNotFoundError ||
-				error instanceof InvalidProfileError)
-		) {
+		if (error instanceof ProfileNotFoundError) {
+			const reason = await buildProfileNotFoundReason(
+				profileName ?? error.profileName,
+				error.message,
+			);
+			if (options.json) {
+				sendProfileUseFailedJson(reason);
+			} else {
+				sendProfileUseFailedMsg(reason);
+			}
+			process.exitCode = 1;
+			return;
+		}
+
+		if (options.json && error instanceof InvalidProfileError) {
 			sendProfileUseFailedJson(error.message);
 			process.exitCode = 1;
 			return;

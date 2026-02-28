@@ -46,6 +46,7 @@ dot segments (`.`/`..`).
   `{ "status": "cloned", "sourceName": "source", "name": "target", "gitName": "Source User", "email": "source@example.com", "signingKey": null }`.
 - JSON failures return:
   `{ "status": "error", "sourceName": "source", "targetName": "target", "reason": "..." }` with exit code `1`.
+- When source profile is missing, failure text appends up to 3 suggestions (for example `Did you mean 'work', 'work-admin'?`).
 
 ## `gitface rename <old-name> <new-name>`
 
@@ -56,6 +57,7 @@ dot segments (`.`/`..`).
   `{ "status": "renamed", "oldName": "old", "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - JSON failures return:
   `{ "status": "error", "oldName": "old", "newName": "new", "reason": "..." }` with exit code `1`.
+- When source profile is missing, failure text appends up to 3 suggestions.
 
 ## `gitface list`
 
@@ -88,6 +90,7 @@ dot segments (`.`/`..`).
   prints guidance to create one via `gitface new <name>`.
 - Successful runs log the applied values so you can double-check before committing.
 - Invalid scopes short-circuit the command with an error banner and status `1`.
+- Missing-profile failures include best-effort suggestions to help recovery without leaving the command.
 
 ## `gitface current`
 
@@ -142,6 +145,7 @@ dot segments (`.`/`..`).
 - `--force` turns missing-profile errors into informational messages, making it safe to run in automation loops.
 - `--json` emits machine-readable output:
   `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- Missing-profile failures (except `--force`) append best-effort suggestions in the `reason` message.
 
 ## `gitface rules <subcommand>`
 
@@ -153,6 +157,7 @@ dot segments (`.`/`..`).
   `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
 - `gitface rules add <directory> <profile> --json` failures emit:
   `{ "status": "error", "directory": "/abs/path/", "profileName": "work", "reason": "..." }` with exit code `1`.
+- Missing-profile failures append best-effort profile suggestions in `reason`.
 - `gitface rules remove <directory> --json` emits:
   `{ "status": "removed", "directory": "/abs/path/" }`.
 - `gitface rules remove <directory> --json` failures emit:

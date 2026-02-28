@@ -98,6 +98,12 @@ describe("use command e2e", () => {
 			process.chdir(repoDir);
 			process.env.XDG_CONFIG_HOME = configDir;
 			process.exitCode = undefined;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
 
 			await runCli([useProfileCommand.command], [
 				"node",
@@ -113,7 +119,10 @@ describe("use command e2e", () => {
 			expect(gitConfig.includes("user.name")).toBe(false);
 			expect(gitConfig.includes("user.email")).toBe(false);
 			expect(process.exitCode).toBe(1);
-			expect(stripAnsi(logs.join("\n")).toLowerCase()).toContain("profile");
+			const output = stripAnsi(logs.join("\n"));
+			expect(output.toLowerCase()).toContain("profile");
+			expect(output).toContain("Did you mean");
+			expect(output).toContain("'work'");
 		} finally {
 			process.chdir(originalCwd);
 			process.argv = originalArgv;

@@ -2,6 +2,7 @@ import { RuleService } from "@/core/rule-service";
 import { Rule } from "@/domain/rule";
 import { ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
+import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
 	sendRuleAddFailedJson,
 	sendRuleAddFailedMsg,
@@ -32,7 +33,10 @@ export const addRuleAction: (
 		} catch (error) {
 			const reason =
 				error instanceof ProfileNotFoundError
-					? `Profile '${profileName}' not found.`
+					? await buildProfileNotFoundReason(
+							profileName,
+							`Profile '${profileName}' not found.`,
+						)
 					: error instanceof Error
 						? error.message
 						: `Unexpected error ${JSON.stringify(error)}`;

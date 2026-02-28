@@ -117,6 +117,12 @@ describe("rename command e2e", () => {
 
 		try {
 			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "old",
+				gitName: "Old User",
+				email: "old@example.com",
+			});
 			process.exitCode = undefined;
 
 			await runCli([renameProfileCommand.command], [
@@ -132,12 +138,13 @@ describe("rename command e2e", () => {
 				string,
 				unknown
 			>;
-			expect(parsed).toEqual({
-				status: "error",
-				oldName: "missing",
-				newName: "new",
-				reason: "'missing' does not exist.",
-			});
+			expect(parsed.status).toBe("error");
+			expect(parsed.oldName).toBe("missing");
+			expect(parsed.newName).toBe("new");
+			expect(parsed.reason).toBeTypeOf("string");
+			expect(String(parsed.reason)).toContain("'missing' does not exist.");
+			expect(String(parsed.reason)).toContain("Did you mean");
+			expect(String(parsed.reason)).toContain("'old'");
 			expect(process.exitCode).toBe(1);
 		} finally {
 			restoreConsole();

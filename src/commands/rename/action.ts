@@ -5,6 +5,7 @@ import {
 	ProfileNotFoundError,
 } from "@/errors";
 import { withCommandHandling } from "../command-runner";
+import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
 	sendProfileRenameFailedJson,
 	sendProfileRenameFailedMsg,
@@ -38,7 +39,10 @@ const action: (
 			sendProfileRenameSuccessMsg(oldName, profile.name);
 		} catch (error) {
 			if (error instanceof ProfileNotFoundError) {
-				const reason = `'${oldName}' does not exist.`;
+				const reason = await buildProfileNotFoundReason(
+					oldName,
+					`'${oldName}' does not exist.`,
+				);
 				if (options.json) {
 					sendProfileRenameFailedJson(oldName, newName, reason);
 				} else {

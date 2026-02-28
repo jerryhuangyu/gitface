@@ -20,6 +20,7 @@ import {
 	type ProfileConfigStore,
 } from "@/infra/profile-config-store";
 import { FileProfileStore, type ProfileStore } from "@/infra/profile-store";
+import { suggestProfileNames } from "./profile-name-suggestions";
 
 export interface CreateProfileOptions {
 	name: string;
@@ -78,6 +79,16 @@ export class ProfileService {
 			count: profiles.length,
 		});
 		return profiles;
+	}
+
+	async suggestProfileNames(name: string, limit = 3): Promise<string[]> {
+		validateProfileName(name);
+		const profiles = await this.listProfiles();
+		return suggestProfileNames(
+			name,
+			profiles.map((profile) => profile.name),
+			limit,
+		);
 	}
 
 	async findProfile(name: string): Promise<Profile | null> {

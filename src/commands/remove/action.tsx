@@ -1,6 +1,7 @@
 import { ProfileService } from "@/core/profile-service";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
+import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
 	sendProfileRemoveFailedJson,
 	sendProfileRemoveFailedMsg,
@@ -36,7 +37,10 @@ const action: (name: string, options: RemoveProfileOptions) => Promise<void> =
 				return;
 			}
 			if (error instanceof ProfileNotFoundError) {
-				const reason = `'${name}' does not exist.`;
+				const reason = await buildProfileNotFoundReason(
+					name,
+					`'${name}' does not exist.`,
+				);
 				if (options.json) {
 					sendProfileRemoveFailedJson(name, reason);
 				} else {
