@@ -153,6 +153,10 @@ dot segments (`.`/`..`).
   - `gitface rules add <directory> <profile>`
   - `gitface rules remove <directory>`
   - `gitface rules list` (human-readable)
+- `gitface rules list --query <text>` filters by case-insensitive substring
+  match on `directory` and `profileName`.
+- `gitface rules list --limit <number>` caps result rows (must be a positive integer).
+- Rules are rendered in deterministic `directory` ascending order before query/limit.
 - `gitface rules add <directory> <profile> --json` emits:
   `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
 - `gitface rules add <directory> <profile> --json` failures emit:
@@ -164,6 +168,8 @@ dot segments (`.`/`..`).
   `{ "status": "error", "directory": "/abs/path/", "reason": "..." }` with exit code `1`.
 - `gitface rules list --json` emits a machine-readable JSON array:
   `[{ "directory": "/abs/path/", "profileName": "work" }]`.
+- `gitface rules list --query work --limit 2 --json` applies filter + cap and
+  returns the same JSON object shape.
 - Empty JSON output is `[]`, which is safe for CI/script parsing.
 
 ## `gitface completion <topic>`

@@ -167,6 +167,8 @@ gitface rules add ~/code/work work
 
 ```bash
 gitface rules list
+gitface rules list --query work
+gitface rules list --limit 10 --json
 ```
 
 移除規則：
@@ -180,6 +182,8 @@ gitface rules remove ~/code/work
 - rules 透過 Git `includeIf.gitdir` 寫在 global config。
 - GitFace 會把目錄正規化成絕對路徑並加上結尾 `/`。
 - 規則對「該資料夾與其子目錄內的 repo」生效。
+- `rules list` 會依目錄路徑排序；可用 `--query`（目錄或 profile 子字串）
+  與 `--limit`（正整數）縮小輸出範圍。
 
 ## JSON 模式（給自動化/CI）
 

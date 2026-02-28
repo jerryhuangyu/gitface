@@ -12,6 +12,11 @@ command
 	.command("list")
 	.alias("ls")
 	.description("List all folder rules")
+	.option(
+		"-q, --query <text>",
+		"Filter rules by directory/profile (case-insensitive)",
+	)
+	.option("--limit <number>", "Limit number of listed rules")
 	.option("--json", "Output folder rules as JSON")
 	.action(listRulesAction);
 
