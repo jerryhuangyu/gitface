@@ -54,6 +54,7 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 - Fetches all profile snapshots, sorts them by `updatedAt`, and renders a table using box-drawing characters for clarity.
 - Empty states display guidance text instead of an empty table.
 - Useful before CI runs to confirm the workspace is pre-seeded.
+- Non-interactive JSON mode lazy-loads the Ink table UI, avoiding unnecessary TUI startup work.
 - `gitface list --json` emits a machine-readable JSON array:
   `[{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }]`.
 
@@ -62,8 +63,12 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 - Applies a profile to Git configuration using `simple-git addConfig`.
 - Options:
   - `--scope <local|global|system>` / `-s` (defaults to `local`).
+  - `--dry-run` previews planned writes/unsets for the target scope without mutating Git config.
 - `--json` emits machine-readable output:
   `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
+- `--dry-run --json` emits a machine-readable change plan:
+  `{ "status": "dry-run", "scope": "local", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+- When `<name>` is provided (including JSON mode), GitFace avoids loading the interactive selector UI.
 - Successful runs log the applied values so you can double-check before committing.
 - Invalid scopes short-circuit the command with an error banner and status `1`.
 

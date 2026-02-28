@@ -1,17 +1,19 @@
-import { render } from "ink";
 import type { ConfigScope } from "@/core/git-service";
+import { GitService } from "@/core/git-service";
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
 import {
-	SelectProfile,
+	sendProfileUseDryRunJson,
+	sendProfileUseDryRunMsg,
 	sendProfileUseFailedJson,
 	sendProfileUseFailedMsg,
 	sendProfileUseSuccessJson,
 	sendProfileUseSuccessMsg,
-} from "./ui";
+} from "./output";
 
 interface UseProfileOptions {
 	scope?: string;
+	dryRun?: boolean;
 	json?: boolean;
 }
 
@@ -43,6 +45,11 @@ const action: (
 		}
 
 		if (!profileName) {
+			const [{ render }, { SelectProfile }] = await Promise.all([
+				import("ink"),
+				import("./select-profile"),
+			]);
+
 			await new Promise<void>((resolve) => {
 				render(
 					<SelectProfile
@@ -57,6 +64,18 @@ const action: (
 		}
 
 		const service = ProfileService.create();
+		if (options.dryRun) {
+			const profile = await service.getProfile(profileName);
+			const currentIdentity = await getScopedIdentity(scope);
+			if (options.json) {
+				sendProfileUseDryRunJson(profile, scope, currentIdentity);
+				return;
+			}
+
+			sendProfileUseDryRunMsg(profile, scope, currentIdentity);
+			return;
+		}
+
 		const profile = await service.applyProfile(profileName, scope);
 
 		if (options.json) {
@@ -73,4 +92,23 @@ export default action;
 function isValidScope(value: string): value is ConfigScope {
 	const VALID_SCOPES = new Set<ConfigScope>(["local", "global", "system"]);
 	return VALID_SCOPES.has(value as ConfigScope);
+}
+
+async function getScopedIdentity(scope: ConfigScope): Promise<{
+	gitName: string | null;
+	email: string | null;
+	signingKey: string | null;
+}> {
+	const gitService = new GitService();
+	const [gitName, email, signingKey] = await Promise.all([
+		gitService.getConfig("user.name", scope),
+		gitService.getConfig("user.email", scope),
+		gitService.getConfig("user.signingkey", scope),
+	]);
+
+	return {
+		gitName,
+		email,
+		signingKey,
+	};
 }

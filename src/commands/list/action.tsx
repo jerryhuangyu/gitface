@@ -1,7 +1,5 @@
-import { render } from "ink";
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
-import ProfilesList from "./ui";
 
 interface ListOptions {
 	json?: boolean;
@@ -32,6 +30,10 @@ const action: (options: ListOptions) => Promise<void> = withCommandHandling(
 			return;
 		}
 
+		const [{ render }, { default: ProfilesList }] = await Promise.all([
+			import("ink"),
+			import("./ui"),
+		]);
 		const instance = render(<ProfilesList profiles={profiles} />);
 		await instance.waitUntilExit();
 	},

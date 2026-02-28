@@ -189,4 +189,115 @@ describe("use command e2e", () => {
 			await safeRemove(tmpRoot);
 		}
 	});
+
+	test("emits dry-run plan with --json and does not mutate git config", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
+		const repoDir = path.join(tmpRoot, "repo");
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		await fs.mkdir(repoDir);
+		const git = simpleGit({ baseDir: repoDir });
+		await git.init();
+
+		try {
+			process.chdir(repoDir);
+			process.env.XDG_CONFIG_HOME = configDir;
+
+			await git.addConfig("user.name", "Current User");
+			await git.addConfig("user.email", "current@example.com");
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await runCli([useProfileCommand.command], [
+				"node",
+				"gitface",
+				"use",
+				"work",
+				"--dry-run",
+				"--json",
+			]);
+
+			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as {
+				status: string;
+				scope: string;
+				profile: {
+					name: string;
+					gitName: string;
+					email: string;
+					signingKey: string | null;
+				};
+				current: {
+					gitName: string | null;
+					email: string | null;
+					signingKey: string | null;
+				};
+				changes: Array<{
+					key: string;
+					action: string;
+					before: string | null;
+					after: string | null;
+				}>;
+			};
+
+			expect(parsed.status).toBe("dry-run");
+			expect(parsed.scope).toBe("local");
+			expect(parsed.profile).toEqual({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+				signingKey: null,
+			});
+			expect(parsed.current).toEqual({
+				gitName: "Current User",
+				email: "current@example.com",
+				signingKey: null,
+			});
+			expect(parsed.changes).toEqual([
+				{
+					key: "user.name",
+					action: "set",
+					before: "Current User",
+					after: "Work User",
+				},
+				{
+					key: "user.email",
+					action: "set",
+					before: "current@example.com",
+					after: "work@example.com",
+				},
+				{
+					key: "user.signingkey",
+					action: "unset",
+					before: null,
+					after: null,
+				},
+			]);
+
+			const config = await git.listConfig();
+			expect(config.all["user.name"]).toBe("Current User");
+			expect(config.all["user.email"]).toBe("current@example.com");
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreLog();
+			await safeRemove(tmpRoot);
+		}
+	});
 });

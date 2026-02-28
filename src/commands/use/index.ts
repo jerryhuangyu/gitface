@@ -6,6 +6,7 @@ export const command: Command = new Command("use")
 	.description("Apply a stored profile to the active Git configuration")
 	.argument("[profile]", "profile identifier")
 	.option("-s, --scope <scope>", "local (default), global, or system", "local")
+	.option("--dry-run", "Preview git config changes without writing")
 	.option("--json", "Output machine-readable JSON")
 	.action(action);
 

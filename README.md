@@ -61,7 +61,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--json`). |
 | `gitface edit <profile>` | Update a stored profile via flags or an interactive editor; supports `--json` output.         |
 | `gitface list`           | Render saved profiles in an Ink table, or use `list --json` for machine-readable output.      |
-| `gitface use <profile>`  | Apply a profile to Git config; supports `--scope` and `use --json` output.                    |
+| `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--dry-run`, and `use --json` output.      |
 | `gitface current`        | Display active Git identity; use `current --json` for machine-readable output.                |
 | `gitface doctor`         | Run environment diagnostics; use `doctor --json` for machine-readable output.                  |
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports `--json` summary output.              |
@@ -98,6 +98,8 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "dryRun": false, "total": 2, "imported": 2, "failed": 0, "results": [{ "name": "work", "status": "imported", "message": "Imported." }] }`.
 - `gitface remove <name> --json` emits machine-readable status:
   `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface use <profile> --dry-run --json` previews scope-specific git config changes without writing:
+  `{ "status": "dry-run", "scope": "local", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
 - `gitface rules add <dir> <profile> --json` emits machine-readable status:
   `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
 - `gitface rules remove <dir> --json` emits machine-readable status:
@@ -134,6 +136,8 @@ Run `gitface <command> --help` to see all flags and examples.
   key.
 - `gitface use <profile> --json` emits machine-readable output:
   `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
+- `gitface use <profile> --dry-run` previews planned scoped config updates and
+  does not mutate `.git/config`.
 
 Set `GITFACE_LOG_LEVEL=debug` (or `GITFACE_DEBUG=1`) to print stack traces and
 additional diagnostics. Supported levels: `critical`, `error`, `warn`, `info`,
@@ -153,4 +157,5 @@ pnpm run build        # tsc + tsdown bundle
 - CI requires `pnpm run lint` to pass before test workflow continues. Use
   `pnpm exec biome check --write .` for safe auto-fixes.
 - `make link` (or `npm link`) exposes the CLI globally for manual testing.
+- Non-interactive paths (for example `list --json`, `use <name> --json`) lazy-load Ink UI modules to keep script startup lean.
 - Release automation lives in `docs/release.md`; keep CI green before tagging.
