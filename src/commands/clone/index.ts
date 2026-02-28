@@ -7,6 +7,7 @@ const command: Command = new Command("clone")
 	.argument("<source>", "source profile identifier")
 	.argument("<target>", "target profile identifier")
 	.option("-f, --force", "Overwrite target profile if it exists")
+	.option("--json", "Output result as JSON")
 	.action(action);
 
 const cloneProfileCommand: CliCommand = {
