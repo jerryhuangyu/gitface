@@ -193,6 +193,7 @@ dot segments (`.`/`..`).
   - `edit`
   - `clone` (source argument only)
   - `rename` / `mv` (source argument only)
+  - `rules add` (profile argument only)
 
 ## Exit Codes & Troubleshooting
 

@@ -6,14 +6,19 @@ type SupportedShell = "zsh" | "bash";
 const PROFILE_COMPLETION_SNIPPETS: Record<SupportedShell, string> = {
 	zsh: `# gitface completion (zsh)
 _gitface_profile_complete() {
-  local sub
+  local sub nested
   sub="\${words[2]}"
+  nested="\${words[3]}"
 
-  if [[ $CURRENT -ne 3 ]]; then
+  if [[ "$sub" == "rules" && "$nested" == "add" ]]; then
+    if [[ $CURRENT -ne 5 ]]; then
+      return 1
+    fi
+  elif [[ $CURRENT -ne 3 ]]; then
     return 1
   fi
 
-  if [[ "$sub" != "rm" && "$sub" != "remove" && "$sub" != "use" && "$sub" != "edit" && "$sub" != "clone" && "$sub" != "rename" && "$sub" != "mv" ]]; then
+  if [[ "$sub" != "rm" && "$sub" != "remove" && "$sub" != "use" && "$sub" != "edit" && "$sub" != "clone" && "$sub" != "rename" && "$sub" != "mv" && !( "$sub" == "rules" && "$nested" == "add" ) ]]; then
     return 1
   fi
 
@@ -25,12 +30,13 @@ compdef _gitface_profile_complete gitface
 `,
 	bash: `# gitface completion (bash)
 _gitface_profile_complete() {
-  local cur sub
+  local cur sub nested
   COMPREPLY=()
   cur="\${COMP_WORDS[COMP_CWORD]}"
   sub="\${COMP_WORDS[1]}"
+  nested="\${COMP_WORDS[2]}"
 
-  if [[ $COMP_CWORD -eq 2 && ( "$sub" == "rm" || "$sub" == "remove" || "$sub" == "use" || "$sub" == "edit" || "$sub" == "clone" || "$sub" == "rename" || "$sub" == "mv" ) ]]; then
+  if [[ ( $COMP_CWORD -eq 2 && ( "$sub" == "rm" || "$sub" == "remove" || "$sub" == "use" || "$sub" == "edit" || "$sub" == "clone" || "$sub" == "rename" || "$sub" == "mv" ) ) || ( $COMP_CWORD -eq 4 && "$sub" == "rules" && "$nested" == "add" ) ]]; then
     COMPREPLY=( $(compgen -W "$(gitface completion profiles --prefix "$cur")" -- "$cur") )
   fi
 }

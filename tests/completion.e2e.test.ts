@@ -114,6 +114,9 @@ describe("completion command e2e", () => {
 			expect(snippet).toContain('"$sub" == "clone"');
 			expect(snippet).toContain('"$sub" == "rename"');
 			expect(snippet).toContain('"$sub" == "mv"');
+			expect(snippet).toContain('$COMP_CWORD -eq 4');
+			expect(snippet).toContain('"$sub" == "rules"');
+			expect(snippet).toContain('"$nested" == "add"');
 		} finally {
 			restoreStdout();
 		}
@@ -142,6 +145,9 @@ describe("completion command e2e", () => {
 			expect(snippet).toContain('"$sub" != "clone"');
 			expect(snippet).toContain('"$sub" != "rename"');
 			expect(snippet).toContain('"$sub" != "mv"');
+			expect(snippet).toContain('"$sub" == "rules"');
+			expect(snippet).toContain('"$nested" == "add"');
+			expect(snippet).toContain("$CURRENT -ne 5");
 		} finally {
 			restoreStdout();
 		}

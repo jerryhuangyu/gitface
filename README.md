@@ -58,7 +58,7 @@ Run `gitface <command> --help` to see all flags and examples.
   - Bash: `gitface completion snippet --shell bash`
 - Append the snippet to your shell rc (or source it) and reload your terminal.
 - Completion is scoped to source-profile arguments for `use`, `rm/remove`,
-  `edit`, `clone`, and `rename/mv`.
+  `edit`, `clone`, and `rename/mv`, plus `rules add` profile argument.
 
 ## Command Reference
 
