@@ -1,11 +1,10 @@
-import chalk from "chalk";
 import { Box, Text, useApp } from "ink";
 import SelectInput from "ink-select-input";
 import TextInput from "ink-text-input";
 import { useEffect, useState } from "react";
 import { ProfileService } from "@/core/profile-service";
-import type { Profile } from "@/domain/profile";
 import { ProfileNotFoundError } from "@/errors";
+import { sendProfileUpdateSuccessMsg } from "./output";
 
 interface Props {
 	name: string;
@@ -123,34 +122,3 @@ const EditProfile: React.FC<Props> = ({ name, onSubmit }) => {
 };
 
 export default EditProfile;
-
-export const sendProfileUpdateSuccessMsg: (profileName: string) => void = (
-	profileName,
-) => {
-	console.log(`\n${chalk.green("✔")} Updated profile '${profileName}'.`);
-};
-
-export const sendProfileUpdateSuccessJson = (profile: Profile): void => {
-	console.log(
-		JSON.stringify({
-			status: "updated",
-			name: profile.name,
-			gitName: profile.gitName,
-			email: profile.email,
-			signingKey: profile.signingKey ?? null,
-		}),
-	);
-};
-
-export const sendProfileUpdateFailedJson = (
-	name: string,
-	reason: string,
-): void => {
-	console.log(
-		JSON.stringify({
-			status: "error",
-			name,
-			reason,
-		}),
-	);
-};

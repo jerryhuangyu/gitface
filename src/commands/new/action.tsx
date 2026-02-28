@@ -1,11 +1,10 @@
-import { render } from "ink";
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
-import CreateProfile, {
+import {
 	sendProfileCreateFailedJson,
 	sendProfileCreateSuccessJson,
 	sendProfileCreateSuccessMsg,
-} from "./ui";
+} from "./output";
 
 interface NewActionOptions {
 	gitName?: string;
@@ -56,6 +55,10 @@ const action: (name: string, options: NewActionOptions) => Promise<void> =
 		}
 
 		const targetProfile = await service.findProfile(name);
+		const [{ render }, { default: CreateProfile }] = await Promise.all([
+			import("ink"),
+			import("./ui"),
+		]);
 		const instance = render(
 			<CreateProfile
 				name={name}

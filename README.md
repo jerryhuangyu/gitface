@@ -162,5 +162,7 @@ pnpm run build        # tsc + tsdown bundle
 - CI requires `pnpm run lint` to pass before test workflow continues. Use
   `pnpm exec biome check --write .` for safe auto-fixes.
 - `make link` (or `npm link`) exposes the CLI globally for manual testing.
-- Non-interactive paths (for example `list --json`, `use <name> --json`) lazy-load Ink UI modules to keep script startup lean.
+- Non-interactive paths (for example `list --json`, `use <name> --json`,
+  `new --json`, and `edit --json`) lazy-load Ink UI modules to keep script
+  startup lean.
 - Release automation lives in `docs/release.md`; keep CI green before tagging.

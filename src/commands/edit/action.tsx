@@ -1,12 +1,11 @@
-import { render } from "ink";
 import { ProfileService } from "@/core/profile-service";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
-import EditProfile, {
+import {
 	sendProfileUpdateFailedJson,
 	sendProfileUpdateSuccessJson,
 	sendProfileUpdateSuccessMsg,
-} from "./ui";
+} from "./output";
 
 interface EditProfileOptions {
 	gitName?: string;
@@ -56,6 +55,10 @@ const action: (name: string, options: EditProfileOptions) => Promise<void> =
 			return;
 		}
 
+		const [{ render }, { default: EditProfile }] = await Promise.all([
+			import("ink"),
+			import("./ui"),
+		]);
 		const instance = render(<EditProfile name={name} onSubmit={() => {}} />);
 		await instance.waitUntilExit();
 	});

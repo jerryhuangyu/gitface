@@ -18,6 +18,7 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
   `{ "status": "created", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `--json` without non-interactive field flags returns:
   `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }` with exit code `1`.
+- Non-interactive paths avoid loading Ink UI modules until interactive mode is needed.
 - **Fallbacks** – missing `--git-name` or `--email` values pick up the current Git identity. Missing signing keys default to `null`.
 
 ## `gitface edit <name>`
@@ -28,6 +29,7 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
   `{ "status": "updated", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `--json` without non-interactive field flags returns:
   `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }` with exit code `1`.
+- Non-interactive paths avoid loading Ink UI modules until interactive mode is needed.
 - Emits a friendly message if the profile does not exist, reminding the user to `gitface list`.
 
 ## `gitface clone <source-name> <target-name>`
