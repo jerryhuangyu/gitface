@@ -1,6 +1,6 @@
 # ADR-20260301: 擴充 rules add 的 profile shell 自動補全
 
-## Context
+## 背景（Context）
 
 GitFace 目前已提供 shell snippet 生成功能（`gitface completion snippet --shell bash|zsh`），並支援多數 profile 參數補全（`use`、`rm/remove`、`edit`、`clone`、`rename/mv` 的來源參數）。  
 但 `gitface rules add <directory> <profile>` 的 `<profile>` 仍缺少補全，造成以下痛點：
@@ -16,7 +16,7 @@ GitFace 目前已提供 shell snippet 生成功能（`gitface completion snippet
 - `pnpm -s test`：pass（`17 files / 77 tests`，`real 3.32s`）
 - `pnpm -s build`：pass（`dist/index.js 94.75 kB`，gzip `20.17 kB`，`real 0.97s`）
 
-## Decision
+## 決策（Decision）
 
 採用「小步、相容、可驗收」策略，新增 `rules add` profile 參數補全：
 
@@ -25,7 +25,7 @@ GitFace 目前已提供 shell snippet 生成功能（`gitface completion snippet
 3. 補上 e2e 測試，驗證 snippet 內含新的 `rules add` 位置守衛。
 4. 更新 README 與 CLI 文件，讓使用者知道 `rules add` 也支援 profile 補全。
 
-## Alternatives Considered
+## 替代方案評估（Alternatives Considered）
 
 1. 不做變更，維持現況。  
 優點：零成本。  
@@ -39,7 +39,7 @@ GitFace 目前已提供 shell snippet 生成功能（`gitface completion snippet
 優點：改動較小。  
 缺點：仍是事後修復，無法降低輸入前錯誤率。
 
-## Consequences
+## 影響與取捨（Consequences）
 
 正面影響：
 
@@ -57,7 +57,7 @@ GitFace 目前已提供 shell snippet 生成功能（`gitface completion snippet
 - 使用者需重新產生並套用 snippet 才能取得新能力。
 - 無資料遷移需求。
 
-## Rollout Plan
+## 推出計畫（Rollout Plan）
 
 1. 新增/更新 completion e2e 測試（先測試）。
 2. 調整 bash/zsh snippet 位置守衛與命令條件。
@@ -73,7 +73,7 @@ Feature flag / 設定：
 
 - 單純 revert 本次 completion snippet 與文件變更即可。
 
-## Test Plan
+## 測試計畫（Test Plan）
 
 - 單元/整合：
   - 以既有 completion e2e 驗證 snippet 內容含 `rules add` 的位置守衛。
@@ -89,7 +89,7 @@ Feature flag / 設定：
 
 - 不新增 runtime command；僅補全條件判斷分支，理論上對啟動效能影響可忽略。
 
-## Observability
+## 可觀測性（Observability）
 
 目前專案無集中式 telemetry，採可觀測替代指標：
 
@@ -97,13 +97,13 @@ Feature flag / 設定：
 - 使用者在 `rules add` 的 profile typo/失敗回報是否下降（issue/回饋）。
 - CLI 失敗訊息中 `rules add` profile 不存在的出現頻率（人工觀察）。
 
-## Security/Privacy
+## 安全與隱私（Security/Privacy）
 
 - 僅讀取本機 profile 名稱，不新增網路傳輸。
 - 不新增 token/PII 蒐集路徑。
 - 符合最小權限原則（沿用既有 completion 行為）。
 
-## Open Questions
+## 未決問題（Open Questions）
 
 - 是否要在下一輪加入 `rules add` 第一個參數（directory）的路徑補全？
 - 是否擴充到 fish shell，建立統一 completion 測試矩陣？
