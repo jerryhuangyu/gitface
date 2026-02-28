@@ -137,17 +137,11 @@ describe("completion command e2e", () => {
 			]);
 
 			const snippet = output.join("");
-			expect(snippet).toContain("$CURRENT -ne 3");
-			expect(snippet).toContain('"$sub" != "use"');
-			expect(snippet).toContain('"$sub" != "rm"');
-			expect(snippet).toContain('"$sub" != "remove"');
-			expect(snippet).toContain('"$sub" != "edit"');
-			expect(snippet).toContain('"$sub" != "clone"');
-			expect(snippet).toContain('"$sub" != "rename"');
-			expect(snippet).toContain('"$sub" != "mv"');
-			expect(snippet).toContain('"$sub" == "rules"');
-			expect(snippet).toContain('"$nested" == "add"');
-			expect(snippet).toContain("$CURRENT -ne 5");
+			expect(snippet).toContain("(( CURRENT == 3 )) || return 1");
+			expect(snippet).toContain("(( CURRENT == 5 )) || return 1");
+			expect(snippet).toContain("rm|remove|use|edit|clone|rename|mv");
+			expect(snippet).toContain("rules) [[ $nested == add ]] && ok=1 ;;");
+			expect(snippet).toContain('compadd -- "${names[@]}"');
 		} finally {
 			restoreStdout();
 		}

@@ -7,24 +7,25 @@ const PROFILE_COMPLETION_SNIPPETS: Record<SupportedShell, string> = {
 	zsh: `# gitface completion (zsh)
 _gitface_profile_complete() {
   local sub nested
-  sub="\${words[2]}"
-  nested="\${words[3]}"
+  sub=\${words[2]}
+  nested=\${words[3]}
 
-  if [[ "$sub" == "rules" && "$nested" == "add" ]]; then
-    if [[ $CURRENT -ne 5 ]]; then
-      return 1
-    fi
-  elif [[ $CURRENT -ne 3 ]]; then
-    return 1
+  if [[ $sub == rules && $nested == add ]]; then
+    (( CURRENT == 5 )) || return 1
+  else
+    (( CURRENT == 3 )) || return 1
   fi
 
-  if [[ "$sub" != "rm" && "$sub" != "remove" && "$sub" != "use" && "$sub" != "edit" && "$sub" != "clone" && "$sub" != "rename" && "$sub" != "mv" && !( "$sub" == "rules" && "$nested" == "add" ) ]]; then
-    return 1
-  fi
+  local ok=0
+  case $sub in
+    rm|remove|use|edit|clone|rename|mv) ok=1 ;;
+    rules) [[ $nested == add ]] && ok=1 ;;
+  esac
+  (( ok )) || return 1
 
   local -a names
   names=("\${(@f)$(gitface completion profiles --prefix "$PREFIX")}")
-  compadd -- "$names[@]"
+  compadd -- "\${names[@]}"
 }
 compdef _gitface_profile_complete gitface
 `,
