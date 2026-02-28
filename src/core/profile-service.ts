@@ -144,14 +144,16 @@ export class ProfileService {
 	}
 
 	async deleteProfile(name: string): Promise<void> {
+		await this.removeProfile(name);
+	}
+
+	async removeProfile(name: string): Promise<Profile> {
 		logger.info("profile-service:deleteProfile invoked", { name });
-		if (!(await this.store.exists(name))) {
-			logger.warn("profile-service:deleteProfile profile not found", { name });
-			throw new ProfileNotFoundError(name);
-		}
+		const profile = await this.getProfile(name);
 		await this.store.remove(name);
 		await this.removeProfileConfig(name);
 		logger.info("profile-service:deleteProfile removed", { name });
+		return profile;
 	}
 
 	async cloneProfile(

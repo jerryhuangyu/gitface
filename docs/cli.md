@@ -77,6 +77,8 @@ Each command inherits global flags from Commander (`--help`, `--version`). Unles
 - Alias: `gitface remove <name>`.
 - Deletes the JSON file for a profile and echoes the removed values.
 - `--force` turns missing-profile errors into informational messages, making it safe to run in automation loops.
+- `--json` emits machine-readable output:
+  `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 
 ## `gitface rules <subcommand>`
 

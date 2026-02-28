@@ -7,6 +7,7 @@ const command: Command = new Command("rm")
 	.description("Delete a stored Git profile")
 	.argument("<profile>", "profile identifier")
 	.option("-f, --force", "Ignore missing profile errors")
+	.option("--json", "Output machine-readable JSON")
 	.action(action);
 
 const removeProfileCommand: CliCommand = {

@@ -28,3 +28,39 @@ export const sendProfileRemoveFailedMsg = (reason: string): void => {
 	console.log();
 	console.log(`${crossIcon} Profile removal failed: ${chalk.red(reason)}`);
 };
+
+export const sendProfileRemoveSuccessJson = (profile: Profile): void => {
+	console.log(
+		JSON.stringify({
+			status: "removed",
+			name: profile.name,
+			gitName: profile.gitName,
+			email: profile.email,
+			signingKey: profile.signingKey ?? null,
+		}),
+	);
+};
+
+export const sendProfileRemoveSkippedJson = (name: string): void => {
+	console.log(
+		JSON.stringify({
+			status: "skipped",
+			name,
+			force: true,
+			reason: "Profile not found.",
+		}),
+	);
+};
+
+export const sendProfileRemoveFailedJson = (
+	name: string,
+	reason: string,
+): void => {
+	console.log(
+		JSON.stringify({
+			status: "error",
+			name,
+			reason,
+		}),
+	);
+};

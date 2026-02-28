@@ -228,4 +228,28 @@ describe("ProfileService", () => {
 		]);
 		expect(configStore.removed).toEqual(["copy", "copy-renamed"]);
 	});
+
+	test("removeProfile returns deleted snapshot", async () => {
+		const git = new FakeGitGateway({
+			gitName: "Jane",
+			email: "jane@example.com",
+		});
+		const service = createService({ git });
+
+		await service.createProfile({
+			name: "temp",
+			gitName: "Temp User",
+			email: "temp@example.com",
+			signingKey: "TEMPKEY",
+		});
+
+		const removed = await service.removeProfile("temp");
+		expect(removed.name).toBe("temp");
+		expect(removed.gitName).toBe("Temp User");
+		expect(removed.email).toBe("temp@example.com");
+		expect(removed.signingKey).toBe("TEMPKEY");
+		await expect(service.getProfile("temp")).rejects.toBeInstanceOf(
+			ProfileNotFoundError,
+		);
+	});
 });
