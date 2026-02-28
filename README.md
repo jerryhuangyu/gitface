@@ -69,7 +69,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface list`           | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, or use `list --json`. |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--dry-run`, and `use --json` output.      |
 | `gitface current`        | Display active Git identity; supports `--scope` and `current --json` for machine-readable output. |
-| `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json` available). |
+| `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--strict` available). |
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports `--json` summary output.              |
 | `gitface import <file>`  | Import profiles from JSON; supports `--dry-run` and `--json` for structured results.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--json` output.                                     |
@@ -164,6 +164,8 @@ Run `gitface <command> --help` to see all flags and examples.
 - Scoped identity reads (`current --scope`, `use` planning, and doctor global checks)
   use a single `git config --list` snapshot per scope by default, with safe
   fallback behavior when listing fails.
+- `gitface doctor --strict` treats warnings as CI-failing results (exit code `1`)
+  while keeping default doctor behavior unchanged.
 - `gitface use <profile> --dry-run` previews planned scoped config updates and
   does not mutate `.git/config`; dry-run output only lists effective changes.
 - `gitface use` exits with code `1` and a guidance message when no profiles are

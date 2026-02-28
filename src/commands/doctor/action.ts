@@ -15,6 +15,7 @@ type DoctorCheck = () => Promise<DoctorCheckResult>;
 
 interface DoctorOptions {
 	json?: boolean;
+	strict?: boolean;
 }
 
 const doctorChecks: DoctorCheck[] = [
@@ -28,6 +29,7 @@ const runDoctorChecks = async (): Promise<DoctorReport> => {
 	return {
 		checks,
 		hasFailures: checks.some((check) => check.status === "fail"),
+		hasWarnings: checks.some((check) => check.status === "warn"),
 	};
 };
 
@@ -35,6 +37,9 @@ const action: (options: DoctorOptions) => Promise<void> = withCommandHandling(
 	"command:doctor",
 	async (options) => {
 		const report = await runDoctorChecks();
+		const strictMode = options.strict ?? false;
+		const hasFatalChecks =
+			report.hasFailures || (strictMode && report.hasWarnings);
 
 		if (options.json) {
 			sendDoctorReportJson(report);
@@ -43,10 +48,10 @@ const action: (options: DoctorOptions) => Promise<void> = withCommandHandling(
 			for (const result of report.checks) {
 				sendDoctorCheckResult(result);
 			}
-			sendDoctorSummary(report.hasFailures);
+			sendDoctorSummary(report.hasFailures, report.hasWarnings, strictMode);
 		}
 
-		if (report.hasFailures) {
+		if (hasFatalChecks) {
 			process.exitCode = 1;
 		}
 	},

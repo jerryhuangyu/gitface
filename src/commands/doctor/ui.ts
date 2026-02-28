@@ -10,6 +10,7 @@ export interface DoctorCheckResult {
 export interface DoctorReport {
 	checks: DoctorCheckResult[];
 	hasFailures: boolean;
+	hasWarnings: boolean;
 }
 
 const successIcon = chalk.green("✔");
@@ -32,11 +33,23 @@ export const sendDoctorCheckResult = (result: DoctorCheckResult): void => {
 	console.log(`${icon} ${result.message}`);
 };
 
-export const sendDoctorSummary = (hasFailures: boolean): void => {
+export const sendDoctorSummary = (
+	hasFailures: boolean,
+	hasWarnings: boolean,
+	strict: boolean,
+): void => {
 	console.log();
 	if (hasFailures) {
 		console.log(
 			chalk.red("✖ Some checks failed. Please review the issues above."),
+		);
+		return;
+	}
+	if (strict && hasWarnings) {
+		console.log(
+			chalk.red(
+				"✖ Strict mode failed because warnings were detected. Resolve warnings or rerun without --strict.",
+			),
 		);
 		return;
 	}
@@ -50,6 +63,7 @@ export const sendDoctorReportJson = (report: DoctorReport): void => {
 			{
 				checks: report.checks,
 				hasFailures: report.hasFailures,
+				hasWarnings: report.hasWarnings,
 			},
 			null,
 			2,

@@ -31,6 +31,12 @@ npx gitface --help
 - profile 儲存區是否可讀寫
 - global Git identity 是否完整
 
+若你在 CI 想把「警告也視為失敗」，可用：
+
+```bash
+gitface doctor --strict
+```
+
 ## 先理解兩個概念
 
 ### 1) Profile
@@ -200,6 +206,8 @@ gitface rules remove ~/code/work
 例如 `--git-name`、`--email`、`--signing-key`、`--unset-signing-key`。
 2. `gitface use --json` 必須提供 profile 名稱  
 例如 `gitface use work --json`。`gitface use --json` 會失敗。
+3. `gitface doctor --strict --json` 會在有 `warn` 或 `fail` 時回傳 exit code `1`，
+   並在 JSON 內提供 `hasWarnings`/`hasFailures` 方便流程判斷。
 
 ## 資料存放位置
 
