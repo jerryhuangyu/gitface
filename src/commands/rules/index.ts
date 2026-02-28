@@ -25,6 +25,7 @@ command
 	.argument("<directory>", "Directory to apply the rule to")
 	.argument("<profile>", "Profile to use for this directory")
 	.description("Add a folder rule")
+	.option("--dry-run", "Preview rule addition without changing git config")
 	.option("--json", "Output add result as JSON")
 	.action(addRuleAction);
 
@@ -33,6 +34,7 @@ command
 	.alias("rm")
 	.argument("<directory>", "Directory to remove the rule for")
 	.description("Remove a folder rule")
+	.option("--dry-run", "Preview rule removal without changing git config")
 	.option("--json", "Output remove result as JSON")
 	.action(removeRuleAction);
 

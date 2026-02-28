@@ -319,6 +319,167 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("previews add with --dry-run --json without mutating global config", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-add-dry-run-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const projectDir = path.join(homeDir, "project-e");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(projectDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "preview-profile",
+				gitName: "Preview User",
+				email: "preview@example.com",
+			});
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				projectDir,
+				"preview-profile",
+				"--dry-run",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				directory: string;
+				profileName: string;
+				overwrite: boolean;
+			};
+			expect(parsed).toEqual({
+				status: "dry-run",
+				directory: `${projectDir}${path.sep}`,
+				profileName: "preview-profile",
+				overwrite: false,
+			});
+
+			const globalConfigPath = path.join(homeDir, ".gitconfig");
+			const hasGlobalConfig = await fs
+				.access(globalConfigPath)
+				.then(() => true)
+				.catch(() => false);
+			expect(hasGlobalConfig).toBe(false);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("previews remove with --dry-run --json and keeps existing rule", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-remove-dry-run-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const projectDir = path.join(homeDir, "project-f");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(projectDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "ops-profile",
+				gitName: "Ops User",
+				email: "ops@example.com",
+			});
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				projectDir,
+				"ops-profile",
+			]);
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"remove",
+				projectDir,
+				"--dry-run",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				directory: string;
+				exists: boolean;
+			};
+			expect(parsed).toEqual({
+				status: "dry-run",
+				directory: `${projectDir}${path.sep}`,
+				exists: true,
+			});
+
+			const gitGlobal = simpleGit({ baseDir: homeDir });
+			const globalConfig = await gitGlobal.listConfig("global");
+			const includeIfKey = Object.keys(globalConfig.all).find((key) =>
+				key.toLowerCase().includes(projectDir.toLowerCase()),
+			);
+			expect(includeIfKey).toBeDefined();
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("filters and limits listed rules with --json", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;

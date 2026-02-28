@@ -168,17 +168,22 @@ dot segments (`.`/`..`).
   - `gitface rules add <directory> <profile>`
   - `gitface rules remove <directory>`
   - `gitface rules list` (human-readable)
+- `rules add/remove --dry-run` previews mutation results without changing global Git config.
 - `gitface rules list --query <text>` filters by case-insensitive substring
   match on `directory` and `profileName`.
 - `gitface rules list --limit <number>` caps result rows (must be a positive integer).
 - Rules are rendered in deterministic `directory` ascending order before query/limit.
 - `gitface rules add <directory> <profile> --json` emits:
   `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
+- `gitface rules add <directory> <profile> --dry-run --json` emits:
+  `{ "status": "dry-run", "directory": "/abs/path/", "profileName": "work", "overwrite": false }`.
 - `gitface rules add <directory> <profile> --json` failures emit:
   `{ "status": "error", "directory": "/abs/path/", "profileName": "work", "reason": "..." }` with exit code `1`.
 - Missing-profile failures append best-effort profile suggestions in `reason`.
 - `gitface rules remove <directory> --json` emits:
   `{ "status": "removed", "directory": "/abs/path/" }`.
+- `gitface rules remove <directory> --dry-run --json` emits:
+  `{ "status": "dry-run", "directory": "/abs/path/", "exists": true }`.
 - `gitface rules remove <directory> --json` failures emit:
   `{ "status": "error", "directory": "/abs/path/", "reason": "..." }` with exit code `1`.
 - `gitface rules list --json` emits a machine-readable JSON array:

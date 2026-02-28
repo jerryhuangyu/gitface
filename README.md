@@ -79,7 +79,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
-| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`) with optional `--json`; `rules list` supports `--query` and `--limit`. |
+| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query` and `--limit`. |
 
 ## Profiles & Storage
 
@@ -127,8 +127,12 @@ Run `gitface <command> --help` to see all flags and examples.
   when stdout is not a TTY (for example when piped in scripts).
 - `gitface rules add <dir> <profile> --json` emits machine-readable status:
   `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
+- `gitface rules add <dir> <profile> --dry-run --json` previews add/update without writing:
+  `{ "status": "dry-run", "directory": "/abs/path/", "profileName": "work", "overwrite": false }`.
 - `gitface rules remove <dir> --json` emits machine-readable status:
   `{ "status": "removed", "directory": "/abs/path/" }`.
+- `gitface rules remove <dir> --dry-run --json` previews removal without writing:
+  `{ "status": "dry-run", "directory": "/abs/path/", "exists": true }`.
 - `gitface rules list --query work --limit 10 --json` filters by
   directory/profile substring, returns deterministic directory-sorted rows, and
   caps output size for scripts.
