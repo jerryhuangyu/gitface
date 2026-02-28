@@ -4,6 +4,7 @@ import { withCommandHandling } from "../command-runner";
 interface ListOptions {
 	json?: boolean;
 	query?: string;
+	limit?: string;
 }
 
 const sortByUpdatedAtDesc = <T extends { updatedAt: string }>(
@@ -24,6 +25,31 @@ const filterByNameQuery = <T extends { name: string }>(
 	}
 
 	return items.filter((item) => item.name.toLowerCase().includes(normalized));
+};
+
+const parseLimit = (value: string | undefined): number | undefined => {
+	if (value === undefined) {
+		return undefined;
+	}
+
+	const normalized = value.trim();
+	if (!/^\d+$/.test(normalized)) {
+		throw new Error("Limit must be a positive integer.");
+	}
+
+	const limit = Number.parseInt(normalized, 10);
+	if (limit < 1) {
+		throw new Error("Limit must be a positive integer.");
+	}
+
+	return limit;
+};
+
+const applyLimit = <T,>(items: T[], limit: number | undefined): T[] => {
+	if (limit === undefined) {
+		return items;
+	}
+	return items.slice(0, limit);
 };
 
 const printPlainProfiles = <
@@ -61,9 +87,12 @@ const action: (options: ListOptions) => Promise<void> = withCommandHandling(
 	"command:list",
 	async (options) => {
 		const service = ProfileService.create();
-		const profiles = filterByNameQuery(
-			sortByUpdatedAtDesc(await service.listProfiles()),
-			options.query,
+		const profiles = applyLimit(
+			filterByNameQuery(
+				sortByUpdatedAtDesc(await service.listProfiles()),
+				options.query,
+			),
+			parseLimit(options.limit),
 		);
 
 		if (options.json) {

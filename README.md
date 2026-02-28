@@ -66,7 +66,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | ------------------------ | --------------------------------------------------------------------------------------------- |
 | `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--json`). |
 | `gitface edit <profile>` | Update a stored profile via flags or an interactive editor; supports `--json` output.         |
-| `gitface list`           | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, or use `list --json`. |
+| `gitface list`           | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, cap output with `--limit`, or use `list --json`. |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--dry-run`, and `use --json` output.      |
 | `gitface current`        | Display active Git identity; supports `--scope` and `current --json` for machine-readable output. |
 | `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--strict` available). |
@@ -116,6 +116,7 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "unchanged", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "changes": [] }`.
 - `gitface list --query wor` filters profiles by case-insensitive name
   substring matching (works in both human and JSON modes).
+- `gitface list --limit 10` caps displayed/JSON rows after sorting and query filtering.
 - `gitface list` automatically falls back to deterministic plain-text output
   when stdout is not a TTY (for example when piped in scripts).
 - `gitface rules add <dir> <profile> --json` emits machine-readable status:

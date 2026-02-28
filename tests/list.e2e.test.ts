@@ -173,6 +173,96 @@ describe("list command e2e", () => {
 		}
 	});
 
+	test("caps profiles with --json --limit", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-cli-list-limit-"),
+		);
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "first",
+				gitName: "First User",
+				email: "first@example.com",
+			});
+			await new Promise((resolve) => setTimeout(resolve, 5));
+			const latest = await service.createProfile({
+				name: "latest",
+				gitName: "Latest User",
+				email: "latest@example.com",
+			});
+
+			const restoreLog = spyConsole(logs);
+			await runCli([listProfilesCommand.command], [
+				"node",
+				"gitface",
+				"list",
+				"--json",
+				"--limit",
+				"1",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as Array<{ name: string }>;
+			expect(parsed).toHaveLength(1);
+			expect(parsed[0].name).toBe(latest.name);
+		} finally {
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("fails when --limit is not a positive integer", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-cli-list-limit-invalid-"),
+		);
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			const restoreLog = spyConsole(logs);
+			await runCli([listProfilesCommand.command], [
+				"node",
+				"gitface",
+				"list",
+				"--limit",
+				"0",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n"));
+			expect(output).toContain("Limit must be a positive integer.");
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("falls back to plain output when stdout is non-tty", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalArgv = process.argv.slice();

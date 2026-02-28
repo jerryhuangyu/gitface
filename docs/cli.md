@@ -63,6 +63,7 @@ dot segments (`.`/`..`).
 
 - Fetches all profile snapshots, sorts them by `updatedAt`, and renders a table using box-drawing characters for clarity.
 - `--query <text>` / `-q` filters by case-insensitive profile-name substring matching.
+- `--limit <number>` caps returned rows after sorting/filtering (must be a positive integer).
 - Empty states display guidance text instead of an empty table.
 - Useful before CI runs to confirm the workspace is pre-seeded.
 - Non-JSON mode auto-detects non-TTY stdout and falls back to deterministic plain-text output (script/log friendly).
