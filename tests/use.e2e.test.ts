@@ -356,6 +356,52 @@ describe("use command e2e", () => {
 		}
 	});
 
+	test("ignores non-function third argument and still resolves --query flow", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
+		const repoDir = path.join(tmpRoot, "repo");
+		const configDir = path.join(tmpRoot, "config");
+
+		await fs.mkdir(repoDir);
+		const git = simpleGit({ baseDir: repoDir });
+		await git.init();
+
+		try {
+			process.chdir(repoDir);
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "test",
+				gitName: "Test User",
+				email: "test@example.com",
+			});
+
+			await runUseAction(
+				undefined,
+				{ query: "tes" },
+				{} as unknown as (options: unknown) => Promise<string | null>,
+			);
+
+			const config = await git.listConfig();
+			expect(config.all["user.name"]).toBe("Test User");
+			expect(config.all["user.email"]).toBe("test@example.com");
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			process.chdir(originalCwd);
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("fails in non-tty mode when --query matches multiple profiles", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;

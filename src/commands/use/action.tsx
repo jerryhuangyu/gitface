@@ -35,8 +35,15 @@ export type PromptForProfileSelection = (
 export const runUseAction = async (
 	name: string | undefined,
 	options: UseProfileOptions,
-	promptForSelection: PromptForProfileSelection = promptForProfileSelection,
+	promptForSelectionOrContext:
+		| PromptForProfileSelection
+		| unknown = promptForProfileSelection,
 ): Promise<void> => {
+	const promptForSelection =
+		typeof promptForSelectionOrContext === "function"
+			? (promptForSelectionOrContext as PromptForProfileSelection)
+			: promptForProfileSelection;
+
 	const normalizedScope = (options.scope ?? "local").toLowerCase();
 	if (!isValidScope(normalizedScope)) {
 		const reason = "Scope must be one of: local, global, system.";
@@ -141,7 +148,12 @@ export const runUseAction = async (
 const action: (
 	name: string | undefined,
 	options: UseProfileOptions,
-) => Promise<void> = withCommandHandling("command:use", runUseAction);
+) => Promise<void> = withCommandHandling(
+	"command:use",
+	async (name, options) => {
+		await runUseAction(name, options);
+	},
+);
 
 export default action;
 
