@@ -123,4 +123,38 @@ describe("runUseAction scoped identity reads", () => {
 
 		logSpy.mockRestore();
 	});
+
+	test("json-envelope mode returns Result Envelope error for invalid scope", async () => {
+		const service = {
+			listProfileNames: vi.fn(),
+			getProfile: vi.fn(),
+			getScopedIdentity: vi.fn(),
+			applyProfile: vi.fn(),
+		};
+		vi.spyOn(ProfileService, "create").mockReturnValue(
+			service as unknown as ProfileService,
+		);
+		const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+		await runUseAction("work", { jsonEnvelope: true, scope: "bad" });
+
+		expect(service.getProfile).not.toHaveBeenCalled();
+		expect(service.applyProfile).not.toHaveBeenCalled();
+		expect(logSpy).toHaveBeenCalledOnce();
+		const payload = JSON.parse(String(logSpy.mock.calls[0][0])) as {
+			status: string;
+			code: string;
+			data: null;
+			errors: Array<{ code: string }>;
+			meta: { schemaVersion: string };
+		};
+		expect(payload.status).toBe("error");
+		expect(payload.code).toBe("USE_SCOPE_INVALID");
+		expect(payload.data).toBeNull();
+		expect(payload.errors).toMatchObject([{ code: "USE_SCOPE_INVALID" }]);
+		expect(payload.meta.schemaVersion).toBe("1.0.0");
+
+		expect(process.exitCode).toBe(1);
+		logSpy.mockRestore();
+	});
 });

@@ -100,14 +100,19 @@ dot segments (`.`/`..`).
   - `--dry-run` previews planned writes/unsets for the target scope without mutating Git config.
 - `--json` emits machine-readable output:
   `{ "status": "applied", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+- `--json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "USE_PROFILE_APPLIED", "message": "Profile applied to Git config.", "data": { "result": "applied", "scope": "local", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - In JSON mode, when `<name>` is omitted, GitFace still resolves candidates:
   - `1` candidate: auto-applies and returns success JSON.
   - `0` or `2+` candidates: returns JSON error with exit code `1`.
   - Interactive selector is not used in JSON mode.
 - JSON failures in `use` return a consistent error shape:
   `{ "status": "error", "reason": "..." }`.
+- `--json-envelope` failures return a consistent envelope error shape:
+  `{ "status": "error", "code": "USE_PROFILE_SELECTION_FAILED", "message": "...", "data": null, "errors": [{ "code": "USE_PROFILE_SELECTION_FAILED", "message": "..." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
 - `--dry-run --json` emits a machine-readable change plan:
   `{ "status": "dry-run", "scope": "local", "hasChanges": true, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+- `--dry-run --json-envelope` emits machine-readable envelope with `data.result = "dry-run"`.
 - Scoped reads for dry-run/no-op planning use one `git config --list` snapshot
   when available, with safe per-key fallback if listing fails.
 - `use` writes are guarded by rollback logic: if any config write fails, GitFace

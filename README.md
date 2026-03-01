@@ -78,7 +78,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--dry-run`, `--json`). |
 | `gitface edit <profile>` | Update a stored profile via flags or an interactive editor; supports `--dry-run` and `--json` output. |
 | `gitface list`           | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, sort with `--sort` (`updated`/`name`), cap output with `--limit`, or use `list --json`. |
-| `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--query`, `--dry-run`, and `use --json` output.      |
+| `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--query`, `--dry-run`, plus `use --json` and `use --json-envelope` output.      |
 | `gitface current`        | Display active Git identity; supports `--scope` and `current --json` for machine-readable output. |
 | `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--strict` available). |
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports `--json` summary output.              |
@@ -137,6 +137,8 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "dry-run", "scope": "local", "hasChanges": true, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
 - `gitface use <profile> --json` emits machine-readable success output:
   `{ "status": "applied", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+- `gitface use <profile> --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "USE_PROFILE_APPLIED", "message": "Profile applied to Git config.", "data": { "result": "applied", "scope": "local", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface use <profile> --json` returns an explicit no-op payload when the
   active scope already matches the profile:
   `{ "status": "unchanged", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "changes": [] }`.
@@ -230,6 +232,8 @@ Run `gitface <command> --help` to see all flags and examples.
   key.
 - `gitface use <profile> --json` emits machine-readable output:
   `{ "status": "applied", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+- `gitface use <profile> --json-envelope` emits machine-readable Result Envelope:
+  `{ "status": "success", "code": "USE_PROFILE_APPLIED", "message": "Profile applied to Git config.", "data": { "result": "applied", "scope": "local", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface use` (without `<profile>`) opens an interactive selector and applies
   the selected profile immediately.
 - `gitface use --query <text>` pre-filters profile candidates by case-insensitive

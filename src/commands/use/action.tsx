@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { ConfigScope } from "@/core/git-service";
 import { ProfileService } from "@/core/profile-service";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
@@ -6,10 +7,14 @@ import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
 	buildUseChangePlan,
 	getEffectiveChanges,
+	sendProfileUseAppliedEnvelope,
+	sendProfileUseDryRunEnvelope,
 	sendProfileUseDryRunJson,
 	sendProfileUseDryRunMsg,
+	sendProfileUseEnvelopeError,
 	sendProfileUseFailedJson,
 	sendProfileUseFailedMsg,
+	sendProfileUseNoopEnvelope,
 	sendProfileUseNoopJson,
 	sendProfileUseNoopMsg,
 	sendProfileUseSuccessJson,
@@ -20,6 +25,7 @@ interface UseProfileOptions {
 	scope?: string;
 	dryRun?: boolean;
 	json?: boolean;
+	jsonEnvelope?: boolean;
 	query?: string;
 }
 
@@ -39,15 +45,31 @@ export const runUseAction = async (
 		| PromptForProfileSelection
 		| unknown = promptForProfileSelection,
 ): Promise<void> => {
+	const startedAtMs = Date.now();
+	const traceId = randomUUID();
 	const promptForSelection =
 		typeof promptForSelectionOrContext === "function"
 			? (promptForSelectionOrContext as PromptForProfileSelection)
 			: promptForProfileSelection;
+	const outputMode =
+		options.jsonEnvelope === true
+			? "json-envelope"
+			: options.json === true
+				? "json"
+				: "text";
+	const allowInteractiveSelection = outputMode === "text";
 
 	const normalizedScope = (options.scope ?? "local").toLowerCase();
 	if (!isValidScope(normalizedScope)) {
 		const reason = "Scope must be one of: local, global, system.";
-		if (options.json) {
+		if (outputMode === "json-envelope") {
+			sendProfileUseEnvelopeError(
+				"USE_SCOPE_INVALID",
+				reason,
+				Date.now() - startedAtMs,
+				traceId,
+			);
+		} else if (outputMode === "json") {
 			sendProfileUseFailedJson(reason);
 		} else {
 			sendProfileUseFailedMsg(reason);
@@ -64,11 +86,18 @@ export const runUseAction = async (
 			service,
 			query: options.query,
 			promptForSelection,
-			allowInteractive: !options.json,
+			allowInteractive: allowInteractiveSelection,
 		});
 
 		if ("reason" in resolved) {
-			if (options.json) {
+			if (outputMode === "json-envelope") {
+				sendProfileUseEnvelopeError(
+					"USE_PROFILE_SELECTION_FAILED",
+					resolved.reason,
+					Date.now() - startedAtMs,
+					traceId,
+				);
+			} else if (outputMode === "json") {
 				sendProfileUseFailedJson(resolved.reason);
 			} else {
 				sendProfileUseFailedMsg(resolved.reason);
@@ -92,7 +121,17 @@ export const runUseAction = async (
 		const effectiveChanges = getEffectiveChanges(plan);
 
 		if (options.dryRun) {
-			if (options.json) {
+			if (outputMode === "json-envelope") {
+				sendProfileUseDryRunEnvelope(
+					profile,
+					scope,
+					currentIdentity,
+					Date.now() - startedAtMs,
+					traceId,
+				);
+				return;
+			}
+			if (outputMode === "json") {
 				sendProfileUseDryRunJson(profile, scope, currentIdentity);
 				return;
 			}
@@ -102,7 +141,16 @@ export const runUseAction = async (
 		}
 
 		if (effectiveChanges.length === 0) {
-			if (options.json) {
+			if (outputMode === "json-envelope") {
+				sendProfileUseNoopEnvelope(
+					profile,
+					scope,
+					Date.now() - startedAtMs,
+					traceId,
+				);
+				return;
+			}
+			if (outputMode === "json") {
 				sendProfileUseNoopJson(profile, scope);
 				return;
 			}
@@ -112,7 +160,17 @@ export const runUseAction = async (
 
 		await service.applyProfile(profileName, scope);
 
-		if (options.json) {
+		if (outputMode === "json-envelope") {
+			sendProfileUseAppliedEnvelope(
+				profile,
+				scope,
+				effectiveChanges,
+				Date.now() - startedAtMs,
+				traceId,
+			);
+			return;
+		}
+		if (outputMode === "json") {
 			sendProfileUseSuccessJson(profile, scope, effectiveChanges);
 			return;
 		}
@@ -124,7 +182,14 @@ export const runUseAction = async (
 				profileName ?? error.profileName,
 				error.message,
 			);
-			if (options.json) {
+			if (outputMode === "json-envelope") {
+				sendProfileUseEnvelopeError(
+					"USE_PROFILE_NOT_FOUND",
+					reason,
+					Date.now() - startedAtMs,
+					traceId,
+				);
+			} else if (outputMode === "json") {
 				sendProfileUseFailedJson(reason);
 			} else {
 				sendProfileUseFailedMsg(reason);
@@ -133,8 +198,17 @@ export const runUseAction = async (
 			return;
 		}
 
-		if (options.json && error instanceof InvalidProfileError) {
-			sendProfileUseFailedJson(error.message);
+		if (outputMode !== "text" && error instanceof InvalidProfileError) {
+			if (outputMode === "json-envelope") {
+				sendProfileUseEnvelopeError(
+					"USE_PROFILE_INVALID",
+					error.message,
+					Date.now() - startedAtMs,
+					traceId,
+				);
+			} else {
+				sendProfileUseFailedJson(error.message);
+			}
 			process.exitCode = 1;
 			return;
 		}

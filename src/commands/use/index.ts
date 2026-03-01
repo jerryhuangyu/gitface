@@ -12,6 +12,10 @@ export const command: Command = new Command("use")
 	)
 	.option("--dry-run", "Preview git config changes without writing")
 	.option("--json", "Output machine-readable JSON")
+	.option(
+		"--json-envelope",
+		"Output unified Result Envelope JSON with schema/version metadata",
+	)
 	.action(action);
 
 const useProfileCommand: CliCommand = {

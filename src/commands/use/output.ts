@@ -1,5 +1,9 @@
 import chalk from "chalk";
 import type { ConfigScope } from "@/core/git-service";
+import {
+	buildResultEnvelope,
+	type ResultEnvelope,
+} from "@/core/result-envelope";
 import type { Profile } from "@/domain/profile";
 
 const infoIcon = chalk.blue("ℹ");
@@ -172,6 +176,152 @@ export const sendProfileUseNoopJson = (
 	);
 };
 
+interface UseProfileEnvelopeData {
+	name: string;
+	gitName: string;
+	email: string;
+	signingKey: string | null;
+}
+
+interface UseEnvelopeData {
+	result: "applied" | "dry-run" | "unchanged";
+	scope: ConfigScope;
+	profile: UseProfileEnvelopeData;
+	hasChanges: boolean;
+	changes: UseChangeStep[];
+	current?: {
+		gitName: string | null;
+		email: string | null;
+		signingKey: string | null;
+	};
+}
+
+function sendProfileUseSuccessEnvelope(
+	code: string,
+	message: string,
+	data: UseEnvelopeData,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeUseEnvelope(
+		buildResultEnvelope({
+			status: "success",
+			code,
+			message,
+			data,
+			errors: [],
+			durationMs,
+			traceId,
+		}),
+	);
+}
+
+export function sendProfileUseAppliedEnvelope(
+	profile: Profile,
+	scope: ConfigScope,
+	changes: UseChangeStep[],
+	durationMs: number,
+	traceId: string,
+): void {
+	sendProfileUseSuccessEnvelope(
+		"USE_PROFILE_APPLIED",
+		"Profile applied to Git config.",
+		{
+			result: "applied",
+			scope,
+			profile: {
+				name: profile.name,
+				gitName: profile.gitName,
+				email: profile.email,
+				signingKey: profile.signingKey ?? null,
+			},
+			hasChanges: true,
+			changes,
+		},
+		durationMs,
+		traceId,
+	);
+}
+
+export function sendProfileUseDryRunEnvelope(
+	profile: Profile,
+	scope: ConfigScope,
+	current: {
+		gitName: string | null;
+		email: string | null;
+		signingKey: string | null;
+	},
+	durationMs: number,
+	traceId: string,
+): void {
+	const plan = buildUseChangePlan(profile, current);
+	const effectiveChanges = getEffectiveChanges(plan);
+	sendProfileUseSuccessEnvelope(
+		"USE_PROFILE_DRY_RUN",
+		"Dry-run plan generated.",
+		{
+			result: "dry-run",
+			scope,
+			profile: {
+				name: profile.name,
+				gitName: profile.gitName,
+				email: profile.email,
+				signingKey: profile.signingKey ?? null,
+			},
+			current,
+			hasChanges: effectiveChanges.length > 0,
+			changes: effectiveChanges,
+		},
+		durationMs,
+		traceId,
+	);
+}
+
+export function sendProfileUseNoopEnvelope(
+	profile: Profile,
+	scope: ConfigScope,
+	durationMs: number,
+	traceId: string,
+): void {
+	sendProfileUseSuccessEnvelope(
+		"USE_PROFILE_UNCHANGED",
+		"Profile is already active for target scope.",
+		{
+			result: "unchanged",
+			scope,
+			profile: {
+				name: profile.name,
+				gitName: profile.gitName,
+				email: profile.email,
+				signingKey: profile.signingKey ?? null,
+			},
+			hasChanges: false,
+			changes: [],
+		},
+		durationMs,
+		traceId,
+	);
+}
+
+export function sendProfileUseEnvelopeError(
+	errorCode: string,
+	message: string,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeUseEnvelope(
+		buildResultEnvelope({
+			status: "error",
+			code: errorCode,
+			message,
+			data: null,
+			errors: [{ code: errorCode, message }],
+			durationMs,
+			traceId,
+		}),
+	);
+}
+
 type UseChangeAction = "set" | "unset" | "unchanged";
 
 export interface UseChangeStep {
@@ -219,6 +369,12 @@ export function buildUseChangePlan(
 
 export function getEffectiveChanges(plan: UseChangeStep[]): UseChangeStep[] {
 	return plan.filter((step) => step.action !== "unchanged");
+}
+
+function writeUseEnvelope(
+	envelope: ResultEnvelope<UseEnvelopeData | null>,
+): void {
+	console.log(JSON.stringify(envelope));
 }
 
 function formatValue(value: string | null): string {
