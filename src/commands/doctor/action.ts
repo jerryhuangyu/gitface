@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import simpleGit from "simple-git";
 import { GitService } from "@/core/git-service";
@@ -7,6 +8,8 @@ import type { DoctorCheckResult, DoctorReport } from "./ui";
 import {
 	sendDoctorCheckResult,
 	sendDoctorHeading,
+	sendDoctorReportEnvelopeError,
+	sendDoctorReportEnvelopeSuccess,
 	sendDoctorReportJson,
 	sendDoctorSummary,
 } from "./ui";
@@ -15,6 +18,7 @@ type DoctorCheck = () => Promise<DoctorCheckResult>;
 
 interface DoctorOptions {
 	json?: boolean;
+	jsonEnvelope?: boolean;
 	strict?: boolean;
 }
 
@@ -36,12 +40,32 @@ const runDoctorChecks = async (): Promise<DoctorReport> => {
 const action: (options: DoctorOptions) => Promise<void> = withCommandHandling(
 	"command:doctor",
 	async (options) => {
+		const startedAtMs = Date.now();
+		const traceId = randomUUID();
+		const outputMode =
+			options.jsonEnvelope === true
+				? "json-envelope"
+				: options.json === true
+					? "json"
+					: "text";
 		const report = await runDoctorChecks();
 		const strictMode = options.strict ?? false;
 		const hasFatalChecks =
 			report.hasFailures || (strictMode && report.hasWarnings);
 
-		if (options.json) {
+		if (outputMode === "json-envelope") {
+			const durationMs = Date.now() - startedAtMs;
+			if (hasFatalChecks) {
+				sendDoctorReportEnvelopeError(report, strictMode, durationMs, traceId);
+			} else {
+				sendDoctorReportEnvelopeSuccess(
+					report,
+					strictMode,
+					durationMs,
+					traceId,
+				);
+			}
+		} else if (outputMode === "json") {
 			sendDoctorReportJson(report);
 		} else {
 			sendDoctorHeading();

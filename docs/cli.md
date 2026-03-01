@@ -162,6 +162,10 @@ dot segments (`.`/`..`).
   global scope (`git config --global`) instead of local repository scope.
 - `gitface doctor --json` emits machine-readable output:
   `{ "checks": [{ "status": "pass", "message": "..." }], "hasFailures": false, "hasWarnings": false }`.
+- `gitface doctor --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "DOCTOR_CHECKS_OK", "message": "Doctor checks passed.", "data": { "strict": false, "hasFatalChecks": false, "summary": { "total": 3, "pass": 3, "warn": 0, "fail": 0 }, "checks": [{ "status": "pass", "message": "..." }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
+- `gitface doctor --strict --json-envelope` returns envelope error + exit code `1` when warnings/failures are present:
+  `{ "status": "error", "code": "DOCTOR_CHECKS_FAILED", "message": "Doctor checks failed in strict mode due to warnings.", "data": { "strict": true, "hasFatalChecks": true, "summary": { "total": 3, "pass": 2, "warn": 1, "fail": 0 }, "checks": [{ "status": "warn", "message": "Global Git identity is missing. GitFace will require explicit values for new profiles." }] }, "errors": [{ "code": "DOCTOR_CHECK_WARN_STRICT", "message": "Global Git identity is missing. GitFace will require explicit values for new profiles." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - Exit behavior:
   - default mode: exit code `1` when any check fails.
   - strict mode: exit code `1` when any check fails or warns.

@@ -9,6 +9,10 @@ const command: Command = new Command("doctor")
 		"Treat warnings as failures (non-zero exit for warn/fail checks)",
 	)
 	.option("--json", "Output doctor report as JSON")
+	.option(
+		"--json-envelope",
+		"Output doctor report with a unified Result Envelope",
+	)
 	.action(action);
 
 const doctorCommand: CliCommand = {

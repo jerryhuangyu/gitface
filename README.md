@@ -80,7 +80,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface list`           | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, sort with `--sort` (`updated`/`name`), cap output with `--limit`, or use `list --json` / `list --json-envelope`. |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--query`, `--dry-run`, plus `use --json` and `use --json-envelope` output.      |
 | `gitface current`        | Display active Git identity; supports `--scope`, `current --json`, and `current --json-envelope` machine-readable output. |
-| `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--strict` available). |
+| `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--json-envelope`, `--strict` available). |
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports legacy `--json` summary and `--json-envelope` unified output. |
 | `gitface import <file>`  | Import profiles from JSON; supports `--dry-run`, `--strict`, `--atomic`, plus `--json` / `--json-envelope` for automation and CI gating.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
@@ -263,6 +263,10 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "error", "reason": "Multiple profiles matched query \"work\". Re-run with an explicit profile name, for example: \`gitface use work-main\`." }`.
 - `gitface current --scope global --json` inspects one scope and emits:
   `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }`.
+- `gitface doctor --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "DOCTOR_CHECKS_OK", "message": "Doctor checks passed.", "data": { "strict": false, "hasFatalChecks": false, "summary": { "total": 3, "pass": 3, "warn": 0, "fail": 0 }, "checks": [{ "status": "pass", "message": "..." }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
+- `gitface doctor --strict --json-envelope` emits envelope errors and exits `1`
+  when warnings/failures are present.
 - Scoped identity reads (`current --scope`, `use` planning, and doctor global checks)
   use a single `git config --list` snapshot per scope by default, with safe
   fallback behavior when listing fails.
