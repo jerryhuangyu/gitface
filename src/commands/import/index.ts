@@ -6,6 +6,10 @@ const command: Command = new Command("import")
 	.description("Import profiles from a JSON file")
 	.argument("<file>", "input file path")
 	.option("--overwrite", "Overwrite existing profiles")
+	.option(
+		"--atomic",
+		"Validate all entries first; abort the whole import if any entry fails",
+	)
 	.option("--dry-run", "Validate import without writing profiles")
 	.option(
 		"--strict",

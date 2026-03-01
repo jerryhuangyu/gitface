@@ -79,7 +79,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface current`        | Display active Git identity; supports `--scope` and `current --json` for machine-readable output. |
 | `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--strict` available). |
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports `--json` summary output.              |
-| `gitface import <file>`  | Import profiles from JSON; supports `--dry-run`, `--strict`, and `--json` for structured results and CI gating.            |
+| `gitface import <file>`  | Import profiles from JSON; supports `--dry-run`, `--strict`, `--atomic`, and `--json` for structured results and CI gating.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
@@ -118,8 +118,13 @@ Run `gitface <command> --help` to see all flags and examples.
   without changing local profile files.
 - `gitface import <file> --strict` exits with code `1` when any entry fails to
   import/validate (also works with `--dry-run` and `--json`) for CI gating.
+- `gitface import <file> --atomic` runs a full precheck first; if any entry
+  fails, no profile is written in that run and exit code is `1`.
 - `gitface import <file> --json` emits machine-readable summary:
   `{ "dryRun": false, "total": 2, "imported": 2, "failed": 0, "results": [{ "name": "work", "status": "imported", "message": "Imported." }] }`.
+- `gitface import <file> --atomic --json` on precheck failure emits all
+  entries as failed (invalid entries + skipped entries), for example:
+  `{ "dryRun": false, "total": 2, "imported": 0, "failed": 2, "results": [{ "name": "work", "status": "failed", "message": "Profile already exists. Use --overwrite to replace." }, { "name": "personal", "status": "failed", "message": "Skipped due to --atomic precheck failure." }] }`.
 - `gitface remove <name> --json` emits machine-readable status:
   `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface remove <name> --dry-run --json` previews deletion without writing:

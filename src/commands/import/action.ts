@@ -14,6 +14,7 @@ import {
 
 interface Options {
 	overwrite?: boolean;
+	atomic?: boolean;
 	dryRun?: boolean;
 	strict?: boolean;
 	json?: boolean;
@@ -42,6 +43,21 @@ interface ImportSummary {
 	results: ImportResultItem[];
 }
 
+interface AtomicPreflightSuccess {
+	name: string;
+	candidate: ImportCandidate;
+}
+
+interface AtomicPreflightFailure {
+	name: string;
+	reason: string;
+}
+
+interface AtomicPreflightReport {
+	successes: AtomicPreflightSuccess[];
+	failures: AtomicPreflightFailure[];
+}
+
 const action: (file: string, options: Options) => Promise<void> =
 	withCommandHandling(
 		"command:import",
@@ -58,6 +74,102 @@ const action: (file: string, options: Options) => Promise<void> =
 			const isDryRun = options.dryRun ?? false;
 			const overwrite = options.overwrite ?? false;
 			const strict = options.strict ?? false;
+			const atomic = options.atomic ?? false;
+
+			if (atomic) {
+				const preflight = await preflightAtomicCandidates(
+					raw,
+					service,
+					overwrite,
+				);
+				if (preflight.failures.length > 0) {
+					for (const failure of preflight.failures) {
+						if (!options.json) {
+							sendImportFailedMsg(failure.name, failure.reason, isDryRun);
+						}
+						results.push({
+							name: failure.name,
+							status: "failed",
+							message: failure.reason,
+						});
+					}
+					for (const success of preflight.successes) {
+						const message = "Skipped due to --atomic precheck failure.";
+						if (!options.json) {
+							sendImportFailedMsg(success.name, message, isDryRun);
+						}
+						results.push({
+							name: success.name,
+							status: "failed",
+							message,
+						});
+					}
+
+					const summary: ImportSummary = {
+						dryRun: isDryRun,
+						total: results.length,
+						imported: 0,
+						failed: results.length,
+						results,
+					};
+					process.exitCode = 1;
+
+					if (options.json) {
+						sendImportJsonSummary(summary);
+						return;
+					}
+
+					if (isDryRun) {
+						sendImportDryRunSummary(summary.imported, summary.failed);
+						return;
+					}
+
+					sendImportSummary(summary.imported, summary.failed);
+					return;
+				}
+
+				if (isDryRun) {
+					for (const success of preflight.successes) {
+						results.push({
+							name: success.name,
+							status: "imported",
+							message: "Validated for import.",
+						});
+					}
+				} else {
+					for (const success of preflight.successes) {
+						await service.createProfile({
+							...success.candidate,
+							force: overwrite,
+						});
+						results.push({
+							name: success.name,
+							status: "imported",
+							message: "Imported.",
+						});
+					}
+				}
+
+				const summary: ImportSummary = {
+					dryRun: isDryRun,
+					total: results.length,
+					imported: results.length,
+					failed: 0,
+					results,
+				};
+				if (options.json) {
+					sendImportJsonSummary(summary);
+					return;
+				}
+
+				if (isDryRun) {
+					sendImportDryRunSummary(summary.imported, summary.failed);
+					return;
+				}
+
+				sendImportSummary(summary.imported, summary.failed);
+				return;
+			}
 
 			for (const profileData of raw) {
 				let sourceName = "<unknown>";
@@ -129,6 +241,45 @@ const action: (file: string, options: Options) => Promise<void> =
 			sendImportSummary(summary.imported, summary.failed);
 		},
 	);
+
+async function preflightAtomicCandidates(
+	raw: unknown[],
+	service: ProfileService,
+	overwrite: boolean,
+): Promise<AtomicPreflightReport> {
+	const seenNames = new Set<string>();
+	const successes: AtomicPreflightSuccess[] = [];
+	const failures: AtomicPreflightFailure[] = [];
+
+	for (const profileData of raw) {
+		let sourceName = "<unknown>";
+		try {
+			const candidate = parseImportCandidate(profileData);
+			sourceName = candidate.name;
+			if (seenNames.has(candidate.name)) {
+				throw new Error(
+					`Duplicate profile name '${candidate.name}' found in import payload.`,
+				);
+			}
+			seenNames.add(candidate.name);
+			await validateDryRunCandidate(service, candidate, overwrite);
+			successes.push({
+				name: candidate.name,
+				candidate,
+			});
+		} catch (error) {
+			failures.push({
+				name: sourceName,
+				reason: error instanceof Error ? error.message : "Unknown error",
+			});
+		}
+	}
+
+	return {
+		successes,
+		failures,
+	};
+}
 
 function parseImportCandidate(profileData: unknown): ImportCandidate {
 	if (

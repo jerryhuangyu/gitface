@@ -160,9 +160,13 @@ dot segments (`.`/`..`).
   any profile files.
 - `--strict` exits with code `1` when any entry fails to import/validate
   (including in `--dry-run` mode), which is useful for CI gating.
+- `--atomic` performs full-file precheck before write; if any entry fails, the
+  run aborts without writing profiles and exits with code `1`.
 - `--json` emits machine-readable import results:
   `{ "dryRun": false, "total": 2, "imported": 1, "failed": 1, "results": [{ "name": "work", "status": "failed", "message": "Profile already exists. Use --overwrite to replace." }] }`.
 - Import continues entry-by-entry: one bad profile does not stop the entire run.
+- With `--atomic`, valid entries are marked as failed with
+  `"Skipped due to --atomic precheck failure."` when any precheck fails.
 
 ## `gitface rm <name>`
 
