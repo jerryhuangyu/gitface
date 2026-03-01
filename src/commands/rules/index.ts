@@ -88,8 +88,14 @@ command
 
 command
 	.command("prune")
-	.description("Remove stale folder rules whose profile no longer exists")
+	.description(
+		"Remove stale folder rules (missing profile by default, optional missing directory)",
+	)
 	.option("--dry-run", "Preview stale rules without removing them")
+	.option(
+		"--include-missing-directory",
+		"Also prune rules whose target directory no longer exists",
+	)
 	.option("--json", "Output prune report as JSON")
 	.action(pruneRuleAction);
 

@@ -165,6 +165,8 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface rules doctor --strict` treats both `warn` and `fail` as non-zero exit results for CI gating.
 - `gitface rules prune --dry-run --json` previews stale rules that reference missing profiles:
   `{ "status": "dry-run", "dryRun": true, "summary": { "scanned": 3, "prunable": 1, "pruned": 0, "skipped": 0 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "candidate" }] }`.
+- `gitface rules prune --dry-run --include-missing-directory --json` also previews stale rules whose target directory is missing:
+  `{ "status": "dry-run", "dryRun": true, "summary": { "scanned": 3, "prunable": 1, "pruned": 0, "skipped": 0 }, "results": [{ "directory": "/abs/path/deleted/", "profileName": "work", "profileExists": true, "directoryExists": false, "staleReason": "missing-directory", "status": "candidate" }] }`.
 - `gitface rules prune --json` removes stale rules and emits:
   `{ "status": "pruned", "dryRun": false, "summary": { "scanned": 3, "prunable": 1, "pruned": 1, "skipped": 0 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "pruned" }] }`.
 - `gitface rename <old> <new> --json` emits machine-readable status:

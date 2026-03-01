@@ -26,7 +26,12 @@ export interface RuleDoctorReport {
 export interface RulePruneResult {
 	directory: string;
 	profileName: string;
-	profileExists: false;
+	profileExists: boolean;
+	directoryExists?: boolean;
+	staleReason?:
+		| "missing-profile"
+		| "missing-directory"
+		| "missing-profile-and-directory";
 	status: "candidate" | "pruned" | "skipped";
 	reason?: string;
 }
@@ -697,7 +702,7 @@ export function sendRulePruneReportMsg(report: RulePruneReport): void {
 					: chalk.red("SKIPPED");
 		const reasonText = result.reason
 			? chalk.gray(` (${result.reason})`)
-			: chalk.gray(" (profile missing)");
+			: chalk.gray(` (${formatPruneStaleReason(result)})`);
 		console.log(
 			`${label} ${chalk.cyan(result.directory)} -> ${chalk.bold(result.profileName)}${reasonText}`,
 		);
@@ -723,4 +728,17 @@ export function sendRulePruneFailedJson(reason: string): void {
 
 function formatValue(value: string | null): string {
 	return value === null ? chalk.dim("<unset>") : chalk.white(value);
+}
+
+function formatPruneStaleReason(result: RulePruneResult): string {
+	if (result.staleReason === "missing-profile-and-directory") {
+		return "profile missing, directory missing";
+	}
+	if (result.staleReason === "missing-directory") {
+		return "directory missing";
+	}
+	if (result.staleReason === "missing-profile") {
+		return "profile missing";
+	}
+	return "profile missing";
 }

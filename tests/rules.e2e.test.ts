@@ -1951,6 +1951,294 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("prune --dry-run --include-missing-directory --json reports missing directory candidates without mutating config", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-prune-missing-dir-dry-run-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const healthyDir = path.join(homeDir, "healthy");
+		const missingDir = path.join(homeDir, "missing");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(healthyDir, { recursive: true });
+		await fs.mkdir(missingDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "healthy-profile",
+				gitName: "Healthy User",
+				email: "healthy@example.com",
+			});
+			await service.createProfile({
+				name: "missing-dir-profile",
+				gitName: "Missing Dir User",
+				email: "missing-dir@example.com",
+			});
+
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				healthyDir,
+				"healthy-profile",
+			]);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				missingDir,
+				"missing-dir-profile",
+			]);
+			await safeRemove(missingDir);
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"prune",
+				"--dry-run",
+				"--include-missing-directory",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				dryRun: boolean;
+				summary: {
+					scanned: number;
+					prunable: number;
+					pruned: number;
+					skipped: number;
+				};
+				results: Array<{
+					directory: string;
+					profileName: string;
+					profileExists: boolean;
+					directoryExists: boolean;
+					staleReason: string;
+					status: string;
+				}>;
+			};
+
+			expect(parsed.status).toBe("dry-run");
+			expect(parsed.dryRun).toBe(true);
+			expect(parsed.summary).toEqual({
+				scanned: 2,
+				prunable: 1,
+				pruned: 0,
+				skipped: 0,
+			});
+			expect(parsed.results).toEqual([
+				{
+					directory: `${missingDir}${path.sep}`,
+					profileName: "missing-dir-profile",
+					profileExists: true,
+					directoryExists: false,
+					staleReason: "missing-directory",
+					status: "candidate",
+				},
+			]);
+
+			logs.length = 0;
+			const restoreLogRules = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"list",
+				"--json",
+			]);
+			restoreLogRules();
+			const rulesOutput = stripAnsi(logs.join("\n")).trim();
+			const listedRules = JSON.parse(rulesOutput) as Array<{
+				directory: string;
+				profileName: string;
+			}>;
+
+			expect(listedRules).toContainEqual({
+				directory: `${missingDir}${path.sep}`,
+				profileName: "missing-dir-profile",
+			});
+			expect(listedRules).toContainEqual({
+				directory: `${healthyDir}${path.sep}`,
+				profileName: "healthy-profile",
+			});
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("prune --include-missing-directory --json removes missing directory rules and keeps healthy rules", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-prune-missing-dir-apply-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const healthyDir = path.join(homeDir, "healthy");
+		const missingDir = path.join(homeDir, "missing");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(healthyDir, { recursive: true });
+		await fs.mkdir(missingDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "healthy-profile",
+				gitName: "Healthy User",
+				email: "healthy@example.com",
+			});
+			await service.createProfile({
+				name: "missing-dir-profile",
+				gitName: "Missing Dir User",
+				email: "missing-dir@example.com",
+			});
+
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				healthyDir,
+				"healthy-profile",
+			]);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				missingDir,
+				"missing-dir-profile",
+			]);
+			await safeRemove(missingDir);
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"prune",
+				"--include-missing-directory",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				dryRun: boolean;
+				summary: {
+					scanned: number;
+					prunable: number;
+					pruned: number;
+					skipped: number;
+				};
+				results: Array<{
+					directory: string;
+					profileName: string;
+					profileExists: boolean;
+					directoryExists: boolean;
+					staleReason: string;
+					status: string;
+				}>;
+			};
+
+			expect(parsed.status).toBe("pruned");
+			expect(parsed.dryRun).toBe(false);
+			expect(parsed.summary).toEqual({
+				scanned: 2,
+				prunable: 1,
+				pruned: 1,
+				skipped: 0,
+			});
+			expect(parsed.results).toEqual([
+				{
+					directory: `${missingDir}${path.sep}`,
+					profileName: "missing-dir-profile",
+					profileExists: true,
+					directoryExists: false,
+					staleReason: "missing-directory",
+					status: "pruned",
+				},
+			]);
+
+			logs.length = 0;
+			const restoreLogRules = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"list",
+				"--json",
+			]);
+			restoreLogRules();
+			const rulesOutput = stripAnsi(logs.join("\n")).trim();
+			const listedRules = JSON.parse(rulesOutput) as Array<{
+				directory: string;
+				profileName: string;
+			}>;
+			expect(listedRules).toContainEqual({
+				directory: `${healthyDir}${path.sep}`,
+				profileName: "healthy-profile",
+			});
+			expect(listedRules).not.toContainEqual({
+				directory: `${missingDir}${path.sep}`,
+				profileName: "missing-dir-profile",
+			});
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("returns exit code 1 when rules list limit is invalid", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;

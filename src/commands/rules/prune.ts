@@ -1,6 +1,7 @@
+import fs from "node:fs/promises";
 import process from "node:process";
 import { ProfileService } from "@/core/profile-service";
-import { RuleService } from "@/core/rule-service";
+import { type FolderRule, RuleService } from "@/core/rule-service";
 import { InvalidProfileError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
 import {
@@ -15,6 +16,7 @@ import {
 interface RulePruneOptions {
 	dryRun?: boolean;
 	json?: boolean;
+	includeMissingDirectory?: boolean;
 }
 
 const isMissingGlobalConfigError = (error: unknown): boolean => {
@@ -38,24 +40,60 @@ async function profileExists(
 	}
 }
 
-async function scanPrunableRules(): Promise<RulePruneResult[]> {
-	const ruleService = RuleService.create();
-	const profileService = ProfileService.create();
-	const rules = await ruleService.listRules().catch((error) => {
-		if (isMissingGlobalConfigError(error)) {
-			return [];
+async function directoryExists(directory: string): Promise<boolean> {
+	try {
+		const stats = await fs.stat(directory);
+		return stats.isDirectory();
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+			return false;
 		}
 		throw error;
-	});
+	}
+}
+
+async function scanPrunableRules(
+	rules: FolderRule[],
+	options: RulePruneOptions,
+): Promise<RulePruneResult[]> {
+	const profileService = ProfileService.create();
+	const profileExistsCache = new Map<string, Promise<boolean>>();
 
 	const results: RulePruneResult[] = [];
 	for (const rule of rules) {
-		const hasProfile = await profileExists(profileService, rule.profileName);
-		if (!hasProfile) {
+		let hasProfilePromise = profileExistsCache.get(rule.profileName);
+		if (!hasProfilePromise) {
+			hasProfilePromise = profileExists(profileService, rule.profileName);
+			profileExistsCache.set(rule.profileName, hasProfilePromise);
+		}
+
+		const hasProfile = await hasProfilePromise;
+		if (!options.includeMissingDirectory) {
+			if (!hasProfile) {
+				results.push({
+					directory: rule.directory,
+					profileName: rule.profileName,
+					profileExists: false,
+					status: "candidate",
+				});
+			}
+			continue;
+		}
+
+		const hasDirectory = await directoryExists(rule.directory);
+		if (!hasProfile || !hasDirectory) {
+			const staleReason =
+				!hasProfile && !hasDirectory
+					? "missing-profile-and-directory"
+					: !hasProfile
+						? "missing-profile"
+						: "missing-directory";
 			results.push({
 				directory: rule.directory,
 				profileName: rule.profileName,
-				profileExists: false,
+				profileExists: hasProfile,
+				directoryExists: hasDirectory,
+				staleReason,
 				status: "candidate",
 			});
 		}
@@ -64,20 +102,22 @@ async function scanPrunableRules(): Promise<RulePruneResult[]> {
 	return results;
 }
 
-async function buildDryRunReport(): Promise<RulePruneReport> {
+async function buildDryRunReportWithOptions(
+	options: RulePruneOptions,
+): Promise<RulePruneReport> {
 	const ruleService = RuleService.create();
-	const scanned = await ruleService.listRules().catch((error) => {
+	const scannedRules = await ruleService.listRules().catch((error) => {
 		if (isMissingGlobalConfigError(error)) {
 			return [];
 		}
 		throw error;
 	});
-	const results = await scanPrunableRules();
+	const results = await scanPrunableRules(scannedRules, options);
 	return {
 		status: "dry-run",
 		dryRun: true,
 		summary: {
-			scanned: scanned.length,
+			scanned: scannedRules.length,
 			prunable: results.length,
 			pruned: 0,
 			skipped: 0,
@@ -86,7 +126,9 @@ async function buildDryRunReport(): Promise<RulePruneReport> {
 	};
 }
 
-async function buildApplyReport(): Promise<RulePruneReport> {
+async function buildApplyReport(
+	options: RulePruneOptions,
+): Promise<RulePruneReport> {
 	const ruleService = RuleService.create();
 	const scannedRules = await ruleService.listRules().catch((error) => {
 		if (isMissingGlobalConfigError(error)) {
@@ -94,7 +136,7 @@ async function buildApplyReport(): Promise<RulePruneReport> {
 		}
 		throw error;
 	});
-	const candidates = await scanPrunableRules();
+	const candidates = await scanPrunableRules(scannedRules, options);
 
 	const results: RulePruneResult[] = [];
 	let pruned = 0;
@@ -136,8 +178,8 @@ export const pruneRuleAction: (options: RulePruneOptions) => Promise<void> =
 	withCommandHandling("command:rules:prune", async (options) => {
 		try {
 			const report = options.dryRun
-				? await buildDryRunReport()
-				: await buildApplyReport();
+				? await buildDryRunReportWithOptions(options)
+				: await buildApplyReport(options);
 			if (options.json) {
 				sendRulePruneReportJson(report);
 			} else {

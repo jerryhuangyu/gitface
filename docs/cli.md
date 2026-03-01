@@ -242,8 +242,11 @@ dot segments (`.`/`..`).
   `{ "status": "issues", "strict": false, "summary": { "total": 2, "pass": 1, "warn": 1, "fail": 0 }, "results": [{ "directory": "/abs/path/", "profileName": "work", "status": "warn", "profileExists": true, "directoryExists": false }] }`.
 - `gitface rules doctor --strict` treats `warn` and `fail` as failures (exit code `1`) for CI gating.
 - `gitface rules prune --dry-run` scans stale rules (missing profile only) without mutating global config.
+- `gitface rules prune --dry-run --include-missing-directory` additionally scans rules whose target directory no longer exists.
 - `gitface rules prune --dry-run --json` emits:
   `{ "status": "dry-run", "dryRun": true, "summary": { "scanned": 3, "prunable": 1, "pruned": 0, "skipped": 0 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "candidate" }] }`.
+- `gitface rules prune --dry-run --include-missing-directory --json` may emit:
+  `{ "status": "dry-run", "dryRun": true, "summary": { "scanned": 3, "prunable": 1, "pruned": 0, "skipped": 0 }, "results": [{ "directory": "/abs/path/deleted/", "profileName": "work", "profileExists": true, "directoryExists": false, "staleReason": "missing-directory", "status": "candidate" }] }`.
 - `gitface rules prune --json` removes stale rules and emits:
   `{ "status": "pruned", "dryRun": false, "summary": { "scanned": 3, "prunable": 1, "pruned": 1, "skipped": 0 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "pruned" }] }`.
 - Empty JSON output is `[]`, which is safe for CI/script parsing.
