@@ -6,9 +6,12 @@ export default defineConfig({
 		alias: {
 			"@": path.resolve(__dirname, "./src"),
 		},
-    coverage: {
-      reportOnFailure: true,
-      reporter: ['text', 'html', 'clover', 'json', 'json-summary']
-    }
+		// E2E tests mutate process-global state (cwd/env/argv); run files serially
+		// to avoid cross-file race conditions and flaky CI timeouts.
+		fileParallelism: false,
+		coverage: {
+			reportOnFailure: true,
+			reporter: ["text", "html", "clover", "json", "json-summary"],
+		},
 	},
 });
