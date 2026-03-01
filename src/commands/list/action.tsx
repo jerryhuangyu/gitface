@@ -1,76 +1,35 @@
+import { randomUUID } from "node:crypto";
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
+import {
+	writeListProfilesEnvelopeError,
+	writeListProfilesEnvelopeSuccess,
+	writeListProfilesJsonLegacy,
+} from "./output";
 
 interface ListOptions {
 	json?: boolean;
+	jsonEnvelope?: boolean;
 	query?: string;
 	limit?: string;
 	sort?: string;
 }
 
 type SortMode = "updated" | "name";
+type OutputMode = "text" | "json" | "json-envelope";
 
-const sortByUpdatedAtDesc = <T extends { updatedAt: string }>(
-	items: T[],
-): T[] =>
-	[...items].sort(
-		(a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-	);
+interface ParsedOptionValue<T> {
+	ok: true;
+	value: T;
+}
 
-const sortByNameAsc = <T extends { name: string }>(items: T[]): T[] =>
-	[...items].sort((a, b) =>
-		a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
-	);
+interface ParsedOptionError {
+	ok: false;
+	code: string;
+	message: string;
+}
 
-const filterByNameQuery = <T extends { name: string }>(
-	items: T[],
-	query: string | undefined,
-): T[] => {
-	const normalized = query?.trim().toLowerCase();
-	if (!normalized) {
-		return items;
-	}
-
-	return items.filter((item) => item.name.toLowerCase().includes(normalized));
-};
-
-const parseSortMode = (value: string | undefined): SortMode => {
-	if (value === undefined) {
-		return "updated";
-	}
-
-	const normalized = value.trim().toLowerCase();
-	if (normalized === "updated" || normalized === "name") {
-		return normalized;
-	}
-
-	throw new Error("Sort mode must be one of: updated, name.");
-};
-
-const parseLimit = (value: string | undefined): number | undefined => {
-	if (value === undefined) {
-		return undefined;
-	}
-
-	const normalized = value.trim();
-	if (!/^\d+$/.test(normalized)) {
-		throw new Error("Limit must be a positive integer.");
-	}
-
-	const limit = Number.parseInt(normalized, 10);
-	if (limit < 1) {
-		throw new Error("Limit must be a positive integer.");
-	}
-
-	return limit;
-};
-
-const applyLimit = <T,>(items: T[], limit: number | undefined): T[] => {
-	if (limit === undefined) {
-		return items;
-	}
-	return items.slice(0, limit);
-};
+type ParsedOptionResult<T> = ParsedOptionValue<T> | ParsedOptionError;
 
 const printPlainProfiles = <
 	T extends {
@@ -103,37 +62,135 @@ const printPlainProfiles = <
 	}
 };
 
+const parseSortMode = (
+	value: string | undefined,
+): ParsedOptionResult<SortMode> => {
+	if (value === undefined) {
+		return { ok: true, value: "updated" };
+	}
+
+	const normalized = value.trim().toLowerCase();
+	if (normalized === "updated" || normalized === "name") {
+		return { ok: true, value: normalized };
+	}
+
+	return {
+		ok: false,
+		code: "LIST_SORT_INVALID",
+		message: "Sort mode must be one of: updated, name.",
+	};
+};
+
+const parseLimit = (
+	value: string | undefined,
+): ParsedOptionResult<number | undefined> => {
+	if (value === undefined) {
+		return { ok: true, value: undefined };
+	}
+
+	const normalized = value.trim();
+	if (!/^\d+$/.test(normalized)) {
+		return {
+			ok: false,
+			code: "LIST_LIMIT_INVALID",
+			message: "Limit must be a positive integer.",
+		};
+	}
+
+	const limit = Number.parseInt(normalized, 10);
+	if (limit < 1) {
+		return {
+			ok: false,
+			code: "LIST_LIMIT_INVALID",
+			message: "Limit must be a positive integer.",
+		};
+	}
+
+	return { ok: true, value: limit };
+};
+
+const resolveOutputMode = (options: ListOptions): OutputMode => {
+	if (options.jsonEnvelope === true) {
+		return "json-envelope";
+	}
+	if (options.json === true) {
+		return "json";
+	}
+	return "text";
+};
+
 const action: (options: ListOptions) => Promise<void> = withCommandHandling(
 	"command:list",
 	async (options) => {
+		const startedAtMs = Date.now();
+		const traceId = randomUUID();
+		const outputMode = resolveOutputMode(options);
 		const service = ProfileService.create();
 		const sortMode = parseSortMode(options.sort);
-		const allProfiles = await service.listProfiles();
-		const sorted =
-			sortMode === "name"
-				? sortByNameAsc(allProfiles)
-				: sortByUpdatedAtDesc(allProfiles);
-		const profiles = applyLimit(
-			filterByNameQuery(sorted, options.query),
-			parseLimit(options.limit),
-		);
+		if (!sortMode.ok) {
+			if (outputMode === "json-envelope") {
+				writeListProfilesEnvelopeError(
+					sortMode.code,
+					sortMode.message,
+					Date.now() - startedAtMs,
+					traceId,
+				);
+				process.exitCode = 1;
+				return;
+			}
+			throw new Error(sortMode.message);
+		}
 
-		if (options.json) {
-			console.log(
-				JSON.stringify(
-					profiles.map((profile) => profile.snapshot()),
-					null,
-					2,
-				),
+		const limit = parseLimit(options.limit);
+		if (!limit.ok) {
+			if (outputMode === "json-envelope") {
+				writeListProfilesEnvelopeError(
+					limit.code,
+					limit.message,
+					Date.now() - startedAtMs,
+					traceId,
+				);
+				process.exitCode = 1;
+				return;
+			}
+			throw new Error(limit.message);
+		}
+
+		const profiles = await service.listProfilesByQuery({
+			query: options.query,
+			sort: sortMode.value,
+			limit: limit.value,
+		});
+		const snapshots = profiles.map((profile) => {
+			const snapshot = profile.snapshot();
+			return {
+				...snapshot,
+				signingKey: snapshot.signingKey ?? null,
+			};
+		});
+
+		if (outputMode === "json-envelope") {
+			writeListProfilesEnvelopeSuccess(
+				{
+					profiles: snapshots,
+					query: options.query?.trim() ? options.query.trim() : null,
+					sort: sortMode.value,
+					limit: limit.value ?? null,
+					count: snapshots.length,
+				},
+				Date.now() - startedAtMs,
+				traceId,
 			);
 			return;
 		}
 
+		if (outputMode === "json") {
+			writeListProfilesJsonLegacy(snapshots);
+			return;
+		}
+
 		if (!process.stdout.isTTY) {
-			printPlainProfiles(
-				profiles.map((profile) => profile.snapshot()),
-				options.query,
-			);
+			printPlainProfiles(snapshots, options.query);
 			return;
 		}
 

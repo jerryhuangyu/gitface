@@ -77,7 +77,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | ------------------------ | --------------------------------------------------------------------------------------------- |
 | `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--dry-run`, `--json`). |
 | `gitface edit <profile>` | Update a stored profile via flags or an interactive editor; supports `--dry-run` and `--json` output. |
-| `gitface list`           | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, sort with `--sort` (`updated`/`name`), cap output with `--limit`, or use `list --json`. |
+| `gitface list`           | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, sort with `--sort` (`updated`/`name`), cap output with `--limit`, or use `list --json` / `list --json-envelope`. |
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--query`, `--dry-run`, plus `use --json` and `use --json-envelope` output.      |
 | `gitface current`        | Display active Git identity; supports `--scope`, `current --json`, and `current --json-envelope` machine-readable output. |
 | `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--strict` available). |
@@ -148,6 +148,8 @@ Run `gitface <command> --help` to see all flags and examples.
   substring matching (works in both human and JSON modes).
 - `gitface list --sort name` sorts output alphabetically by profile name; default `--sort updated` keeps most-recently-updated first.
 - `gitface list --limit 10` caps displayed/JSON rows after sorting and query filtering.
+- `gitface list --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "LIST_PROFILES_OK", "message": "Profiles listed successfully.", "data": { "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }], "query": "wo", "sort": "updated", "limit": 10, "count": 1 }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface list` automatically falls back to deterministic plain-text output
   when stdout is not a TTY (for example when piped in scripts).
 - `gitface rules add <dir> <profile> --json` emits machine-readable status:

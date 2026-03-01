@@ -9,6 +9,7 @@ const command: Command = new Command("list")
 	.option("--sort <mode>", "Sort profiles by 'updated' (default) or 'name'")
 	.option("--limit <number>", "Limit the number of returned profiles")
 	.option("--json", "Output profiles as JSON")
+	.option("--json-envelope", "Output profiles with a unified Result Envelope")
 	.action(action);
 
 const listProfilesCommand: CliCommand = {

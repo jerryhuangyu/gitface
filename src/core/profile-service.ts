@@ -54,6 +54,14 @@ export interface CreateProfileServiceOptions {
 	gitBaseDir?: string;
 }
 
+export type ListProfilesSortMode = "updated" | "name";
+
+export interface ListProfilesQueryOptions {
+	query?: string;
+	sort?: ListProfilesSortMode;
+	limit?: number;
+}
+
 export class ProfileService {
 	constructor(
 		private readonly store: ProfileStore,
@@ -87,14 +95,23 @@ export class ProfileService {
 
 	async listProfiles(): Promise<Profile[]> {
 		logger.debug("profile-service:listProfiles invoked");
-		const snapshots = await this.store.list();
-		const profiles = snapshots
-			.map((snapshot) => Profile.fromSnapshot(snapshot))
-			.sort((a, b) => a.name.localeCompare(b.name));
+		const profiles = await this.listProfilesByQuery({ sort: "name" });
 		logger.debug("profile-service:listProfiles completed", {
 			count: profiles.length,
 		});
 		return profiles;
+	}
+
+	async listProfilesByQuery(
+		options: ListProfilesQueryOptions = {},
+	): Promise<Profile[]> {
+		const snapshots = await this.store.list();
+		const profiles = snapshots.map((snapshot) =>
+			Profile.fromSnapshot(snapshot),
+		);
+		const sorted = sortProfiles(profiles, options.sort ?? "updated");
+		const filtered = filterProfilesByQuery(sorted, options.query);
+		return applyProfilesLimit(filtered, options.limit);
 	}
 
 	async listProfileNames(): Promise<string[]> {
@@ -373,4 +390,43 @@ export class ProfileService {
 			signingKey,
 		};
 	}
+}
+
+function sortProfiles(
+	profiles: Profile[],
+	sortMode: ListProfilesSortMode,
+): Profile[] {
+	if (sortMode === "name") {
+		return [...profiles].sort((a, b) =>
+			a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+		);
+	}
+
+	return [...profiles].sort(
+		(a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+	);
+}
+
+function filterProfilesByQuery(
+	profiles: Profile[],
+	query: string | undefined,
+): Profile[] {
+	const normalized = query?.trim().toLowerCase();
+	if (!normalized) {
+		return profiles;
+	}
+
+	return profiles.filter((profile) =>
+		profile.name.toLowerCase().includes(normalized),
+	);
+}
+
+function applyProfilesLimit(
+	profiles: Profile[],
+	limit: number | undefined,
+): Profile[] {
+	if (limit === undefined) {
+		return profiles;
+	}
+	return profiles.slice(0, limit);
 }

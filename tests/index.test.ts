@@ -272,4 +272,58 @@ describe("ProfileService", () => {
 			ProfileNotFoundError,
 		);
 	});
+
+	test("listProfilesByQuery applies updated sort, query filter, and limit", async () => {
+		const git = new FakeGitGateway({
+			gitName: "Jane",
+			email: "jane@example.com",
+		});
+		const service = createService({ git });
+
+		await service.createProfile({
+			name: "work",
+			gitName: "Work User",
+			email: "work@example.com",
+		});
+		await new Promise((resolve) => setTimeout(resolve, 5));
+		await service.createProfile({
+			name: "personal",
+			gitName: "Personal User",
+			email: "personal@example.com",
+		});
+
+		const result = await service.listProfilesByQuery({
+			query: "or",
+			sort: "updated",
+			limit: 1,
+		});
+
+		expect(result).toHaveLength(1);
+		expect(result[0]?.name).toBe("work");
+	});
+
+	test("listProfilesByQuery supports case-insensitive name sort", async () => {
+		const git = new FakeGitGateway({
+			gitName: "Jane",
+			email: "jane@example.com",
+		});
+		const service = createService({ git });
+
+		await service.createProfile({
+			name: "zeta",
+			gitName: "Zeta User",
+			email: "zeta@example.com",
+		});
+		await service.createProfile({
+			name: "Alpha",
+			gitName: "Alpha User",
+			email: "alpha@example.com",
+		});
+
+		const result = await service.listProfilesByQuery({
+			sort: "name",
+		});
+
+		expect(result.map((profile) => profile.name)).toEqual(["Alpha", "zeta"]);
+	});
 });

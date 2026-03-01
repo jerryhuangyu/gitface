@@ -85,6 +85,10 @@ dot segments (`.`/`..`).
 - Non-JSON mode auto-detects non-TTY stdout and falls back to deterministic plain-text output (script/log friendly).
 - `gitface list --json` emits a machine-readable JSON array:
   `[{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }]`.
+- `gitface list --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "LIST_PROFILES_OK", "message": "Profiles listed successfully.", "data": { "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }], "query": "wo", "sort": "updated", "limit": 10, "count": 1 }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
+- `--json-envelope` validation failures return a consistent envelope error shape with exit code `1`:
+  `{ "status": "error", "code": "LIST_LIMIT_INVALID", "message": "Limit must be a positive integer.", "data": null, "errors": [{ "code": "LIST_LIMIT_INVALID", "message": "Limit must be a positive integer." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
 
 ## `gitface use <name>`
 

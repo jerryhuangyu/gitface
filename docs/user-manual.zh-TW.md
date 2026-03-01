@@ -310,7 +310,10 @@ gitface completion profiles --prefix wo --limit 5 --json-envelope
 4. `gitface current --json-envelope` 會輸出統一 Result Envelope（含 `schemaVersion/durationMs/traceId`）  
 成功範例：`{ "status": "success", "code": "CURRENT_IDENTITY_RESOLVED", "message": "Current Git identity resolved.", "data": { "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`。  
 錯誤範例：`{ "status": "error", "code": "CURRENT_SCOPE_INVALID", "message": "Scope must be one of: local, global, system.", "data": null, "errors": [{ "code": "CURRENT_SCOPE_INVALID", "message": "Scope must be one of: local, global, system." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`。
-5. `gitface doctor --strict --json` 會在有 `warn` 或 `fail` 時回傳 exit code `1`，
+5. `gitface list --json-envelope` 會輸出統一 Result Envelope（含 `schemaVersion/durationMs/traceId`）  
+成功範例：`{ "status": "success", "code": "LIST_PROFILES_OK", "message": "Profiles listed successfully.", "data": { "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }], "query": "wo", "sort": "updated", "limit": 10, "count": 1 }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`。  
+錯誤範例：`{ "status": "error", "code": "LIST_LIMIT_INVALID", "message": "Limit must be a positive integer.", "data": null, "errors": [{ "code": "LIST_LIMIT_INVALID", "message": "Limit must be a positive integer." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`。
+6. `gitface doctor --strict --json` 會在有 `warn` 或 `fail` 時回傳 exit code `1`，
    並在 JSON 內提供 `hasWarnings`/`hasFailures` 方便流程判斷。
 
 ## 資料存放位置
