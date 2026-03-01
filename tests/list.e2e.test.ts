@@ -206,6 +206,52 @@ describe("list command e2e", () => {
 		}
 	});
 
+	test("sorts profiles by name with --json --sort name", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-cli-list-sort-name-"),
+		);
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "zeta",
+				gitName: "Zeta User",
+				email: "zeta@example.com",
+			});
+			await new Promise((resolve) => setTimeout(resolve, 5));
+			await service.createProfile({
+				name: "alpha",
+				gitName: "Alpha User",
+				email: "alpha@example.com",
+			});
+
+			const restoreLog = spyConsole(logs);
+			await runCli(
+				[listProfilesCommand.command],
+				["node", "gitface", "list", "--json", "--sort", "name"],
+			);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as Array<{ name: string }>;
+			expect(parsed).toHaveLength(2);
+			expect(parsed[0].name).toBe("alpha");
+			expect(parsed[1].name).toBe("zeta");
+		} finally {
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("fails when --limit is not a positive integer", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalArgv = process.argv.slice();
@@ -234,6 +280,44 @@ describe("list command e2e", () => {
 
 			const output = stripAnsi(logs.join("\n"));
 			expect(output).toContain("Limit must be a positive integer.");
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("fails when --sort value is invalid", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-cli-list-sort-invalid-"),
+		);
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			const restoreLog = spyConsole(logs);
+			await runCli(
+				[listProfilesCommand.command],
+				["node", "gitface", "list", "--sort", "latest"],
+			);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n"));
+			expect(output).toContain("Sort mode must be one of: updated, name.");
 			expect(process.exitCode).toBe(1);
 		} finally {
 			process.argv = originalArgv;

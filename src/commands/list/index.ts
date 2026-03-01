@@ -6,6 +6,7 @@ const command: Command = new Command("list")
 	.alias("ls")
 	.description("Display all stored Git profiles")
 	.option("-q, --query <text>", "Filter profiles by name (case-insensitive)")
+	.option("--sort <mode>", "Sort profiles by 'updated' (default) or 'name'")
 	.option("--limit <number>", "Limit the number of returned profiles")
 	.option("--json", "Output profiles as JSON")
 	.action(action);

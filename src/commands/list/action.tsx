@@ -5,15 +5,22 @@ interface ListOptions {
 	json?: boolean;
 	query?: string;
 	limit?: string;
+	sort?: string;
 }
+
+type SortMode = "updated" | "name";
 
 const sortByUpdatedAtDesc = <T extends { updatedAt: string }>(
 	items: T[],
-): T[] => {
-	return [...items].sort(
+): T[] =>
+	[...items].sort(
 		(a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
 	);
-};
+
+const sortByNameAsc = <T extends { name: string }>(items: T[]): T[] =>
+	[...items].sort((a, b) =>
+		a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+	);
 
 const filterByNameQuery = <T extends { name: string }>(
 	items: T[],
@@ -25,6 +32,19 @@ const filterByNameQuery = <T extends { name: string }>(
 	}
 
 	return items.filter((item) => item.name.toLowerCase().includes(normalized));
+};
+
+const parseSortMode = (value: string | undefined): SortMode => {
+	if (value === undefined) {
+		return "updated";
+	}
+
+	const normalized = value.trim().toLowerCase();
+	if (normalized === "updated" || normalized === "name") {
+		return normalized;
+	}
+
+	throw new Error("Sort mode must be one of: updated, name.");
 };
 
 const parseLimit = (value: string | undefined): number | undefined => {
@@ -87,11 +107,14 @@ const action: (options: ListOptions) => Promise<void> = withCommandHandling(
 	"command:list",
 	async (options) => {
 		const service = ProfileService.create();
+		const sortMode = parseSortMode(options.sort);
+		const allProfiles = await service.listProfiles();
+		const sorted =
+			sortMode === "name"
+				? sortByNameAsc(allProfiles)
+				: sortByUpdatedAtDesc(allProfiles);
 		const profiles = applyLimit(
-			filterByNameQuery(
-				sortByUpdatedAtDesc(await service.listProfiles()),
-				options.query,
-			),
+			filterByNameQuery(sorted, options.query),
 			parseLimit(options.limit),
 		);
 
