@@ -767,4 +767,175 @@ describe("export/import e2e", () => {
 			await safeRemove(tmpRoot);
 		}
 	});
+
+	test("emits result envelope for import --json-envelope partial failures", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-e2e-"));
+		const configDir = path.join(tmpRoot, "config");
+		const importFile = path.join(tmpRoot, "profiles.json");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await fs.writeFile(
+				importFile,
+				JSON.stringify(
+					[
+						{
+							name: "work",
+							gitName: "Work User",
+							email: "work@example.com",
+						},
+						{
+							name: "personal",
+							gitName: "Personal User",
+							email: "me@example.com",
+						},
+					],
+					null,
+					2,
+				),
+				"utf8",
+			);
+
+			await runCli(
+				[importProfileCommand.command],
+				["node", "gitface", "import", importFile, "--json-envelope"],
+			);
+
+			const envelope = JSON.parse(logs.join("\n")) as {
+				status: string;
+				code: string;
+				data: {
+					file: string;
+					strict: boolean;
+					overwrite: boolean;
+					atomic: boolean;
+					dryRun: boolean;
+					total: number;
+					imported: number;
+					failed: number;
+				};
+				errors: Array<{ code: string; message: string }>;
+				meta: { schemaVersion: string; durationMs: number; traceId: string };
+			};
+
+			expect(envelope.status).toBe("success");
+			expect(envelope.code).toBe("IMPORT_PROFILES_PARTIAL");
+			expect(envelope.data).toMatchObject({
+				file: importFile,
+				strict: false,
+				overwrite: false,
+				atomic: false,
+				dryRun: false,
+				total: 2,
+				imported: 1,
+				failed: 1,
+			});
+			expect(envelope.errors).toEqual([]);
+			expect(envelope.meta.schemaVersion).toBe("1.0.0");
+			expect(typeof envelope.meta.durationMs).toBe("number");
+			expect(envelope.meta.traceId.length).toBeGreaterThan(0);
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			restoreLog();
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("emits error envelope and exit code for import --atomic --json-envelope precheck failures", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-e2e-"));
+		const configDir = path.join(tmpRoot, "config");
+		const importFile = path.join(tmpRoot, "profiles.json");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Existing User",
+				email: "existing@example.com",
+			});
+
+			await fs.writeFile(
+				importFile,
+				JSON.stringify(
+					[
+						{
+							name: "work",
+							gitName: "Work User",
+							email: "work@example.com",
+						},
+						{
+							name: "personal",
+							gitName: "Personal User",
+							email: "me@example.com",
+						},
+					],
+					null,
+					2,
+				),
+				"utf8",
+			);
+
+			await runCli(
+				[importProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"import",
+					importFile,
+					"--atomic",
+					"--json-envelope",
+				],
+			);
+
+			const envelope = JSON.parse(logs.join("\n")) as {
+				status: string;
+				code: string;
+				data: {
+					atomic: boolean;
+					failed: number;
+				};
+				errors: Array<{ code: string; message: string }>;
+				meta: { schemaVersion: string };
+			};
+
+			expect(envelope.status).toBe("error");
+			expect(envelope.code).toBe("IMPORT_PROFILES_ATOMIC_ABORTED");
+			expect(envelope.data.atomic).toBe(true);
+			expect(envelope.data.failed).toBe(2);
+			expect(envelope.errors).toHaveLength(2);
+			expect(envelope.meta.schemaVersion).toBe("1.0.0");
+			expect(process.exitCode).toBe(1);
+		} finally {
+			restoreLog();
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
 });

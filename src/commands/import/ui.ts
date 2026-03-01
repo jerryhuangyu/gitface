@@ -1,8 +1,20 @@
 import chalk from "chalk";
+import type { ImportSummary } from "@/core/profile-import-service";
+import {
+	buildResultEnvelope,
+	type ResultEnvelope,
+} from "@/core/result-envelope";
 
 const successIcon = chalk.green("✔");
 const warningIcon = chalk.yellow("⚠");
 const failureIcon = chalk.red("✖");
+
+interface ImportEnvelopeData extends ImportSummary {
+	file: string;
+	strict: boolean;
+	overwrite: boolean;
+	atomic: boolean;
+}
 
 export const sendImportExistsWarning = (name: string, dryRun = false): void => {
 	if (dryRun) {
@@ -56,6 +68,55 @@ export const sendImportDryRunSummary = (
 	);
 };
 
-export const sendImportJsonSummary = (summary: unknown): void => {
+export const sendImportJsonSummary = (summary: ImportSummary): void => {
 	console.log(JSON.stringify(summary, null, 2));
 };
+
+export const sendImportEnvelopeSuccess = (
+	code: string,
+	message: string,
+	data: ImportEnvelopeData,
+	durationMs: number,
+	traceId: string,
+): void => {
+	writeImportEnvelope(
+		buildResultEnvelope({
+			status: "success",
+			code,
+			message,
+			data,
+			errors: [],
+			durationMs,
+			traceId,
+		}),
+	);
+};
+
+export const sendImportEnvelopeError = (
+	code: string,
+	message: string,
+	data: ImportEnvelopeData | null,
+	errorItems: Array<{ code: string; message: string }>,
+	durationMs: number,
+	traceId: string,
+): void => {
+	writeImportEnvelope(
+		buildResultEnvelope({
+			status: "error",
+			code,
+			message,
+			data,
+			errors: errorItems,
+			durationMs,
+			traceId,
+		}),
+	);
+};
+
+function writeImportEnvelope(
+	envelope: ResultEnvelope<ImportEnvelopeData | null>,
+): void {
+	console.log(JSON.stringify(envelope));
+}
+
+export type { ImportEnvelopeData };

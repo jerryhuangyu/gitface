@@ -190,9 +190,18 @@ dot segments (`.`/`..`).
   run aborts without writing profiles and exits with code `1`.
 - `--json` emits machine-readable import results:
   `{ "dryRun": false, "total": 2, "imported": 1, "failed": 1, "results": [{ "name": "work", "status": "failed", "message": "Profile already exists. Use --overwrite to replace." }] }`.
+- `--json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "IMPORT_PROFILES_PARTIAL", "message": "Import completed with partial failures.", "data": { "file": "./profiles.json", "strict": false, "overwrite": false, "atomic": false, "dryRun": false, "total": 2, "imported": 1, "failed": 1, "results": [{ "name": "work", "status": "failed", "message": "Profile already exists. Use --overwrite to replace." }, { "name": "personal", "status": "imported", "message": "Imported." }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - Import continues entry-by-entry: one bad profile does not stop the entire run.
 - With `--atomic`, valid entries are marked as failed with
   `"Skipped due to --atomic precheck failure."` when any precheck fails.
+- `--json-envelope` failure examples:
+  - invalid file/payload shape:
+    `{ "status": "error", "code": "IMPORT_INPUT_INVALID", "message": "Invalid format: expected an array of profiles.", "data": null, "errors": [{ "code": "IMPORT_INPUT_INVALID", "message": "Invalid format: expected an array of profiles." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`
+  - atomic precheck abort (always exit code `1`):
+    `{ "status": "error", "code": "IMPORT_PROFILES_ATOMIC_ABORTED", "message": "Atomic precheck failed; no profiles were written.", "data": { "file": "./profiles.json", "strict": false, "overwrite": false, "atomic": true, "dryRun": false, "total": 2, "imported": 0, "failed": 2, "results": [{ "name": "work", "status": "failed", "message": "Profile 'work' already exists." }, { "name": "personal", "status": "failed", "message": "Skipped due to --atomic precheck failure." }] }, "errors": [{ "code": "IMPORT_PROFILE_ATOMIC_FAILED", "message": "work: Profile 'work' already exists." }, { "code": "IMPORT_PROFILE_ATOMIC_SKIPPED", "message": "personal: Skipped due to --atomic precheck failure." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`
+  - strict mode with failures exits with code `1` and returns:
+    `{ "status": "error", "code": "IMPORT_PROFILES_STRICT_FAILED", "message": "Import completed with failures in strict mode.", "data": { "strict": true, "failed": 1 }, "errors": [{ "code": "IMPORT_PROFILE_EXISTS", "message": "work: Profile already exists. Use --overwrite to replace." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 
 ## `gitface rm <name>`
 

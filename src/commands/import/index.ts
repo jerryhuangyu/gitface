@@ -16,6 +16,10 @@ const command: Command = new Command("import")
 		"Exit with non-zero status when any profile fails to import/validate",
 	)
 	.option("--json", "Output machine-readable import results")
+	.option(
+		"--json-envelope",
+		"Output import results with unified Result Envelope",
+	)
 	.action(action);
 
 const importProfileCommand: CliCommand = {

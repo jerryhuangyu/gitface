@@ -185,9 +185,11 @@ gitface export ./profiles-backup.json
 ```bash
 gitface import ./profiles-backup.json --dry-run
 gitface import ./profiles-backup.json
+gitface import ./profiles-backup.json --json-envelope
 ```
 
 如果 profile 同名，要覆蓋請加 `--overwrite`。
+在 CI/agent 中，建議優先用 `--json-envelope` 取得統一 Result Envelope（含 `schemaVersion/durationMs/traceId`）。
 
 ### 情境 G：依資料夾自動套用身份（rules）
 

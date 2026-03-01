@@ -1,11 +1,18 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import process from "node:process";
+import {
+	executeProfileImport,
+	type ImportResultItem,
+	type ImportSummary,
+} from "@/core/profile-import-service";
 import { ProfileService } from "@/core/profile-service";
-import { Profile } from "@/domain/profile";
-import { ProfileAlreadyExistsError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
 import {
+	type ImportEnvelopeData,
 	sendImportDryRunSummary,
+	sendImportEnvelopeError,
+	sendImportEnvelopeSuccess,
 	sendImportExistsWarning,
 	sendImportFailedMsg,
 	sendImportJsonSummary,
@@ -18,308 +25,213 @@ interface Options {
 	dryRun?: boolean;
 	strict?: boolean;
 	json?: boolean;
+	jsonEnvelope?: boolean;
 }
 
-interface ImportCandidate {
-	name: string;
-	gitName: string;
-	email: string;
-	signingKey: string | null;
-}
-
-type ImportResultStatus = "imported" | "failed";
-
-interface ImportResultItem {
-	name: string;
-	status: ImportResultStatus;
-	message: string;
-}
-
-interface ImportSummary {
-	dryRun: boolean;
-	total: number;
-	imported: number;
-	failed: number;
-	results: ImportResultItem[];
-}
-
-interface AtomicPreflightSuccess {
-	name: string;
-	candidate: ImportCandidate;
-}
-
-interface AtomicPreflightFailure {
-	name: string;
-	reason: string;
-}
-
-interface AtomicPreflightReport {
-	successes: AtomicPreflightSuccess[];
-	failures: AtomicPreflightFailure[];
-}
+type OutputMode = "text" | "json" | "json-envelope";
 
 const action: (file: string, options: Options) => Promise<void> =
 	withCommandHandling(
 		"command:import",
 		async (file: string, options: Options) => {
-			const content = await fs.readFile(file, "utf-8");
-			const raw = JSON.parse(content);
+			const startedAtMs = Date.now();
+			const traceId = randomUUID();
+			const outputMode = resolveOutputMode(options);
+			const strict = options.strict ?? false;
+			const dryRun = options.dryRun ?? false;
+			const overwrite = options.overwrite ?? false;
+			const atomic = options.atomic ?? false;
+
+			let raw: unknown;
+			try {
+				const content = await fs.readFile(file, "utf-8");
+				raw = JSON.parse(content);
+			} catch (error) {
+				if (outputMode === "json-envelope") {
+					const message =
+						error instanceof Error
+							? error.message
+							: "Failed to read import file.";
+					sendImportEnvelopeError(
+						"IMPORT_INPUT_INVALID",
+						message,
+						null,
+						[{ code: "IMPORT_INPUT_INVALID", message }],
+						Date.now() - startedAtMs,
+						traceId,
+					);
+					process.exitCode = 1;
+					return;
+				}
+				throw error;
+			}
 
 			if (!Array.isArray(raw)) {
-				throw new Error("Invalid format: expected an array of profiles.");
+				const message = "Invalid format: expected an array of profiles.";
+				if (outputMode === "json-envelope") {
+					sendImportEnvelopeError(
+						"IMPORT_INPUT_INVALID",
+						message,
+						null,
+						[{ code: "IMPORT_INPUT_INVALID", message }],
+						Date.now() - startedAtMs,
+						traceId,
+					);
+					process.exitCode = 1;
+					return;
+				}
+				throw new Error(message);
 			}
 
 			const service = ProfileService.create();
-			const results: ImportResultItem[] = [];
-			const isDryRun = options.dryRun ?? false;
-			const overwrite = options.overwrite ?? false;
-			const strict = options.strict ?? false;
-			const atomic = options.atomic ?? false;
+			const importReport = await executeProfileImport(raw, service, {
+				dryRun,
+				overwrite,
+				atomic,
+			});
+			const summary = importReport.summary;
+			if (importReport.atomicAborted) {
+				process.exitCode = 1;
+			}
 
-			if (atomic) {
-				const preflight = await preflightAtomicCandidates(
-					raw,
-					service,
-					overwrite,
+			if (outputMode === "json-envelope") {
+				writeImportEnvelopeResult(
+					summary,
+					importReport.results,
+					{
+						file,
+						strict,
+						overwrite,
+						atomic,
+					},
+					{
+						startedAtMs,
+						traceId,
+						atomicAborted: importReport.atomicAborted,
+					},
 				);
-				if (preflight.failures.length > 0) {
-					for (const failure of preflight.failures) {
-						if (!options.json) {
-							sendImportFailedMsg(failure.name, failure.reason, isDryRun);
-						}
-						results.push({
-							name: failure.name,
-							status: "failed",
-							message: failure.reason,
-						});
-					}
-					for (const success of preflight.successes) {
-						const message = "Skipped due to --atomic precheck failure.";
-						if (!options.json) {
-							sendImportFailedMsg(success.name, message, isDryRun);
-						}
-						results.push({
-							name: success.name,
-							status: "failed",
-							message,
-						});
-					}
-
-					const summary: ImportSummary = {
-						dryRun: isDryRun,
-						total: results.length,
-						imported: 0,
-						failed: results.length,
-						results,
-					};
-					process.exitCode = 1;
-
-					if (options.json) {
-						sendImportJsonSummary(summary);
-						return;
-					}
-
-					if (isDryRun) {
-						sendImportDryRunSummary(summary.imported, summary.failed);
-						return;
-					}
-
-					sendImportSummary(summary.imported, summary.failed);
-					return;
-				}
-
-				if (isDryRun) {
-					for (const success of preflight.successes) {
-						results.push({
-							name: success.name,
-							status: "imported",
-							message: "Validated for import.",
-						});
-					}
-				} else {
-					for (const success of preflight.successes) {
-						await service.createProfile({
-							...success.candidate,
-							force: overwrite,
-						});
-						results.push({
-							name: success.name,
-							status: "imported",
-							message: "Imported.",
-						});
-					}
-				}
-
-				const summary: ImportSummary = {
-					dryRun: isDryRun,
-					total: results.length,
-					imported: results.length,
-					failed: 0,
-					results,
-				};
-				if (options.json) {
-					sendImportJsonSummary(summary);
-					return;
-				}
-
-				if (isDryRun) {
-					sendImportDryRunSummary(summary.imported, summary.failed);
-					return;
-				}
-
-				sendImportSummary(summary.imported, summary.failed);
 				return;
 			}
-
-			for (const profileData of raw) {
-				let sourceName = "<unknown>";
-				try {
-					const candidate = parseImportCandidate(profileData);
-					sourceName = candidate.name;
-
-					if (isDryRun) {
-						await validateDryRunCandidate(service, candidate, overwrite);
-					} else {
-						await service.createProfile({
-							...candidate,
-							force: overwrite,
-						});
-					}
-
-					results.push({
-						name: sourceName,
-						status: "imported",
-						message: isDryRun ? "Validated for import." : "Imported.",
-					});
-				} catch (error) {
-					if (error instanceof ProfileAlreadyExistsError) {
-						if (!options.json) {
-							sendImportExistsWarning(sourceName, isDryRun);
-						}
-						results.push({
-							name: sourceName,
-							status: "failed",
-							message: "Profile already exists. Use --overwrite to replace.",
-						});
-					} else {
-						const reason =
-							error instanceof Error ? error.message : "Unknown error";
-						if (!options.json) {
-							sendImportFailedMsg(sourceName, reason, isDryRun);
-						}
-						results.push({
-							name: sourceName,
-							status: "failed",
-							message: reason,
-						});
-					}
-				}
-			}
-
-			const summary: ImportSummary = {
-				dryRun: isDryRun,
-				total: results.length,
-				imported: results.filter((item) => item.status === "imported").length,
-				failed: results.filter((item) => item.status === "failed").length,
-				results,
-			};
 
 			if (strict && summary.failed > 0) {
 				process.exitCode = 1;
 			}
 
-			if (options.json) {
+			if (outputMode === "json") {
 				sendImportJsonSummary(summary);
 				return;
 			}
 
-			if (isDryRun) {
+			renderImportTextResults(importReport.results, dryRun);
+			if (dryRun) {
 				sendImportDryRunSummary(summary.imported, summary.failed);
 				return;
 			}
-
 			sendImportSummary(summary.imported, summary.failed);
 		},
 	);
 
-async function preflightAtomicCandidates(
-	raw: unknown[],
-	service: ProfileService,
-	overwrite: boolean,
-): Promise<AtomicPreflightReport> {
-	const seenNames = new Set<string>();
-	const successes: AtomicPreflightSuccess[] = [];
-	const failures: AtomicPreflightFailure[] = [];
-
-	for (const profileData of raw) {
-		let sourceName = "<unknown>";
-		try {
-			const candidate = parseImportCandidate(profileData);
-			sourceName = candidate.name;
-			if (seenNames.has(candidate.name)) {
-				throw new Error(
-					`Duplicate profile name '${candidate.name}' found in import payload.`,
-				);
-			}
-			seenNames.add(candidate.name);
-			await validateDryRunCandidate(service, candidate, overwrite);
-			successes.push({
-				name: candidate.name,
-				candidate,
-			});
-		} catch (error) {
-			failures.push({
-				name: sourceName,
-				reason: error instanceof Error ? error.message : "Unknown error",
-			});
-		}
-	}
-
-	return {
-		successes,
-		failures,
+function writeImportEnvelopeResult(
+	summary: ImportSummary,
+	results: ImportResultItem[],
+	baseData: Omit<ImportEnvelopeData, keyof ImportSummary>,
+	meta: { startedAtMs: number; traceId: string; atomicAborted: boolean },
+): void {
+	const data: ImportEnvelopeData = {
+		...summary,
+		...baseData,
 	};
-}
+	const durationMs = Date.now() - meta.startedAtMs;
 
-function parseImportCandidate(profileData: unknown): ImportCandidate {
-	if (
-		profileData &&
-		typeof profileData === "object" &&
-		"state" in (profileData as Record<string, unknown>)
-	) {
-		throw new Error(
-			"Invalid format: expected plain profile snapshots without 'state' wrapper.",
+	if (meta.atomicAborted) {
+		sendImportEnvelopeError(
+			"IMPORT_PROFILES_ATOMIC_ABORTED",
+			"Atomic precheck failed; no profiles were written.",
+			data,
+			buildEnvelopeErrors(results, "IMPORT_PROFILE_ATOMIC_FAILED"),
+			durationMs,
+			meta.traceId,
 		);
+		process.exitCode = 1;
+		return;
 	}
 
-	const source = profileData as Record<string, unknown>;
-	const sourceName = String(source.name ?? "").trim();
-
-	if (!sourceName) {
-		throw new Error("Invalid format: profile name is required.");
+	if (baseData.strict && summary.failed > 0) {
+		sendImportEnvelopeError(
+			"IMPORT_PROFILES_STRICT_FAILED",
+			"Import completed with failures in strict mode.",
+			data,
+			buildEnvelopeErrors(results, "IMPORT_PROFILE_FAILED"),
+			durationMs,
+			meta.traceId,
+		);
+		process.exitCode = 1;
+		return;
 	}
 
-	return {
-		name: sourceName,
-		gitName: String(source.gitName ?? ""),
-		email: String(source.email ?? ""),
-		signingKey:
-			source.signingKey === undefined || source.signingKey === null
-				? null
-				: String(source.signingKey),
-	};
+	if (summary.failed > 0) {
+		sendImportEnvelopeSuccess(
+			"IMPORT_PROFILES_PARTIAL",
+			"Import completed with partial failures.",
+			data,
+			durationMs,
+			meta.traceId,
+		);
+		return;
+	}
+
+	sendImportEnvelopeSuccess(
+		"IMPORT_PROFILES_OK",
+		summary.dryRun
+			? "Dry-run import validation completed successfully."
+			: "Profiles imported successfully.",
+		data,
+		durationMs,
+		meta.traceId,
+	);
 }
 
-async function validateDryRunCandidate(
-	service: ProfileService,
-	candidate: ImportCandidate,
-	overwrite: boolean,
-): Promise<void> {
-	if (!overwrite && (await service.findProfile(candidate.name))) {
-		throw new ProfileAlreadyExistsError(candidate.name);
-	}
+function buildEnvelopeErrors(
+	results: ImportResultItem[],
+	defaultCode: string,
+): Array<{ code: string; message: string }> {
+	return results
+		.filter((result) => result.status === "failed")
+		.map((result) => ({
+			code:
+				result.kind === "exists"
+					? "IMPORT_PROFILE_EXISTS"
+					: result.kind === "atomic-skipped"
+						? "IMPORT_PROFILE_ATOMIC_SKIPPED"
+						: defaultCode,
+			message: `${result.name}: ${result.message}`,
+		}));
+}
 
-	Profile.create(candidate);
+function renderImportTextResults(
+	results: ImportResultItem[],
+	dryRun: boolean,
+): void {
+	for (const result of results) {
+		if (result.status !== "failed") {
+			continue;
+		}
+		if (result.kind === "exists") {
+			sendImportExistsWarning(result.name, dryRun);
+			continue;
+		}
+		sendImportFailedMsg(result.name, result.message, dryRun);
+	}
+}
+
+function resolveOutputMode(options: Options): OutputMode {
+	if (options.jsonEnvelope === true) {
+		return "json-envelope";
+	}
+	if (options.json === true) {
+		return "json";
+	}
+	return "text";
 }
 
 export default action;
