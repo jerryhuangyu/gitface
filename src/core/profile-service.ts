@@ -50,6 +50,10 @@ export interface GitGateway {
 	): Promise<void>;
 }
 
+export interface CreateProfileServiceOptions {
+	gitBaseDir?: string;
+}
+
 export class ProfileService {
 	constructor(
 		private readonly store: ProfileStore,
@@ -57,10 +61,13 @@ export class ProfileService {
 		private readonly profileConfigStore: ProfileConfigStore,
 	) {}
 
-	static create(): ProfileService {
+	static create(options: CreateProfileServiceOptions = {}): ProfileService {
+		const gitGateway = options.gitBaseDir
+			? new GitService({ baseDir: options.gitBaseDir })
+			: new GitService();
 		return new ProfileService(
 			new FileProfileStore(),
-			new GitService(),
+			gitGateway,
 			new FileProfileConfigStore(),
 		);
 	}

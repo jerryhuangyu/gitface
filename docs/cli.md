@@ -219,6 +219,8 @@ dot segments (`.`/`..`).
 - `gitface rules apply [directory]` resolves the most specific matching rule and
   applies the matched profile to Git config in one step. `directory` defaults
   to current working directory.
+- Local-scope apply targets the resolved `directory` directly and does not
+  change the caller process working directory.
 - `gitface rules apply [directory] --scope <local|global|system>` controls
   target scope (`local` default).
 - `gitface rules apply [directory] --fallback-profile <name>` applies the

@@ -1023,6 +1023,78 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("applies matched rule without mutating process cwd", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-apply-cwd-stable-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const workspaceDir = path.join(homeDir, "workspace");
+		const ruleDir = path.join(workspaceDir, "work");
+		const repoDir = path.join(ruleDir, "repo");
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(ruleDir, { recursive: true });
+		await fs.mkdir(repoDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(workspaceDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "rule-profile",
+				gitName: "Rule User",
+				email: "rule@example.com",
+			});
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				ruleDir,
+				"rule-profile",
+			]);
+
+			const git = simpleGit({ baseDir: repoDir });
+			await git.init();
+
+			const cwdBefore = process.cwd();
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"apply",
+				repoDir,
+			]);
+			const cwdAfter = process.cwd();
+
+			expect(cwdAfter).toBe(cwdBefore);
+			const localConfig = await git.listConfig();
+			expect(localConfig.all["user.name"]).toBe("Rule User");
+			expect(localConfig.all["user.email"]).toBe("rule@example.com");
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("previews apply with --dry-run --json without mutating local git config", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;

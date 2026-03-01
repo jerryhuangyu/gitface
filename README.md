@@ -151,6 +151,7 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface rules resolve [dir] --strict` treats `unmatched` and `matched + profileExists=false` as non-zero exit results for CI gating.
 - `gitface rules apply [dir] --json` resolves and applies matched profile in one step:
   `{ "status": "applied", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }`.
+- `gitface rules apply [dir]` applies local scope against the target directory directly and does not mutate the caller process working directory.
 - `gitface rules apply [dir] --dry-run --json` previews scope-specific changes without writing:
   `{ "status": "dry-run", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
 - `gitface rules apply [dir] --json` when no rule matches:

@@ -74,6 +74,10 @@ export const applyRuleAction: (
 			directory ?? process.cwd(),
 			"dummy",
 		).directory;
+		const scopedProfileService =
+			scope === "local"
+				? ProfileService.create({ gitBaseDir: targetDirectory })
+				: profileService;
 
 		try {
 			const matchedRule = await ruleService
@@ -117,7 +121,6 @@ export const applyRuleAction: (
 			const isFallback = !resolvedRule;
 			const profile = await profileService.getProfile(resolvedProfileName);
 			const runApply = async (): Promise<void> => {
-				const scopedProfileService = ProfileService.create();
 				const scopedIdentity =
 					await scopedProfileService.getScopedIdentity(scope);
 				const currentIdentity = {
@@ -217,14 +220,7 @@ export const applyRuleAction: (
 				await runApply();
 				return;
 			}
-
-			const originalCwd = process.cwd();
-			process.chdir(targetDirectory);
-			try {
-				await runApply();
-			} finally {
-				process.chdir(originalCwd);
-			}
+			await runApply();
 		} catch (error) {
 			let reason: string;
 			if (error instanceof ProfileNotFoundError) {
