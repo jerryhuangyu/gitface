@@ -580,6 +580,187 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("lists rule health report with --health --json", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-list-health-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const healthyDir = path.join(homeDir, "healthy-project");
+		const missingDirectory = path.join(homeDir, "deleted-project");
+		const missingProfileDir = path.join(homeDir, "missing-profile-project");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(healthyDir, { recursive: true });
+		await fs.mkdir(missingDirectory, { recursive: true });
+		await fs.mkdir(missingProfileDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "healthy-profile",
+				gitName: "Healthy User",
+				email: "healthy@example.com",
+			});
+			await service.createProfile({
+				name: "deprecated-profile",
+				gitName: "Deprecated User",
+				email: "deprecated@example.com",
+			});
+
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				healthyDir,
+				"healthy-profile",
+			]);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				missingDirectory,
+				"healthy-profile",
+			]);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				missingProfileDir,
+				"deprecated-profile",
+			]);
+
+			await fs.rm(missingDirectory, { recursive: true, force: true });
+			await service.removeProfile("deprecated-profile");
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"list",
+				"--health",
+				"--concurrency",
+				"2",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				rules: Array<{
+					directory: string;
+					profileName: string;
+					status: "pass" | "warn" | "fail";
+					profileExists: boolean;
+					directoryExists: boolean;
+				}>;
+				summary: {
+					total: number;
+					pass: number;
+					warn: number;
+					fail: number;
+				};
+				metrics: {
+					concurrency: number;
+					scanned: number;
+					uniqueProfilesChecked: number;
+					uniqueDirectoriesChecked: number;
+					scanDurationMs: number;
+				};
+			};
+
+			expect(parsed.summary).toEqual({
+				total: 3,
+				pass: 1,
+				warn: 1,
+				fail: 1,
+			});
+			expect(parsed.metrics.scanned).toBe(3);
+			expect(parsed.metrics.concurrency).toBeGreaterThan(0);
+
+			const byDirectory = new Map(
+				parsed.rules.map((item) => [item.directory, item]),
+			);
+			expect(byDirectory.get(`${healthyDir}${path.sep}`)?.status).toBe("pass");
+			expect(byDirectory.get(`${missingDirectory}${path.sep}`)?.status).toBe(
+				"warn",
+			);
+			expect(
+				byDirectory.get(`${missingProfileDir}${path.sep}`)?.status,
+			).toBe("fail");
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("fails when using --concurrency without --health", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-list-concurrency-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"list",
+				"--concurrency",
+				"2",
+			]);
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("resolves most specific matching rule with --json", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;

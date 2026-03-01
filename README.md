@@ -83,7 +83,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
-| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`, `prune`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query` and `--limit`; `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor/prune --strict` support CI gating; `rules doctor/prune --concurrency` tune integrity scan parallelism. |
+| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`, `prune`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query`, `--limit`, and `--health` (`--concurrency` in health mode); `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor/prune --strict` support CI gating; `rules doctor/prune --concurrency` tune integrity scan parallelism. |
 
 ## Profiles & Storage
 
@@ -144,6 +144,9 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface rules list --query work --limit 10 --json` filters by
   directory/profile substring, returns deterministic directory-sorted rows, and
   caps output size for scripts.
+- `gitface rules list --health --json` emits integrity-aware report output:
+  `{ "rules": [{ "directory": "/abs/path/", "profileName": "work", "status": "pass", "profileExists": true, "directoryExists": true }], "summary": { "total": 1, "pass": 1, "warn": 0, "fail": 0 }, "metrics": { "concurrency": 1, "scanned": 1, "uniqueProfilesChecked": 1, "uniqueDirectoriesChecked": 1, "scanDurationMs": 2 } }`.
+- `gitface rules list --health --concurrency <number>` limits concurrent integrity checks in health mode (default `8`; must be a positive integer).
 - Rules commands read `includeIf.gitdir:*` entries via targeted regexp lookup
   (with fallback to full global config scan on unexpected Git errors), keeping
   rule resolution responsive in large `.gitconfig` setups.

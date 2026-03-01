@@ -188,6 +188,11 @@ dot segments (`.`/`..`).
 - `gitface rules list --query <text>` filters by case-insensitive substring
   match on `directory` and `profileName`.
 - `gitface rules list --limit <number>` caps result rows (must be a positive integer).
+- `gitface rules list --health` enriches each listed rule with integrity state
+  (`pass`/`warn`/`fail`, plus profile/directory existence).
+- `gitface rules list --health --concurrency <number>` limits concurrent
+  integrity checks (default `8`; positive integer only).
+- `gitface rules list --concurrency <number>` requires `--health`.
 - Rules are rendered in deterministic `directory` ascending order before query/limit.
 - Rule scans use a targeted global config regexp lookup for
   `includeIf.gitdir:*` keys, with safe fallback to full config scan on
@@ -209,6 +214,8 @@ dot segments (`.`/`..`).
   `[{ "directory": "/abs/path/", "profileName": "work" }]`.
 - `gitface rules list --query work --limit 2 --json` applies filter + cap and
   returns the same JSON object shape.
+- `gitface rules list --health --json` emits a machine-readable health report:
+  `{ "rules": [{ "directory": "/abs/path/", "profileName": "work", "status": "pass", "profileExists": true, "directoryExists": true }], "summary": { "total": 1, "pass": 1, "warn": 0, "fail": 0 }, "metrics": { "concurrency": 1, "scanned": 1, "uniqueProfilesChecked": 1, "uniqueDirectoriesChecked": 1, "scanDurationMs": 2 } }`.
 - `gitface rules resolve [directory]` resolves the most specific matching
   directory rule (longest prefix wins). `directory` defaults to current working
   directory.
@@ -263,7 +270,8 @@ dot segments (`.`/`..`).
   `{ "status": "dry-run", "dryRun": true, "strict": false, "summary": { "scanned": 3, "prunable": 1, "pruned": 0, "skipped": 0 }, "metrics": { "concurrency": 3, "scanned": 3, "uniqueProfilesChecked": 2, "uniqueDirectoriesChecked": 3, "scanDurationMs": 4 }, "results": [{ "directory": "/abs/path/deleted/", "profileName": "work", "profileExists": true, "directoryExists": false, "staleReason": "missing-directory", "status": "candidate" }] }`.
 - `gitface rules prune --json` removes stale rules and emits:
   `{ "status": "pruned", "dryRun": false, "strict": false, "summary": { "scanned": 3, "prunable": 1, "pruned": 1, "skipped": 0 }, "metrics": { "concurrency": 3, "scanned": 3, "uniqueProfilesChecked": 2, "uniqueDirectoriesChecked": 0, "scanDurationMs": 3 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "pruned" }] }`.
-- Empty JSON output is `[]`, which is safe for CI/script parsing.
+- Empty JSON output remains `[]` for `rules list --json`; `rules list --health --json`
+  returns `{ "rules": [], "summary": { "total": 0, "pass": 0, "warn": 0, "fail": 0 }, "metrics": { ... } }`.
 
 ## `gitface completion <topic>`
 

@@ -44,6 +44,14 @@ command
 		"Filter rules by directory/profile (case-insensitive)",
 	)
 	.option("--limit <number>", "Limit number of listed rules")
+	.option(
+		"--health",
+		"Include profile/directory integrity status for each listed rule",
+	)
+	.option(
+		"--concurrency <number>",
+		"Limit concurrent integrity checks when using --health (default: 8)",
+	)
 	.option("--json", "Output folder rules as JSON")
 	.action(listRulesAction);
 
