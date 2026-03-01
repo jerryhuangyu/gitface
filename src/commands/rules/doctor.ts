@@ -1,12 +1,9 @@
-import fs from "node:fs/promises";
 import process from "node:process";
-import { ProfileService } from "@/core/profile-service";
 import { RuleService } from "@/core/rule-service";
-import { InvalidProfileError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
+import { parseConcurrency, scanRuleIntegrity } from "./integrity";
 import {
 	type RuleDoctorReport,
-	type RuleDoctorResult,
 	sendRuleDoctorFailedJson,
 	sendRuleDoctorFailedMsg,
 	sendRuleDoctorReportJson,
@@ -16,6 +13,7 @@ import {
 interface RuleDoctorOptions {
 	json?: boolean;
 	strict?: boolean;
+	concurrency?: string;
 }
 
 const isMissingGlobalConfigError = (error: unknown): boolean => {
@@ -25,35 +23,10 @@ const isMissingGlobalConfigError = (error: unknown): boolean => {
 	);
 };
 
-async function directoryExists(directory: string): Promise<boolean> {
-	try {
-		const stats = await fs.stat(directory);
-		return stats.isDirectory();
-	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-			return false;
-		}
-		throw error;
-	}
-}
-
-async function profileExists(
-	service: ProfileService,
-	profileName: string,
-): Promise<boolean> {
-	try {
-		return (await service.findProfile(profileName)) !== null;
-	} catch (error) {
-		if (error instanceof InvalidProfileError) {
-			return false;
-		}
-		throw error;
-	}
-}
-
-async function buildDoctorReport(): Promise<RuleDoctorReport> {
+async function buildDoctorReport(
+	concurrency: number,
+): Promise<RuleDoctorReport> {
 	const ruleService = RuleService.create();
-	const profileService = ProfileService.create();
 	const rules = await ruleService.listRules().catch((error) => {
 		if (isMissingGlobalConfigError(error)) {
 			return [];
@@ -61,21 +34,18 @@ async function buildDoctorReport(): Promise<RuleDoctorReport> {
 		throw error;
 	});
 
-	const results: RuleDoctorResult[] = [];
-	for (const rule of rules) {
-		const [hasProfile, hasDirectory] = await Promise.all([
-			profileExists(profileService, rule.profileName),
-			directoryExists(rule.directory),
-		]);
-		const status = !hasProfile ? "fail" : hasDirectory ? "pass" : "warn";
-		results.push({
-			directory: rule.directory,
-			profileName: rule.profileName,
-			status,
-			profileExists: hasProfile,
-			directoryExists: hasDirectory,
-		});
-	}
+	const integrityResults = await scanRuleIntegrity(rules, {
+		checkDirectory: true,
+		concurrency,
+	});
+	const results = integrityResults.map((result) => ({
+		...result,
+		status: !result.profileExists
+			? ("fail" as const)
+			: result.directoryExists
+				? ("pass" as const)
+				: ("warn" as const),
+	}));
 
 	const summary = results.reduce(
 		(acc, item) => {
@@ -102,7 +72,8 @@ const doctorRuleAction: (options: RuleDoctorOptions) => Promise<void> =
 		const strictMode = options.strict ?? false;
 
 		try {
-			const report = await buildDoctorReport();
+			const concurrency = parseConcurrency(options.concurrency);
+			const report = await buildDoctorReport(concurrency);
 			if (options.json) {
 				sendRuleDoctorReportJson(report, strictMode);
 			} else {

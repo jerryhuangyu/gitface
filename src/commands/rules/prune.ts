@@ -1,9 +1,7 @@
-import fs from "node:fs/promises";
 import process from "node:process";
-import { ProfileService } from "@/core/profile-service";
 import { type FolderRule, RuleService } from "@/core/rule-service";
-import { InvalidProfileError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
+import { parseConcurrency, scanRuleIntegrity } from "./integrity";
 import {
 	type RulePruneReport,
 	type RulePruneResult,
@@ -18,6 +16,7 @@ interface RulePruneOptions {
 	json?: boolean;
 	includeMissingDirectory?: boolean;
 	strict?: boolean;
+	concurrency?: string;
 }
 
 const isMissingGlobalConfigError = (error: unknown): boolean => {
@@ -27,53 +26,24 @@ const isMissingGlobalConfigError = (error: unknown): boolean => {
 	);
 };
 
-async function profileExists(
-	service: ProfileService,
-	profileName: string,
-): Promise<boolean> {
-	try {
-		return (await service.findProfile(profileName)) !== null;
-	} catch (error) {
-		if (error instanceof InvalidProfileError) {
-			return false;
-		}
-		throw error;
-	}
-}
-
-async function directoryExists(directory: string): Promise<boolean> {
-	try {
-		const stats = await fs.stat(directory);
-		return stats.isDirectory();
-	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-			return false;
-		}
-		throw error;
-	}
-}
-
 async function scanPrunableRules(
 	rules: FolderRule[],
 	options: RulePruneOptions,
+	concurrency: number,
 ): Promise<RulePruneResult[]> {
-	const profileService = ProfileService.create();
-	const profileExistsCache = new Map<string, Promise<boolean>>();
+	const includeMissingDirectory = options.includeMissingDirectory ?? false;
+	const integrityResults = await scanRuleIntegrity(rules, {
+		checkDirectory: includeMissingDirectory,
+		concurrency,
+	});
 
-	const results: RulePruneResult[] = [];
-	for (const rule of rules) {
-		let hasProfilePromise = profileExistsCache.get(rule.profileName);
-		if (!hasProfilePromise) {
-			hasProfilePromise = profileExists(profileService, rule.profileName);
-			profileExistsCache.set(rule.profileName, hasProfilePromise);
-		}
-
-		const hasProfile = await hasProfilePromise;
-		if (!options.includeMissingDirectory) {
-			if (!hasProfile) {
-				results.push({
-					directory: rule.directory,
-					profileName: rule.profileName,
+	const candidates: RulePruneResult[] = [];
+	for (const result of integrityResults) {
+		if (!includeMissingDirectory) {
+			if (!result.profileExists) {
+				candidates.push({
+					directory: result.directory,
+					profileName: result.profileName,
 					profileExists: false,
 					status: "candidate",
 				});
@@ -81,30 +51,31 @@ async function scanPrunableRules(
 			continue;
 		}
 
-		const hasDirectory = await directoryExists(rule.directory);
-		if (!hasProfile || !hasDirectory) {
-			const staleReason =
-				!hasProfile && !hasDirectory
-					? "missing-profile-and-directory"
-					: !hasProfile
-						? "missing-profile"
-						: "missing-directory";
-			results.push({
-				directory: rule.directory,
-				profileName: rule.profileName,
-				profileExists: hasProfile,
-				directoryExists: hasDirectory,
-				staleReason,
-				status: "candidate",
-			});
+		if (result.profileExists && result.directoryExists) {
+			continue;
 		}
+		const staleReason =
+			!result.profileExists && !result.directoryExists
+				? "missing-profile-and-directory"
+				: !result.profileExists
+					? "missing-profile"
+					: "missing-directory";
+		candidates.push({
+			directory: result.directory,
+			profileName: result.profileName,
+			profileExists: result.profileExists,
+			directoryExists: result.directoryExists,
+			staleReason,
+			status: "candidate",
+		});
 	}
 
-	return results;
+	return candidates;
 }
 
 async function buildDryRunReportWithOptions(
 	options: RulePruneOptions,
+	concurrency: number,
 ): Promise<RulePruneReport> {
 	const ruleService = RuleService.create();
 	const scannedRules = await ruleService.listRules().catch((error) => {
@@ -113,7 +84,7 @@ async function buildDryRunReportWithOptions(
 		}
 		throw error;
 	});
-	const results = await scanPrunableRules(scannedRules, options);
+	const results = await scanPrunableRules(scannedRules, options, concurrency);
 	return {
 		status: "dry-run",
 		dryRun: true,
@@ -129,6 +100,7 @@ async function buildDryRunReportWithOptions(
 
 async function buildApplyReport(
 	options: RulePruneOptions,
+	concurrency: number,
 ): Promise<RulePruneReport> {
 	const ruleService = RuleService.create();
 	const scannedRules = await ruleService.listRules().catch((error) => {
@@ -137,7 +109,11 @@ async function buildApplyReport(
 		}
 		throw error;
 	});
-	const candidates = await scanPrunableRules(scannedRules, options);
+	const candidates = await scanPrunableRules(
+		scannedRules,
+		options,
+		concurrency,
+	);
 
 	const results: RulePruneResult[] = [];
 	let pruned = 0;
@@ -178,9 +154,10 @@ async function buildApplyReport(
 export const pruneRuleAction: (options: RulePruneOptions) => Promise<void> =
 	withCommandHandling("command:rules:prune", async (options) => {
 		try {
+			const concurrency = parseConcurrency(options.concurrency);
 			const report = options.dryRun
-				? await buildDryRunReportWithOptions(options)
-				: await buildApplyReport(options);
+				? await buildDryRunReportWithOptions(options, concurrency)
+				: await buildApplyReport(options, concurrency);
 			if (options.json) {
 				sendRulePruneReportJson(report, options.strict ?? false);
 			} else {

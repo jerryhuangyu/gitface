@@ -1676,6 +1676,40 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("returns json error when doctor concurrency is invalid", async () => {
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const logs: string[] = [];
+
+		try {
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"doctor",
+				"--json",
+				"--concurrency",
+				"0",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				reason: string;
+			};
+			expect(parsed).toEqual({
+				status: "error",
+				reason: "Concurrency must be a positive integer.",
+			});
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.argv = originalArgv;
+			process.exitCode = originalExitCode;
+		}
+	});
+
 	test("prune --dry-run --json reports stale rules without mutating config", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;
@@ -1811,6 +1845,41 @@ describe("rules command e2e", () => {
 			}
 			process.exitCode = originalExitCode;
 			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns json error when prune concurrency is invalid", async () => {
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const logs: string[] = [];
+
+		try {
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"prune",
+				"--dry-run",
+				"--json",
+				"--concurrency",
+				"invalid",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				reason: string;
+			};
+			expect(parsed).toEqual({
+				status: "error",
+				reason: "Concurrency must be a positive integer.",
+			});
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.argv = originalArgv;
+			process.exitCode = originalExitCode;
 		}
 	});
 

@@ -241,11 +241,13 @@ dot segments (`.`/`..`).
 - `gitface rules doctor --json` emits:
   `{ "status": "issues", "strict": false, "summary": { "total": 2, "pass": 1, "warn": 1, "fail": 0 }, "results": [{ "directory": "/abs/path/", "profileName": "work", "status": "warn", "profileExists": true, "directoryExists": false }] }`.
 - `gitface rules doctor --strict` treats `warn` and `fail` as failures (exit code `1`) for CI gating.
+- `gitface rules doctor --concurrency <number>` limits concurrent integrity checks (default `8`; positive integer only).
 - `gitface rules prune --dry-run` scans stale rules (missing profile only) without mutating global config.
 - `gitface rules prune --dry-run --include-missing-directory` additionally scans rules whose target directory no longer exists.
 - `gitface rules prune --strict` enables CI gating:
   - dry-run mode fails (`exit code 1`) when `summary.prunable > 0`.
   - apply mode fails (`exit code 1`) when `summary.skipped > 0`.
+- `gitface rules prune --concurrency <number>` limits concurrent integrity checks (default `8`; positive integer only).
 - `gitface rules prune --dry-run --json` emits:
   `{ "status": "dry-run", "dryRun": true, "strict": false, "summary": { "scanned": 3, "prunable": 1, "pruned": 0, "skipped": 0 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "candidate" }] }`.
 - `gitface rules prune --dry-run --strict --json` emits:

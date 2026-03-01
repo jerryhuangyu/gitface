@@ -83,6 +83,10 @@ command
 	.command("doctor")
 	.description("Check folder rule health (profile/directory integrity)")
 	.option("--strict", "Treat warnings as failures (exit code 1) for CI gating")
+	.option(
+		"--concurrency <number>",
+		"Limit concurrent integrity checks to a positive integer (default: 8)",
+	)
 	.option("--json", "Output doctor report as JSON")
 	.action(doctorRuleAction);
 
@@ -99,6 +103,10 @@ command
 	.option(
 		"--include-missing-directory",
 		"Also prune rules whose target directory no longer exists",
+	)
+	.option(
+		"--concurrency <number>",
+		"Limit concurrent integrity checks to a positive integer (default: 8)",
 	)
 	.option("--json", "Output prune report as JSON")
 	.action(pruneRuleAction);
