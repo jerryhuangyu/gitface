@@ -1,7 +1,12 @@
 import process from "node:process";
-import { type FolderRule, RuleService } from "@/core/rule-service";
+import { RuleService } from "@/core/rule-service";
 import { withCommandHandling } from "../command-runner";
-import { parseConcurrency, scanRuleIntegrity } from "./integrity";
+import {
+	parseConcurrency,
+	type RuleIntegrityRecord,
+	type RuleIntegrityScanMetrics,
+	scanRuleIntegrity,
+} from "./integrity";
 import {
 	type RulePruneReport,
 	type RulePruneResult,
@@ -27,15 +32,10 @@ const isMissingGlobalConfigError = (error: unknown): boolean => {
 };
 
 async function scanPrunableRules(
-	rules: FolderRule[],
+	integrityResults: RuleIntegrityRecord[],
 	options: RulePruneOptions,
-	concurrency: number,
 ): Promise<RulePruneResult[]> {
 	const includeMissingDirectory = options.includeMissingDirectory ?? false;
-	const integrityResults = await scanRuleIntegrity(rules, {
-		checkDirectory: includeMissingDirectory,
-		concurrency,
-	});
 
 	const candidates: RulePruneResult[] = [];
 	for (const result of integrityResults) {
@@ -73,6 +73,14 @@ async function scanPrunableRules(
 	return candidates;
 }
 
+const buildEmptyMetrics = (concurrency: number): RuleIntegrityScanMetrics => ({
+	concurrency,
+	scanned: 0,
+	uniqueProfilesChecked: 0,
+	uniqueDirectoriesChecked: 0,
+	scanDurationMs: 0,
+});
+
 async function buildDryRunReportWithOptions(
 	options: RulePruneOptions,
 	concurrency: number,
@@ -84,7 +92,17 @@ async function buildDryRunReportWithOptions(
 		}
 		throw error;
 	});
-	const results = await scanPrunableRules(scannedRules, options, concurrency);
+	const integrityReport =
+		scannedRules.length === 0
+			? {
+					records: [],
+					metrics: buildEmptyMetrics(concurrency),
+				}
+			: await scanRuleIntegrity(scannedRules, {
+					checkDirectory: options.includeMissingDirectory ?? false,
+					concurrency,
+				});
+	const results = await scanPrunableRules(integrityReport.records, options);
 	return {
 		status: "dry-run",
 		dryRun: true,
@@ -94,6 +112,7 @@ async function buildDryRunReportWithOptions(
 			pruned: 0,
 			skipped: 0,
 		},
+		metrics: integrityReport.metrics,
 		results,
 	};
 }
@@ -109,11 +128,17 @@ async function buildApplyReport(
 		}
 		throw error;
 	});
-	const candidates = await scanPrunableRules(
-		scannedRules,
-		options,
-		concurrency,
-	);
+	const integrityReport =
+		scannedRules.length === 0
+			? {
+					records: [],
+					metrics: buildEmptyMetrics(concurrency),
+				}
+			: await scanRuleIntegrity(scannedRules, {
+					checkDirectory: options.includeMissingDirectory ?? false,
+					concurrency,
+				});
+	const candidates = await scanPrunableRules(integrityReport.records, options);
 
 	const results: RulePruneResult[] = [];
 	let pruned = 0;
@@ -147,6 +172,7 @@ async function buildApplyReport(
 			pruned,
 			skipped,
 		},
+		metrics: integrityReport.metrics,
 		results,
 	};
 }

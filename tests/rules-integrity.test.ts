@@ -42,7 +42,7 @@ describe("rules integrity scan", () => {
 				return !directory.includes("missing");
 			});
 
-		const results = await scanRuleIntegrity(
+		const report = await scanRuleIntegrity(
 			[
 				{ directory: "/tmp/work/", profileName: "team" },
 				{ directory: "/tmp/work/", profileName: "team" },
@@ -57,7 +57,7 @@ describe("rules integrity scan", () => {
 
 		expect(findProfile).toHaveBeenCalledTimes(2);
 		expect(directoryExistsCheck).toHaveBeenCalledTimes(2);
-		expect(results).toEqual([
+		expect(report.records).toEqual([
 			{
 				directory: "/tmp/work/",
 				profileName: "team",
@@ -77,6 +77,13 @@ describe("rules integrity scan", () => {
 				directoryExists: false,
 			},
 		]);
+		expect(report.metrics).toMatchObject({
+			concurrency: 3,
+			scanned: 3,
+			uniqueProfilesChecked: 2,
+			uniqueDirectoriesChecked: 2,
+		});
+		expect(report.metrics.scanDurationMs).toBeGreaterThanOrEqual(0);
 	});
 
 	test("skips directory checks when directory scanning is disabled", async () => {
@@ -86,7 +93,7 @@ describe("rules integrity scan", () => {
 		} as unknown as ProfileService);
 		const directoryExistsCheck = vi.fn().mockResolvedValue(true);
 
-		const results = await scanRuleIntegrity(
+		const report = await scanRuleIntegrity(
 			[{ directory: "/tmp/unused/", profileName: "ghost" }],
 			{
 				checkDirectory: false,
@@ -96,7 +103,7 @@ describe("rules integrity scan", () => {
 		);
 
 		expect(directoryExistsCheck).not.toHaveBeenCalled();
-		expect(results).toEqual([
+		expect(report.records).toEqual([
 			{
 				directory: "/tmp/unused/",
 				profileName: "ghost",
@@ -104,5 +111,12 @@ describe("rules integrity scan", () => {
 				directoryExists: true,
 			},
 		]);
+		expect(report.metrics).toMatchObject({
+			concurrency: 1,
+			scanned: 1,
+			uniqueProfilesChecked: 1,
+			uniqueDirectoriesChecked: 0,
+		});
+		expect(report.metrics.scanDurationMs).toBeGreaterThanOrEqual(0);
 	});
 });

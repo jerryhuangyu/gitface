@@ -10,6 +10,19 @@ export interface RuleIntegrityRecord {
 	directoryExists: boolean;
 }
 
+export interface RuleIntegrityScanMetrics {
+	concurrency: number;
+	scanned: number;
+	uniqueProfilesChecked: number;
+	uniqueDirectoriesChecked: number;
+	scanDurationMs: number;
+}
+
+export interface RuleIntegrityScanReport {
+	records: RuleIntegrityRecord[];
+	metrics: RuleIntegrityScanMetrics;
+}
+
 interface ScanRuleIntegrityOptions {
 	checkDirectory: boolean;
 	concurrency: number;
@@ -70,7 +83,10 @@ async function mapWithConcurrency<T, U>(
 	items: T[],
 	concurrency: number,
 	mapper: (item: T) => Promise<U>,
-): Promise<U[]> {
+): Promise<{
+	results: U[];
+	workerCount: number;
+}> {
 	const workerCount = Math.min(Math.max(concurrency, 1), items.length || 1);
 	const results = new Array<U>(items.length);
 	let currentIndex = 0;
@@ -87,13 +103,17 @@ async function mapWithConcurrency<T, U>(
 	});
 
 	await Promise.all(workers);
-	return results;
+	return {
+		results,
+		workerCount,
+	};
 }
 
 export async function scanRuleIntegrity(
 	rules: FolderRule[],
 	options: ScanRuleIntegrityOptions,
-): Promise<RuleIntegrityRecord[]> {
+): Promise<RuleIntegrityScanReport> {
+	const scanStartedAt = Date.now();
 	const profileService = ProfileService.create();
 	const profileExistsCache = new Map<string, Promise<boolean>>();
 	const directoryExistsCache = new Map<string, Promise<boolean>>();
@@ -101,38 +121,55 @@ export async function scanRuleIntegrity(
 	const directoryExistsCheck =
 		options.directoryExistsCheck ?? checkDirectoryExists;
 
-	return mapWithConcurrency(rules, options.concurrency, async (rule) => {
-		let profileExistsPromise = profileExistsCache.get(rule.profileName);
-		if (!profileExistsPromise) {
-			profileExistsPromise = profileExistsCheck(
-				profileService,
-				rule.profileName,
-			);
-			profileExistsCache.set(rule.profileName, profileExistsPromise);
-		}
-		const profileExists = await profileExistsPromise;
+	const { results, workerCount } = await mapWithConcurrency(
+		rules,
+		options.concurrency,
+		async (rule) => {
+			let profileExistsPromise = profileExistsCache.get(rule.profileName);
+			if (!profileExistsPromise) {
+				profileExistsPromise = profileExistsCheck(
+					profileService,
+					rule.profileName,
+				);
+				profileExistsCache.set(rule.profileName, profileExistsPromise);
+			}
+			const profileExists = await profileExistsPromise;
 
-		if (!options.checkDirectory) {
+			if (!options.checkDirectory) {
+				return {
+					directory: rule.directory,
+					profileName: rule.profileName,
+					profileExists,
+					directoryExists: true,
+				};
+			}
+
+			let directoryExistsPromise = directoryExistsCache.get(rule.directory);
+			if (!directoryExistsPromise) {
+				directoryExistsPromise = directoryExistsCheck(rule.directory);
+				directoryExistsCache.set(rule.directory, directoryExistsPromise);
+			}
+			const directoryExists = await directoryExistsPromise;
+
 			return {
 				directory: rule.directory,
 				profileName: rule.profileName,
 				profileExists,
-				directoryExists: true,
+				directoryExists,
 			};
-		}
+		},
+	);
 
-		let directoryExistsPromise = directoryExistsCache.get(rule.directory);
-		if (!directoryExistsPromise) {
-			directoryExistsPromise = directoryExistsCheck(rule.directory);
-			directoryExistsCache.set(rule.directory, directoryExistsPromise);
-		}
-		const directoryExists = await directoryExistsPromise;
-
-		return {
-			directory: rule.directory,
-			profileName: rule.profileName,
-			profileExists,
-			directoryExists,
-		};
-	});
+	return {
+		records: results,
+		metrics: {
+			concurrency: workerCount,
+			scanned: rules.length,
+			uniqueProfilesChecked: profileExistsCache.size,
+			uniqueDirectoriesChecked: options.checkDirectory
+				? directoryExistsCache.size
+				: 0,
+			scanDurationMs: Date.now() - scanStartedAt,
+		},
+	};
 }

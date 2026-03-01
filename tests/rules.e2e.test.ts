@@ -1538,6 +1538,13 @@ describe("rules command e2e", () => {
 					warn: number;
 					fail: number;
 				};
+				metrics: {
+					concurrency: number;
+					scanned: number;
+					uniqueProfilesChecked: number;
+					uniqueDirectoriesChecked: number;
+					scanDurationMs: number;
+				};
 			};
 			expect(parsed.status).toBe("ok");
 			expect(parsed.strict).toBe(false);
@@ -1547,6 +1554,11 @@ describe("rules command e2e", () => {
 				warn: 0,
 				fail: 0,
 			});
+			expect(parsed.metrics.scanned).toBe(1);
+			expect(parsed.metrics.concurrency).toBeGreaterThanOrEqual(1);
+			expect(parsed.metrics.uniqueProfilesChecked).toBe(1);
+			expect(parsed.metrics.uniqueDirectoriesChecked).toBe(1);
+			expect(parsed.metrics.scanDurationMs).toBeGreaterThanOrEqual(0);
 			expect(process.exitCode).toBeUndefined();
 		} finally {
 			process.chdir(originalCwd);
@@ -1616,6 +1628,13 @@ describe("rules command e2e", () => {
 			const parsed = JSON.parse(output) as {
 				status: string;
 				summary: { total: number; pass: number; warn: number; fail: number };
+				metrics: {
+					concurrency: number;
+					scanned: number;
+					uniqueProfilesChecked: number;
+					uniqueDirectoriesChecked: number;
+					scanDurationMs: number;
+				};
 			};
 			expect(parsed.status).toBe("issues");
 			expect(parsed.summary).toEqual({
@@ -1624,6 +1643,10 @@ describe("rules command e2e", () => {
 				warn: 1,
 				fail: 0,
 			});
+			expect(parsed.metrics.scanned).toBe(1);
+			expect(parsed.metrics.uniqueProfilesChecked).toBe(1);
+			expect(parsed.metrics.uniqueDirectoriesChecked).toBe(1);
+			expect(parsed.metrics.scanDurationMs).toBeGreaterThanOrEqual(0);
 			expect(process.exitCode).toBeUndefined();
 
 			logs.length = 0;
@@ -1864,6 +1887,13 @@ describe("rules command e2e", () => {
 					profileName: string;
 					status: string;
 				}>;
+				metrics: {
+					concurrency: number;
+					scanned: number;
+					uniqueProfilesChecked: number;
+					uniqueDirectoriesChecked: number;
+					scanDurationMs: number;
+				};
 			};
 
 			expect(parsed.status).toBe("dry-run");
@@ -1874,6 +1904,10 @@ describe("rules command e2e", () => {
 				pruned: 0,
 				skipped: 0,
 			});
+			expect(parsed.metrics.scanned).toBe(2);
+			expect(parsed.metrics.uniqueProfilesChecked).toBe(2);
+			expect(parsed.metrics.uniqueDirectoriesChecked).toBe(0);
+			expect(parsed.metrics.scanDurationMs).toBeGreaterThanOrEqual(0);
 			expect(parsed.results).toEqual([
 				{
 					directory: `${staleDir}${path.sep}`,
@@ -2120,6 +2154,13 @@ describe("rules command e2e", () => {
 					profileName: string;
 					status: string;
 				}>;
+				metrics: {
+					concurrency: number;
+					scanned: number;
+					uniqueProfilesChecked: number;
+					uniqueDirectoriesChecked: number;
+					scanDurationMs: number;
+				};
 			};
 
 			expect(parsed.status).toBe("pruned");
@@ -2130,6 +2171,10 @@ describe("rules command e2e", () => {
 				pruned: 1,
 				skipped: 0,
 			});
+			expect(parsed.metrics.scanned).toBe(2);
+			expect(parsed.metrics.uniqueProfilesChecked).toBe(2);
+			expect(parsed.metrics.uniqueDirectoriesChecked).toBe(0);
+			expect(parsed.metrics.scanDurationMs).toBeGreaterThanOrEqual(0);
 			expect(parsed.results).toEqual([
 				{
 					directory: `${staleDir}${path.sep}`,

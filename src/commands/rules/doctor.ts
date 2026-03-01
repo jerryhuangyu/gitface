@@ -38,7 +38,7 @@ async function buildDoctorReport(
 		checkDirectory: true,
 		concurrency,
 	});
-	const results = integrityResults.map((result) => ({
+	const results = integrityResults.records.map((result) => ({
 		...result,
 		status: !result.profileExists
 			? ("fail" as const)
@@ -63,6 +63,7 @@ async function buildDoctorReport(
 	return {
 		status: summary.warn > 0 || summary.fail > 0 ? "issues" : "ok",
 		summary,
+		metrics: integrityResults.metrics,
 		results,
 	};
 }

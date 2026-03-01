@@ -20,6 +20,7 @@ export interface RuleDoctorReport {
 		warn: number;
 		fail: number;
 	};
+	metrics: RuleScanMetrics;
 	results: RuleDoctorResult[];
 }
 
@@ -45,7 +46,16 @@ export interface RulePruneReport {
 		pruned: number;
 		skipped: number;
 	};
+	metrics: RuleScanMetrics;
 	results: RulePruneResult[];
+}
+
+export interface RuleScanMetrics {
+	concurrency: number;
+	scanned: number;
+	uniqueProfilesChecked: number;
+	uniqueDirectoriesChecked: number;
+	scanDurationMs: number;
 }
 
 export function sendRuleAddSuccessMsg(
@@ -652,6 +662,11 @@ export function sendRuleDoctorReportMsg(
 			`Summary: total=${report.summary.total} pass=${report.summary.pass} warn=${report.summary.warn} fail=${report.summary.fail}${strict ? " (strict mode)" : ""}`,
 		),
 	);
+	console.log(
+		chalk.gray(
+			`Scan metrics: concurrency=${report.metrics.concurrency} scanned=${report.metrics.scanned} uniqueProfiles=${report.metrics.uniqueProfilesChecked} uniqueDirectories=${report.metrics.uniqueDirectoriesChecked} durationMs=${report.metrics.scanDurationMs}`,
+		),
+	);
 }
 
 export function sendRuleDoctorReportJson(
@@ -663,6 +678,7 @@ export function sendRuleDoctorReportJson(
 			status: report.status,
 			strict,
 			summary: report.summary,
+			metrics: report.metrics,
 			results: report.results,
 		}),
 	);
@@ -689,6 +705,11 @@ export function sendRulePruneReportMsg(
 	console.log(
 		chalk.gray(
 			`Summary: scanned=${report.summary.scanned} prunable=${report.summary.prunable} pruned=${report.summary.pruned} skipped=${report.summary.skipped}${report.dryRun ? " (dry-run)" : ""}${strict ? " (strict mode)" : ""}`,
+		),
+	);
+	console.log(
+		chalk.gray(
+			`Scan metrics: concurrency=${report.metrics.concurrency} scanned=${report.metrics.scanned} uniqueProfiles=${report.metrics.uniqueProfilesChecked} uniqueDirectories=${report.metrics.uniqueDirectoriesChecked} durationMs=${report.metrics.scanDurationMs}`,
 		),
 	);
 	if (report.results.length === 0) {
