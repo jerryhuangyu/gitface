@@ -20,6 +20,10 @@ command
 	.description("Resolve matched folder rule and apply profile")
 	.option("-s, --scope <scope>", "local (default), global, or system", "local")
 	.option(
+		"--fallback-profile <profile>",
+		"Apply this profile when no folder rule matches the target directory",
+	)
+	.option(
 		"--dry-run",
 		"Preview profile application without changing git config",
 	)

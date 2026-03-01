@@ -14,6 +14,12 @@ import {
 	sendRuleApplyDryRunMsg,
 	sendRuleApplyFailedJson,
 	sendRuleApplyFailedMsg,
+	sendRuleApplyFallbackAppliedJson,
+	sendRuleApplyFallbackAppliedMsg,
+	sendRuleApplyFallbackDryRunJson,
+	sendRuleApplyFallbackDryRunMsg,
+	sendRuleApplyFallbackUnchangedJson,
+	sendRuleApplyFallbackUnchangedMsg,
 	sendRuleApplyUnchangedJson,
 	sendRuleApplyUnchangedMsg,
 	sendRuleApplyUnmatchedJson,
@@ -22,6 +28,7 @@ import {
 
 interface ApplyRuleOptions {
 	scope?: string;
+	fallbackProfile?: string;
 	dryRun?: boolean;
 	json?: boolean;
 	strict?: boolean;
@@ -78,7 +85,8 @@ export const applyRuleAction: (
 					throw error;
 				});
 
-			if (!matchedRule) {
+			const fallbackProfileName = options.fallbackProfile?.trim();
+			if (!matchedRule && !fallbackProfileName) {
 				if (options.json) {
 					sendRuleApplyUnmatchedJson(targetDirectory, scope);
 				} else {
@@ -90,7 +98,24 @@ export const applyRuleAction: (
 				return;
 			}
 
-			const profile = await profileService.getProfile(matchedRule.profileName);
+			const resolvedRule = matchedRule ?? undefined;
+			const resolvedProfileName = resolvedRule
+				? resolvedRule.profileName
+				: fallbackProfileName;
+			if (!resolvedProfileName) {
+				if (options.json) {
+					sendRuleApplyUnmatchedJson(targetDirectory, scope);
+				} else {
+					sendRuleApplyUnmatchedMsg(targetDirectory, scope);
+				}
+				if (options.strict) {
+					process.exitCode = 1;
+				}
+				return;
+			}
+
+			const isFallback = !resolvedRule;
+			const profile = await profileService.getProfile(resolvedProfileName);
 			const runApply = async (): Promise<void> => {
 				const scopedProfileService = ProfileService.create();
 				const scopedIdentity =
@@ -105,19 +130,35 @@ export const applyRuleAction: (
 				);
 
 				if (options.dryRun) {
-					if (options.json) {
-						sendRuleApplyDryRunJson(
+					if (isFallback && options.json) {
+						sendRuleApplyFallbackDryRunJson(
 							targetDirectory,
-							matchedRule,
 							scope,
 							profile,
 							currentIdentity,
 							effectiveChanges,
 						);
-					} else {
+					} else if (isFallback) {
+						sendRuleApplyFallbackDryRunMsg(
+							targetDirectory,
+							scope,
+							profile,
+							currentIdentity,
+							effectiveChanges,
+						);
+					} else if (options.json && resolvedRule) {
+						sendRuleApplyDryRunJson(
+							targetDirectory,
+							resolvedRule,
+							scope,
+							profile,
+							currentIdentity,
+							effectiveChanges,
+						);
+					} else if (resolvedRule) {
 						sendRuleApplyDryRunMsg(
 							targetDirectory,
-							matchedRule,
+							resolvedRule,
 							scope,
 							profile,
 							currentIdentity,
@@ -128,17 +169,21 @@ export const applyRuleAction: (
 				}
 
 				if (effectiveChanges.length === 0) {
-					if (options.json) {
+					if (isFallback && options.json) {
+						sendRuleApplyFallbackUnchangedJson(targetDirectory, scope, profile);
+					} else if (isFallback) {
+						sendRuleApplyFallbackUnchangedMsg(targetDirectory, scope, profile);
+					} else if (options.json && resolvedRule) {
 						sendRuleApplyUnchangedJson(
 							targetDirectory,
-							matchedRule,
+							resolvedRule,
 							scope,
 							profile,
 						);
-					} else {
+					} else if (resolvedRule) {
 						sendRuleApplyUnchangedMsg(
 							targetDirectory,
-							matchedRule,
+							resolvedRule,
 							scope,
 							profile,
 						);
@@ -147,15 +192,24 @@ export const applyRuleAction: (
 				}
 
 				await scopedProfileService.applyProfile(profile.name, scope);
-				if (options.json) {
+				if (isFallback && options.json) {
+					sendRuleApplyFallbackAppliedJson(targetDirectory, scope, profile);
+				} else if (isFallback) {
+					sendRuleApplyFallbackAppliedMsg(targetDirectory, scope, profile);
+				} else if (options.json && resolvedRule) {
 					sendRuleApplyAppliedJson(
 						targetDirectory,
-						matchedRule,
+						resolvedRule,
 						scope,
 						profile,
 					);
-				} else {
-					sendRuleApplyAppliedMsg(targetDirectory, matchedRule, scope, profile);
+				} else if (resolvedRule) {
+					sendRuleApplyAppliedMsg(
+						targetDirectory,
+						resolvedRule,
+						scope,
+						profile,
+					);
 				}
 			};
 

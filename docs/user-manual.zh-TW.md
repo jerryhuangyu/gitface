@@ -230,6 +230,7 @@ gitface rules apply ~/code/work/monorepo
 gitface rules apply ~/code/work/monorepo --dry-run --json
 gitface rules apply ~/code/work/monorepo --scope global --json
 gitface rules apply ~/code/work/monorepo --strict --json
+gitface rules apply ~/code/work/monorepo --fallback-profile work --json
 gitface rules doctor --json
 gitface rules doctor --strict --json
 ```
@@ -248,6 +249,8 @@ gitface rules doctor --strict --json
   （`profileExists=false`）視為失敗並回傳 exit code `1`，適合 CI gate。
 - `rules apply [directory]` 會直接以命中的規則套用 profile（等同 resolve + use）。
 - `rules apply --dry-run` 只輸出預計變更，不會寫入 Git config。
+- `rules apply --fallback-profile <name>` 在 `unmatched` 時改套用指定 profile，
+  適合新目錄第一次使用或 CI/agent 防呆。
 - `rules apply --strict` 會把 `unmatched` 視為失敗並回傳 exit code `1`。
 - `rules doctor` 可批次檢查規則健康度（profile 是否存在、目錄是否存在）。
 - `rules doctor --strict` 會把 `warn`/`fail` 都視為失敗並回傳 exit code `1`，適合 CI gate。

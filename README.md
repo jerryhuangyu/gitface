@@ -83,7 +83,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
-| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query` and `--limit`; `rules resolve/apply/doctor --strict` support CI gating. |
+| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query` and `--limit`; `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor --strict` support CI gating. |
 
 ## Profiles & Storage
 
@@ -155,6 +155,10 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "dry-run", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
 - `gitface rules apply [dir] --json` when no rule matches:
   `{ "status": "unmatched", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null }`.
+- `gitface rules apply [dir] --fallback-profile work --json` applies fallback profile when no rule matches:
+  `{ "status": "applied", "resolution": "fallback", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null, "fallbackProfileName": "work", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }`.
+- `gitface rules apply [dir] --dry-run --fallback-profile work --json` previews fallback application without writing:
+  `{ "status": "dry-run", "resolution": "fallback", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null, "fallbackProfileName": "work", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
 - `gitface rules apply [dir] --strict` treats `unmatched` as non-zero exit results for CI gating.
 - `gitface rules doctor --json` checks every rule for missing profile/directory and emits:
   `{ "status": "issues", "strict": false, "summary": { "total": 2, "pass": 1, "warn": 1, "fail": 0 }, "results": [{ "directory": "/abs/path/", "profileName": "work", "status": "warn", "profileExists": true, "directoryExists": false }] }`.

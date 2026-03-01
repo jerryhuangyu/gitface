@@ -220,6 +220,8 @@ dot segments (`.`/`..`).
   to current working directory.
 - `gitface rules apply [directory] --scope <local|global|system>` controls
   target scope (`local` default).
+- `gitface rules apply [directory] --fallback-profile <name>` applies the
+  named profile when no folder rule matches.
 - `gitface rules apply [directory] --dry-run` previews planned writes/unsets and
   does not mutate Git config.
 - `gitface rules apply [directory] --json` emits:
@@ -228,6 +230,9 @@ dot segments (`.`/`..`).
   `{ "status": "dry-run", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
 - `gitface rules apply [directory] --json` when no rule matches emits:
   `{ "status": "unmatched", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null }`.
+- `gitface rules apply [directory] --fallback-profile work --json` when no rule
+  matches emits:
+  `{ "status": "applied", "resolution": "fallback", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null, "fallbackProfileName": "work", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }`.
 - `gitface rules apply [directory] --strict` treats unmatched results as
   failures (`exit code 1`) for CI gating.
 - `gitface rules doctor` checks all folder rules for stale profile references

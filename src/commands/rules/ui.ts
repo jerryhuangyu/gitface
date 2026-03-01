@@ -387,6 +387,165 @@ export function sendRuleApplyDryRunJson(
 	);
 }
 
+export function sendRuleApplyFallbackAppliedMsg(
+	targetDirectory: string,
+	scope: ConfigScope,
+	profile: Profile,
+): void {
+	console.log(
+		chalk.yellow(
+			`No folder rule matched ${targetDirectory}. Applying fallback profile '${profile.name}'.`,
+		),
+	);
+	console.log(
+		chalk.green(
+			`Applied to ${chalk.bold(scope)} scope with profile '${profile.name}'.`,
+		),
+	);
+}
+
+export function sendRuleApplyFallbackAppliedJson(
+	targetDirectory: string,
+	scope: ConfigScope,
+	profile: Profile,
+): void {
+	console.log(
+		JSON.stringify({
+			status: "applied",
+			resolution: "fallback",
+			directory: targetDirectory,
+			scope,
+			matchedRule: null,
+			fallbackProfileName: profile.name,
+			profile: {
+				name: profile.name,
+				gitName: profile.gitName,
+				email: profile.email,
+				signingKey: profile.signingKey ?? null,
+			},
+		}),
+	);
+}
+
+export function sendRuleApplyFallbackUnchangedMsg(
+	targetDirectory: string,
+	scope: ConfigScope,
+	profile: Profile,
+): void {
+	console.log(
+		chalk.yellow(
+			`No folder rule matched ${targetDirectory}. Fallback profile '${profile.name}' selected.`,
+		),
+	);
+	console.log(
+		chalk.green(
+			`Profile '${profile.name}' already matches ${chalk.bold(scope)} scope. No changes were written.`,
+		),
+	);
+}
+
+export function sendRuleApplyFallbackUnchangedJson(
+	targetDirectory: string,
+	scope: ConfigScope,
+	profile: Profile,
+): void {
+	console.log(
+		JSON.stringify({
+			status: "unchanged",
+			resolution: "fallback",
+			directory: targetDirectory,
+			scope,
+			matchedRule: null,
+			fallbackProfileName: profile.name,
+			profile: {
+				name: profile.name,
+				gitName: profile.gitName,
+				email: profile.email,
+				signingKey: profile.signingKey ?? null,
+			},
+			changes: [],
+		}),
+	);
+}
+
+export function sendRuleApplyFallbackDryRunMsg(
+	targetDirectory: string,
+	scope: ConfigScope,
+	profile: Profile,
+	current: {
+		gitName: string | null;
+		email: string | null;
+		signingKey: string | null;
+	},
+	changes: UseChangeStep[],
+): void {
+	console.log(chalk.blue("Dry run: no git config was changed."));
+	console.log(
+		chalk.yellow(
+			`No folder rule matched ${targetDirectory}. Previewing fallback profile '${profile.name}'.`,
+		),
+	);
+	console.log(`${chalk.gray("Scope:")} ${chalk.green(scope)}`);
+	if (changes.length === 0) {
+		console.log(
+			chalk.green(
+				`No changes detected. Profile '${profile.name}' already matches ${scope} scope.`,
+			),
+		);
+		return;
+	}
+	for (const change of changes) {
+		const actionLabel = change.action === "unset" ? "UNSET" : "SET";
+		console.log(
+			`${chalk.gray(change.key)} ${chalk.yellow(actionLabel)} ${formatValue(change.before)} -> ${formatValue(change.after)}`,
+		);
+	}
+	if (
+		current.gitName === null &&
+		current.email === null &&
+		current.signingKey === null
+	) {
+		console.log(chalk.gray("Current identity is empty in target scope."));
+	}
+}
+
+export function sendRuleApplyFallbackDryRunJson(
+	targetDirectory: string,
+	scope: ConfigScope,
+	profile: Profile,
+	current: {
+		gitName: string | null;
+		email: string | null;
+		signingKey: string | null;
+	},
+	changes: UseChangeStep[],
+): void {
+	console.log(
+		JSON.stringify({
+			status: "dry-run",
+			resolution: "fallback",
+			directory: targetDirectory,
+			scope,
+			matchedRule: null,
+			fallbackProfileName: profile.name,
+			profile: {
+				name: profile.name,
+				gitName: profile.gitName,
+				email: profile.email,
+				signingKey: profile.signingKey ?? null,
+			},
+			current,
+			hasChanges: changes.length > 0,
+			changes: changes.map((change) => ({
+				key: change.key,
+				action: change.action,
+				before: change.before,
+				after: change.after,
+			})),
+		}),
+	);
+}
+
 export function sendRuleApplyUnmatchedMsg(
 	targetDirectory: string,
 	scope: ConfigScope,

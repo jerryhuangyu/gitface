@@ -1179,6 +1179,157 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("applies fallback profile when no rule matches target directory", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-apply-fallback-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const targetDir = path.join(homeDir, "sandbox");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(targetDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "fallback-work",
+				gitName: "Fallback User",
+				email: "fallback@example.com",
+			});
+
+			const git = simpleGit({ baseDir: targetDir });
+			await git.init();
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"apply",
+				targetDir,
+				"--strict",
+				"--fallback-profile",
+				"fallback-work",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				resolution: string;
+				directory: string;
+				scope: string;
+				matchedRule: null;
+				fallbackProfileName: string;
+				profile: {
+					name: string;
+					gitName: string;
+					email: string;
+					signingKey: string | null;
+				};
+			};
+			expect(parsed.status).toBe("applied");
+			expect(parsed.resolution).toBe("fallback");
+			expect(parsed.directory).toBe(`${targetDir}${path.sep}`);
+			expect(parsed.scope).toBe("local");
+			expect(parsed.matchedRule).toBeNull();
+			expect(parsed.fallbackProfileName).toBe("fallback-work");
+			expect(parsed.profile.name).toBe("fallback-work");
+			expect(process.exitCode ?? 0).toBe(0);
+
+			const config = await git.listConfig();
+			expect(config.all["user.name"]).toBe("Fallback User");
+			expect(config.all["user.email"]).toBe("fallback@example.com");
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns error when fallback profile does not exist", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-apply-fallback-missing-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const targetDir = path.join(homeDir, "sandbox");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(targetDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"apply",
+				targetDir,
+				"--fallback-profile",
+				"not-exist",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				directory: string;
+				reason: string;
+			};
+			expect(parsed.status).toBe("error");
+			expect(parsed.directory).toBe(`${targetDir}${path.sep}`);
+			expect(parsed.reason).toContain("not-exist");
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("returns error when rules apply matches missing profile", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;
