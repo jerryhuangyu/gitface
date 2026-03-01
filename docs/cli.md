@@ -86,10 +86,14 @@ dot segments (`.`/`..`).
 ## `gitface use <name>`
 
 - Applies a profile to Git configuration using `simple-git addConfig`.
-- Running `gitface use` without `<name>` opens an interactive selector; after
-  selection GitFace applies the chosen profile immediately.
+- Running `gitface use` without `<name>` resolves candidate profiles first, then:
+  - `0` candidates: fails with guidance.
+  - `1` candidate: auto-applies without opening UI.
+  - `2+` candidates on TTY: opens an interactive selector for those candidates.
+  - `2+` candidates on non-TTY: fails and asks for explicit `<name>`.
 - Options:
   - `--scope <local|global|system>` / `-s` (defaults to `local`).
+  - `--query <text>` / `-q` filters candidates by case-insensitive profile-name substring matching when `<name>` is omitted.
   - `--dry-run` previews planned writes/unsets for the target scope without mutating Git config.
 - `--json` emits machine-readable output:
   `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
@@ -104,6 +108,7 @@ dot segments (`.`/`..`).
 - When `<name>` is provided (including JSON mode), GitFace avoids loading the interactive selector UI.
 - If no profiles exist in interactive mode, GitFace exits with code `1` and
   prints guidance to create one via `gitface new <name>`.
+- If `--query` matches multiple profiles in non-TTY mode, GitFace exits with code `1` and asks for explicit `gitface use <name>`.
 - Successful runs log the applied values so you can double-check before committing.
 - Invalid scopes short-circuit the command with an error banner and status `1`.
 - Missing-profile failures include best-effort suggestions to help recovery without leaving the command.

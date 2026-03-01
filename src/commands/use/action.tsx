@@ -20,9 +20,17 @@ interface UseProfileOptions {
 	scope?: string;
 	dryRun?: boolean;
 	json?: boolean;
+	query?: string;
 }
 
-export type PromptForProfileSelection = () => Promise<string | null>;
+export interface PromptForProfileSelectionOptions {
+	candidates: string[];
+	query?: string;
+}
+
+export type PromptForProfileSelection = (
+	options: PromptForProfileSelectionOptions,
+) => Promise<string | null>;
 
 export const runUseAction = async (
 	name: string | undefined,
@@ -51,19 +59,24 @@ export const runUseAction = async (
 		return;
 	}
 
+	const service = ProfileService.create();
 	if (!profileName) {
-		profileName = (await promptForSelection()) ?? undefined;
-		if (!profileName) {
-			sendProfileUseFailedMsg(
-				"No profiles found. Run `gitface new <name>` to create one first.",
-			);
+		const resolved = await resolveProfileName({
+			service,
+			query: options.query,
+			promptForSelection,
+		});
+
+		if ("reason" in resolved) {
+			sendProfileUseFailedMsg(resolved.reason);
 			process.exitCode = 1;
 			return;
 		}
+
+		profileName = resolved.profileName;
 	}
 
 	try {
-		const service = ProfileService.create();
 		const profile = await service.getProfile(profileName);
 		const scopedIdentity = await service.getScopedIdentity(scope);
 		const currentIdentity = {
@@ -132,26 +145,107 @@ const action: (
 
 export default action;
 
-export const promptForProfileSelection: PromptForProfileSelection =
-	async () => {
-		const [{ render }, { SelectProfile }] = await Promise.all([
-			import("ink"),
-			import("./select-profile"),
-		]);
+export const promptForProfileSelection: PromptForProfileSelection = async ({
+	candidates,
+	query,
+}) => {
+	const [{ render }, { SelectProfile }] = await Promise.all([
+		import("ink"),
+		import("./select-profile"),
+	]);
 
-		return await new Promise<string | null>((resolve) => {
-			render(
-				<SelectProfile
-					onSelect={(selected) => {
-						resolve(selected);
-					}}
-					onEmpty={() => {
-						resolve(null);
-					}}
-				/>,
-			);
-		});
-	};
+	return await new Promise<string | null>((resolve) => {
+		render(
+			<SelectProfile
+				candidates={candidates}
+				query={query}
+				onSelect={(selected) => {
+					resolve(selected);
+				}}
+				onEmpty={() => {
+					resolve(null);
+				}}
+			/>,
+		);
+	});
+};
+
+async function resolveProfileName({
+	service,
+	query,
+	promptForSelection,
+}: {
+	service: ProfileService;
+	query?: string;
+	promptForSelection: PromptForProfileSelection;
+}): Promise<{ profileName: string } | { reason: string }> {
+	const names = (await service.listProfileNames()).sort((a, b) =>
+		a.localeCompare(b),
+	);
+	if (names.length === 0) {
+		return {
+			reason:
+				"No profiles found. Run `gitface new <name>` to create one first.",
+		};
+	}
+
+	const normalizedQuery = normalizeQuery(query);
+	const candidates = filterProfileNames(names, normalizedQuery);
+	if (candidates.length === 0) {
+		if (!normalizedQuery) {
+			return {
+				reason:
+					"No profiles found. Run `gitface new <name>` to create one first.",
+			};
+		}
+		return {
+			reason: `No profiles matched query "${normalizedQuery}". Run \`gitface list\` to inspect available profiles.`,
+		};
+	}
+
+	if (candidates.length === 1) {
+		return { profileName: candidates[0] };
+	}
+
+	if (!process.stdout.isTTY) {
+		if (normalizedQuery) {
+			return {
+				reason: `Multiple profiles matched query "${normalizedQuery}". Re-run with an explicit profile name, for example: \`gitface use ${candidates[0]}\`.`,
+			};
+		}
+		return {
+			reason:
+				"Profile name is required in non-interactive mode. Re-run with `gitface use <name>`.",
+		};
+	}
+
+	const selected = await promptForSelection({
+		candidates,
+		query: normalizedQuery,
+	});
+
+	if (!selected) {
+		return { reason: "No profile selected." };
+	}
+
+	return { profileName: selected };
+}
+
+function normalizeQuery(value: string | undefined): string | undefined {
+	const normalized = value?.trim();
+	return normalized ? normalized : undefined;
+}
+
+function filterProfileNames(
+	names: string[],
+	query: string | undefined,
+): string[] {
+	if (!query) {
+		return names;
+	}
+	const loweredQuery = query.toLowerCase();
+	return names.filter((name) => name.toLowerCase().includes(loweredQuery));
+}
 
 function isValidScope(value: string): value is ConfigScope {
 	const VALID_SCOPES = new Set<ConfigScope>(["local", "global", "system"]);

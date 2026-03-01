@@ -131,6 +131,18 @@ gitface use work --scope global
 gitface current --scope global
 ```
 
+### 情境 C-1：profile 太多時，用 query 縮小候選
+
+```bash
+gitface use --query work
+```
+
+- `--query` 會做不分大小寫子字串比對。
+- 若只命中 1 個 profile，會直接套用（不進互動選單）。
+- 若命中多個：
+  - TTY 終端：進互動選單（只顯示命中項目）。
+  - 非 TTY/CI：會失敗並提示你改用明確 `gitface use <name>`。
+
 ### 情境 D：編輯既有 profile
 
 ```bash
@@ -300,6 +312,15 @@ gitface new <name>
 ### `No profiles found. Run \`gitface new <name>\` to create one first.`
 
 你執行了互動選單模式 `gitface use`，但目前沒有任何 profile。
+
+### `Multiple profiles matched query \"<text>\". Re-run with an explicit profile name ...`
+
+你在 `gitface use --query <text>` 命中多個 profile，且當前是非互動環境（例如 CI）。
+請改成明確指定名稱，例如：
+
+```bash
+gitface use work-main
+```
 
 ### `Non-interactive flags are required when using --json output mode.`
 

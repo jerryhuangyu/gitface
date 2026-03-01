@@ -75,7 +75,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface new <profile>`  | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--dry-run`, `--json`). |
 | `gitface edit <profile>` | Update a stored profile via flags or an interactive editor; supports `--dry-run` and `--json` output. |
 | `gitface list`           | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, cap output with `--limit`, or use `list --json`. |
-| `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--dry-run`, and `use --json` output.      |
+| `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--query`, `--dry-run`, and `use --json` output.      |
 | `gitface current`        | Display active Git identity; supports `--scope` and `current --json` for machine-readable output. |
 | `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--strict` available). |
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports `--json` summary output.              |
@@ -198,6 +198,12 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
 - `gitface use` (without `<profile>`) opens an interactive selector and applies
   the selected profile immediately.
+- `gitface use --query <text>` pre-filters profile candidates by case-insensitive
+  substring matching when `<profile>` is omitted.
+- `gitface use --query <text>` auto-applies directly when exactly one profile
+  matches.
+- `gitface use --query <text>` in non-TTY mode fails fast when multiple profiles
+  match and asks for an explicit profile name.
 - `gitface current --scope global --json` inspects one scope and emits:
   `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }`.
 - Scoped identity reads (`current --scope`, `use` planning, and doctor global checks)

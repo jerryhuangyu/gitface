@@ -1,45 +1,32 @@
 import { Box, Text, useApp } from "ink";
 import SelectInput from "ink-select-input";
-import { useEffect, useState } from "react";
-import { ProfileService } from "@/core/profile-service";
+import { useEffect } from "react";
 
 interface Props {
+	candidates: string[];
+	query?: string;
 	onSelect: (profileName: string) => void;
 	onEmpty?: () => void;
 }
 
-export const SelectProfile: React.FC<Props> = ({ onSelect, onEmpty }) => {
+export const SelectProfile: React.FC<Props> = ({
+	candidates,
+	query,
+	onSelect,
+	onEmpty,
+}) => {
 	const { exit } = useApp();
-	const [items, setItems] = useState<Array<{ label: string; value: string }>>(
-		[],
-	);
-	const [loading, setLoading] = useState(true);
+	const items = candidates.map((name) => ({
+		label: name,
+		value: name,
+	}));
 
 	useEffect(() => {
-		const fetchProfiles = async () => {
-			const service = ProfileService.create();
-			const profiles = await service.listProfiles();
-			setItems(
-				profiles.map((p) => ({
-					label: p.name,
-					value: p.name,
-				})),
-			);
-			setLoading(false);
-		};
-		fetchProfiles();
-	}, []);
-
-	useEffect(() => {
-		if (!loading && items.length === 0) {
+		if (items.length === 0) {
 			onEmpty?.();
 			exit();
 		}
-	}, [exit, items.length, loading, onEmpty]);
-
-	if (loading) {
-		return <Text>Loading profiles...</Text>;
-	}
+	}, [exit, items.length, onEmpty]);
 
 	if (items.length === 0) {
 		return (
@@ -53,6 +40,11 @@ export const SelectProfile: React.FC<Props> = ({ onSelect, onEmpty }) => {
 	return (
 		<Box flexDirection="column">
 			<Text bold>Select a profile to use:</Text>
+			{query ? (
+				<Text>
+					Filtered by query: <Text color="cyan">{query}</Text>
+				</Text>
+			) : null}
 			<SelectInput
 				items={items}
 				onSelect={(item) => {

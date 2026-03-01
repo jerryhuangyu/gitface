@@ -8,6 +8,27 @@ import { runUseAction } from "../src/commands/use/action";
 import { useProfileCommand } from "../src/commands/index";
 import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
 
+function setStdoutTTY(value: boolean): () => void {
+	const hadOwn = Object.prototype.hasOwnProperty.call(process.stdout, "isTTY");
+	const previous = (process.stdout as { isTTY?: boolean }).isTTY;
+
+	Object.defineProperty(process.stdout, "isTTY", {
+		value,
+		configurable: true,
+	});
+
+	return () => {
+		if (hadOwn) {
+			Object.defineProperty(process.stdout, "isTTY", {
+				value: previous,
+				configurable: true,
+			});
+			return;
+		}
+		delete (process.stdout as { isTTY?: boolean }).isTTY;
+	};
+}
+
 describe("use command e2e", () => {
 	test("applies profile and overrides with another profile to local git config in a repo", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
@@ -207,6 +228,7 @@ describe("use command e2e", () => {
 		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
 		const repoDir = path.join(tmpRoot, "repo");
 		const configDir = path.join(tmpRoot, "config");
+		const restoreTTY = setStdoutTTY(true);
 
 		await fs.mkdir(repoDir);
 		const git = simpleGit({ baseDir: repoDir });
@@ -231,6 +253,7 @@ describe("use command e2e", () => {
 			expect(config.all["user.email"]).toBe("work@example.com");
 			expect(process.exitCode).toBeUndefined();
 		} finally {
+			restoreTTY();
 			process.chdir(originalCwd);
 			if (originalXdg === undefined) {
 				delete process.env.XDG_CONFIG_HOME;
@@ -251,6 +274,7 @@ describe("use command e2e", () => {
 		const configDir = path.join(tmpRoot, "config");
 		const logs: string[] = [];
 		const restoreLog = spyConsole(logs);
+		const restoreTTY = setStdoutTTY(true);
 
 		await fs.mkdir(repoDir);
 		const git = simpleGit({ baseDir: repoDir });
@@ -272,6 +296,106 @@ describe("use command e2e", () => {
 			expect(process.exitCode).toBe(1);
 			expect(stripAnsi(logs.join("\n"))).toContain("No profiles found");
 		} finally {
+			restoreTTY();
+			process.chdir(originalCwd);
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreLog();
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("auto-selects single matched profile when --query is provided", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
+		const repoDir = path.join(tmpRoot, "repo");
+		const configDir = path.join(tmpRoot, "config");
+
+		await fs.mkdir(repoDir);
+		const git = simpleGit({ baseDir: repoDir });
+		await git.init();
+
+		try {
+			process.chdir(repoDir);
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-main",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await service.createProfile({
+				name: "personal",
+				gitName: "Personal User",
+				email: "personal@example.com",
+			});
+
+			await runUseAction(undefined, { query: "main" }, async () => null);
+
+			const config = await git.listConfig();
+			expect(config.all["user.name"]).toBe("Work User");
+			expect(config.all["user.email"]).toBe("work@example.com");
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			process.chdir(originalCwd);
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("fails in non-tty mode when --query matches multiple profiles", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
+		const repoDir = path.join(tmpRoot, "repo");
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+		const restoreTTY = setStdoutTTY(false);
+
+		await fs.mkdir(repoDir);
+		const git = simpleGit({ baseDir: repoDir });
+		await git.init();
+
+		try {
+			process.chdir(repoDir);
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-main",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await service.createProfile({
+				name: "work-admin",
+				gitName: "Work Admin",
+				email: "work-admin@example.com",
+			});
+
+			await runUseAction(undefined, { query: "work" }, async () => null);
+
+			expect(process.exitCode).toBe(1);
+			expect(stripAnsi(logs.join("\n"))).toContain(
+				"Multiple profiles matched query",
+			);
+		} finally {
+			restoreTTY();
 			process.chdir(originalCwd);
 			if (originalXdg === undefined) {
 				delete process.env.XDG_CONFIG_HOME;
