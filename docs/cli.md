@@ -299,6 +299,10 @@ dot segments (`.`/`..`).
   suggestions to a positive integer.
 - `gitface completion profiles --json` emits machine-readable output:
   `{ "topic": "profiles", "prefix": "wo", "limit": 5, "count": 1, "names": ["work-admin"] }`.
+- `gitface completion profiles --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "COMPLETION_PROFILES_OK", "message": "Completion profiles resolved.", "data": { "topic": "profiles", "prefix": "wo", "limit": 5, "count": 1, "names": ["work-admin"] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
+- `--json-envelope` validation/topic failures emit machine-readable errors and exit `1`, for example:
+  `{ "status": "error", "code": "COMPLETION_LIMIT_INVALID", "message": "Limit must be a positive integer.", "data": null, "errors": [{ "code": "COMPLETION_LIMIT_INVALID", "message": "Limit must be a positive integer." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
 - `--json` mode always prints valid JSON (including no-match case as
   `{ "topic": "profiles", "prefix": "none", "limit": null, "count": 0, "names": [] }`).
 - Completion suggestions are derived from local profile filenames (name index),

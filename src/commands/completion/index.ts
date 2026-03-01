@@ -16,6 +16,10 @@ const command: Command = new Command("completion")
 		"delimiter between suggestions (default: newline)",
 	)
 	.option("--json", "emit machine-readable JSON output")
+	.option(
+		"--json-envelope",
+		"emit Result Envelope JSON output with schema/version metadata",
+	)
 	.action(action);
 
 command

@@ -63,6 +63,9 @@ Run `gitface <command> --help` to see all flags and examples.
   matching, so `wo` can match `Work` / `work-admin`.
 - `gitface completion profiles --json` emits machine-readable payload:
   `{ "topic": "profiles", "prefix": "wo", "limit": 5, "count": 1, "names": ["work-admin"] }`.
+- `gitface completion profiles --json-envelope` emits Result Envelope output for
+  automation/CI observability:
+  `{ "status": "success", "code": "COMPLETION_PROFILES_OK", "message": "Completion profiles resolved.", "data": { "topic": "profiles", "prefix": "wo", "limit": 5, "count": 1, "names": ["work-admin"] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface completion profiles` reads profile names from local profile filenames,
   so unrelated malformed profile JSON payloads do not block tab completion.
 - Completion is scoped to source-profile arguments for `use`, `rm/remove`,

@@ -279,6 +279,72 @@ describe("completion command e2e", () => {
 		}
 	});
 
+	test("emits result envelope payload with --json-envelope", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-completion-"),
+		);
+		const configDir = path.join(tmpRoot, "config");
+		const output: string[] = [];
+		const restoreStdout = captureStdout(output);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-admin",
+				gitName: "Work Admin",
+				email: "work-admin@example.com",
+			});
+
+			await runCli(
+				[completionCommand.command],
+				[
+					"node",
+					"gitface",
+					"completion",
+					"profiles",
+					"--prefix",
+					"wo",
+					"--limit",
+					"1",
+					"--json-envelope",
+				],
+			);
+
+			const payload = JSON.parse(output.join(""));
+			expect(payload.status).toBe("success");
+			expect(payload.code).toBe("COMPLETION_PROFILES_OK");
+			expect(payload.message).toBe("Completion profiles resolved.");
+			expect(payload.errors).toEqual([]);
+			expect(payload.data).toEqual({
+				topic: "profiles",
+				prefix: "wo",
+				limit: 1,
+				count: 1,
+				names: ["work-admin"],
+			});
+			expect(payload.meta.schemaVersion).toBe("1.0.0");
+			expect(typeof payload.meta.durationMs).toBe("number");
+			expect(payload.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(typeof payload.meta.traceId).toBe("string");
+			expect(payload.meta.traceId.length).toBeGreaterThan(0);
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreStdout();
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("sets exit code and writes no output for invalid --limit", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
@@ -316,6 +382,67 @@ describe("completion command e2e", () => {
 
 			expect(process.exitCode).toBe(1);
 			expect(output.join("")).toBe("");
+		} finally {
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreStdout();
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns result envelope error for invalid --limit with --json-envelope", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-completion-"),
+		);
+		const configDir = path.join(tmpRoot, "config");
+		const output: string[] = [];
+		const restoreStdout = captureStdout(output);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await runCli(
+				[completionCommand.command],
+				[
+					"node",
+					"gitface",
+					"completion",
+					"profiles",
+					"--prefix",
+					"wo",
+					"--limit",
+					"0",
+					"--json-envelope",
+				],
+			);
+
+			const payload = JSON.parse(output.join(""));
+			expect(payload.status).toBe("error");
+			expect(payload.code).toBe("COMPLETION_LIMIT_INVALID");
+			expect(payload.message).toBe("Limit must be a positive integer.");
+			expect(payload.data).toBeNull();
+			expect(payload.errors).toEqual([
+				{
+					code: "COMPLETION_LIMIT_INVALID",
+					message: "Limit must be a positive integer.",
+				},
+			]);
+			expect(payload.meta.schemaVersion).toBe("1.0.0");
+			expect(process.exitCode).toBe(1);
 		} finally {
 			if (originalXdg === undefined) {
 				delete process.env.XDG_CONFIG_HOME;
@@ -388,6 +515,37 @@ describe("completion command e2e", () => {
 
 			expect(process.exitCode).toBe(1);
 			expect(output.join("")).toBe("");
+		} finally {
+			process.exitCode = originalExitCode;
+			restoreStdout();
+		}
+	});
+
+	test("returns result envelope error for unsupported topic with --json-envelope", async () => {
+		const originalExitCode = process.exitCode;
+		const output: string[] = [];
+		const restoreStdout = captureStdout(output);
+
+		try {
+			process.exitCode = undefined;
+			await runCli(
+				[completionCommand.command],
+				["node", "gitface", "completion", "invalid-topic", "--json-envelope"],
+			);
+
+			const payload = JSON.parse(output.join(""));
+			expect(payload.status).toBe("error");
+			expect(payload.code).toBe("COMPLETION_TOPIC_UNSUPPORTED");
+			expect(payload.message).toBe("Completion topic must be: profiles.");
+			expect(payload.data).toBeNull();
+			expect(payload.errors).toEqual([
+				{
+					code: "COMPLETION_TOPIC_UNSUPPORTED",
+					message: "Completion topic must be: profiles.",
+				},
+			]);
+			expect(payload.meta.schemaVersion).toBe("1.0.0");
+			expect(process.exitCode).toBe(1);
 		} finally {
 			process.exitCode = originalExitCode;
 			restoreStdout();

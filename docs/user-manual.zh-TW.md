@@ -273,6 +273,7 @@ gitface rules prune --json
 gitface completion snippet --shell zsh
 gitface completion profiles --prefix wo --limit 5
 gitface completion profiles --prefix wo --limit 5 --json
+gitface completion profiles --prefix wo --limit 5 --json-envelope
 ```
 
 說明：
@@ -281,6 +282,8 @@ gitface completion profiles --prefix wo --limit 5 --json
 - 預設 snippet 會帶 `--limit 50`，避免 profile 很多時補全輸出過大。
 - `completion profiles --json` 會輸出結構化結果，方便 CI/agent 腳本：
   `{ "topic": "profiles", "prefix": "wo", "limit": 5, "count": 1, "names": ["work-admin"] }`。
+- `completion profiles --json-envelope` 會輸出統一 Result Envelope（含 `schemaVersion/durationMs/traceId`），便於可觀測與回放：
+  `{ "status": "success", "code": "COMPLETION_PROFILES_OK", "message": "Completion profiles resolved.", "data": { "topic": "profiles", "prefix": "wo", "limit": 5, "count": 1, "names": ["work-admin"] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`。
 
 ## JSON 模式（給自動化/CI）
 
