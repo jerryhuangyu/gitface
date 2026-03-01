@@ -1,5 +1,5 @@
-import { ProfileService } from "@/core/profile-service";
-import { RuleService } from "@/core/rule-service";
+import { randomUUID } from "node:crypto";
+import { ProfileRenameService } from "@/core/profile-rename-service";
 import {
 	InvalidProfileError,
 	ProfileAlreadyExistsError,
@@ -10,6 +10,8 @@ import { buildProfileNotFoundReason } from "../profile-not-found-reason";
 import {
 	sendProfileRenameDryRunJson,
 	sendProfileRenameDryRunMsg,
+	sendProfileRenameEnvelopeError,
+	sendProfileRenameEnvelopeSuccess,
 	sendProfileRenameFailedJson,
 	sendProfileRenameFailedMsg,
 	sendProfileRenameSuccessJson,
@@ -20,47 +22,10 @@ interface Options {
 	force?: boolean;
 	dryRun?: boolean;
 	json?: boolean;
+	jsonEnvelope?: boolean;
 }
 
-const isMissingGlobalConfigError = (error: unknown): boolean => {
-	return (
-		error instanceof Error &&
-		error.message.toLowerCase().includes("unable to read config file")
-	);
-};
-
-async function countRulesUsingProfile(profileName: string): Promise<number> {
-	try {
-		const ruleService = RuleService.create();
-		const rules = await ruleService.listRules();
-		return rules.filter((rule) => rule.profileName === profileName).length;
-	} catch (error) {
-		if (isMissingGlobalConfigError(error)) {
-			return 0;
-		}
-		throw error;
-	}
-}
-
-async function migrateRulesToRenamedProfile(
-	oldName: string,
-	newName: string,
-): Promise<number> {
-	try {
-		const ruleService = RuleService.create();
-		const rules = await ruleService.listRules();
-		const impactedRules = rules.filter((rule) => rule.profileName === oldName);
-		for (const rule of impactedRules) {
-			await ruleService.addRule(rule.directory, newName);
-		}
-		return impactedRules.length;
-	} catch (error) {
-		if (isMissingGlobalConfigError(error)) {
-			return 0;
-		}
-		throw error;
-	}
-}
+type OutputMode = "text" | "json" | "json-envelope";
 
 const action: (
 	oldName: string,
@@ -69,43 +34,90 @@ const action: (
 ) => Promise<void> = withCommandHandling(
 	"command:rename",
 	async (oldName: string, newName: string, options: Options) => {
-		const service = ProfileService.create();
+		const startedAtMs = Date.now();
+		const traceId = randomUUID();
+		const outputMode: OutputMode =
+			options.jsonEnvelope === true
+				? "json-envelope"
+				: options.json === true
+					? "json"
+					: "text";
+		const service = ProfileRenameService.create();
 		try {
 			if (options.dryRun) {
-				const profile = await service.getProfile(oldName);
-				const targetProfile = await service.findProfile(newName);
-				const rulesToUpdate = await countRulesUsingProfile(oldName);
-				if (!options.force && targetProfile !== null) {
+				const preview = await service.previewRename(oldName, newName);
+				if (!options.force && preview.overwrite) {
 					throw new ProfileAlreadyExistsError(newName);
 				}
-				const overwrite = targetProfile !== null;
-				if (options.json) {
+				if (outputMode === "json-envelope") {
+					sendProfileRenameEnvelopeSuccess(
+						"RENAME_PROFILE_DRY_RUN",
+						"Profile rename dry-run completed.",
+						{
+							result: "dry-run",
+							oldName,
+							newName,
+							overwrite: preview.overwrite,
+							rulesUpdated: preview.rulesToUpdate,
+							profile: {
+								name: preview.profile.name,
+								gitName: preview.profile.gitName,
+								email: preview.profile.email,
+								signingKey: preview.profile.signingKey ?? null,
+							},
+						},
+						Date.now() - startedAtMs,
+						traceId,
+					);
+					return;
+				}
+				if (outputMode === "json") {
 					sendProfileRenameDryRunJson(
 						oldName,
 						newName,
-						profile,
-						overwrite,
-						rulesToUpdate,
+						preview.profile,
+						preview.overwrite,
+						preview.rulesToUpdate,
 					);
 					return;
 				}
 				sendProfileRenameDryRunMsg(
 					oldName,
 					newName,
-					profile,
-					overwrite,
-					rulesToUpdate,
+					preview.profile,
+					preview.overwrite,
+					preview.rulesToUpdate,
 				);
 				return;
 			}
 
-			const profile = await service.renameProfile(
+			const { profile, rulesUpdated } = await service.renameProfile(
 				oldName,
 				newName,
-				options.force,
+				options.force ?? false,
 			);
-			const rulesUpdated = await migrateRulesToRenamedProfile(oldName, newName);
-			if (options.json) {
+			if (outputMode === "json-envelope") {
+				sendProfileRenameEnvelopeSuccess(
+					"RENAME_PROFILE_OK",
+					"Profile renamed successfully.",
+					{
+						result: "renamed",
+						oldName,
+						newName: profile.name,
+						rulesUpdated,
+						profile: {
+							name: profile.name,
+							gitName: profile.gitName,
+							email: profile.email,
+							signingKey: profile.signingKey ?? null,
+						},
+					},
+					Date.now() - startedAtMs,
+					traceId,
+				);
+				return;
+			}
+			if (outputMode === "json") {
 				sendProfileRenameSuccessJson(oldName, profile, rulesUpdated);
 				return;
 			}
@@ -116,7 +128,14 @@ const action: (
 					oldName,
 					`'${oldName}' does not exist.`,
 				);
-				if (options.json) {
+				if (outputMode === "json-envelope") {
+					sendProfileRenameEnvelopeError(
+						"RENAME_PROFILE_NOT_FOUND",
+						reason,
+						Date.now() - startedAtMs,
+						traceId,
+					);
+				} else if (outputMode === "json") {
 					sendProfileRenameFailedJson(oldName, newName, reason);
 				} else {
 					sendProfileRenameFailedMsg(reason);
@@ -127,7 +146,14 @@ const action: (
 
 			if (error instanceof ProfileAlreadyExistsError) {
 				const reason = error.message;
-				if (options.json) {
+				if (outputMode === "json-envelope") {
+					sendProfileRenameEnvelopeError(
+						"RENAME_PROFILE_CONFLICT",
+						reason,
+						Date.now() - startedAtMs,
+						traceId,
+					);
+				} else if (outputMode === "json") {
 					sendProfileRenameFailedJson(oldName, newName, reason);
 				} else {
 					sendProfileRenameFailedMsg(reason);
@@ -138,7 +164,14 @@ const action: (
 
 			if (error instanceof InvalidProfileError) {
 				const reason = error.message;
-				if (options.json) {
+				if (outputMode === "json-envelope") {
+					sendProfileRenameEnvelopeError(
+						"RENAME_PROFILE_INVALID",
+						reason,
+						Date.now() - startedAtMs,
+						traceId,
+					);
+				} else if (outputMode === "json") {
 					sendProfileRenameFailedJson(oldName, newName, reason);
 				} else {
 					sendProfileRenameFailedMsg(reason);

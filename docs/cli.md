@@ -66,10 +66,16 @@ dot segments (`.`/`..`).
 - `--dry-run` previews rename metadata without modifying profile files.
 - `--json` emits machine-readable output:
   `{ "status": "renamed", "oldName": "old", "name": "new", "rulesUpdated": 2, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `--json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "RENAME_PROFILE_OK", "message": "Profile renamed successfully.", "data": { "result": "renamed", "oldName": "old", "newName": "new", "rulesUpdated": 2, "profile": { "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
+- `--dry-run --json-envelope` emits:
+  `{ "status": "success", "code": "RENAME_PROFILE_DRY_RUN", "message": "Profile rename dry-run completed.", "data": { "result": "dry-run", "oldName": "old", "newName": "new", "overwrite": false, "rulesUpdated": 2, "profile": { "name": "old", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `--dry-run --json` emits machine-readable preview output:
   `{ "status": "dry-run", "oldName": "old", "newName": "new", "overwrite": false, "rulesToUpdate": 2, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - JSON failures return:
   `{ "status": "error", "oldName": "old", "newName": "new", "reason": "..." }` with exit code `1`.
+- `--json-envelope` failures return:
+  `{ "status": "error", "code": "RENAME_PROFILE_NOT_FOUND", "message": "'old' does not exist.", "data": null, "errors": [{ "code": "RENAME_PROFILE_NOT_FOUND", "message": "'old' does not exist." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }` with exit code `1`.
 - When source profile is missing, failure text appends up to 3 suggestions.
 
 ## `gitface list`

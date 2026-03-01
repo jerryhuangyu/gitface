@@ -1,4 +1,8 @@
 import chalk from "chalk";
+import {
+	buildResultEnvelope,
+	type ResultEnvelope,
+} from "@/core/result-envelope";
 import type { Profile } from "@/domain/profile";
 
 const checkIcon = chalk.greenBright("✔");
@@ -98,3 +102,64 @@ export const sendProfileRenameDryRunJson = (
 		}),
 	);
 };
+
+interface RenameEnvelopeProfile {
+	name: string;
+	gitName: string;
+	email: string;
+	signingKey: string | null;
+}
+
+interface RenameEnvelopeData {
+	result: "renamed" | "dry-run";
+	oldName: string;
+	newName: string;
+	overwrite?: boolean;
+	rulesUpdated: number;
+	profile: RenameEnvelopeProfile;
+}
+
+export const sendProfileRenameEnvelopeSuccess = (
+	code: string,
+	message: string,
+	data: RenameEnvelopeData,
+	durationMs: number,
+	traceId: string,
+): void => {
+	writeRenameEnvelope(
+		buildResultEnvelope({
+			status: "success",
+			code,
+			message,
+			data,
+			errors: [],
+			durationMs,
+			traceId,
+		}),
+	);
+};
+
+export const sendProfileRenameEnvelopeError = (
+	code: string,
+	message: string,
+	durationMs: number,
+	traceId: string,
+): void => {
+	writeRenameEnvelope(
+		buildResultEnvelope({
+			status: "error",
+			code,
+			message,
+			data: null,
+			errors: [{ code, message }],
+			durationMs,
+			traceId,
+		}),
+	);
+};
+
+function writeRenameEnvelope(
+	envelope: ResultEnvelope<RenameEnvelopeData | null>,
+): void {
+	console.log(JSON.stringify(envelope));
+}

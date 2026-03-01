@@ -313,6 +313,120 @@ describe("rename command e2e", () => {
 		}
 	});
 
+	test("emits Result Envelope output when renaming with --json-envelope", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreConsole = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "old",
+				gitName: "Old User",
+				email: "old@example.com",
+			});
+
+			await runCli(
+				[renameProfileCommand.command],
+				["node", "gitface", "rename", "old", "new", "--json-envelope"],
+			);
+
+			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as {
+				status: string;
+				code: string;
+				data: {
+					result: string;
+					oldName: string;
+					newName: string;
+					rulesUpdated: number;
+					profile: { name: string };
+				};
+				errors: unknown[];
+				meta: {
+					schemaVersion: string;
+					durationMs: number;
+					traceId: string;
+				};
+			};
+			expect(parsed.status).toBe("success");
+			expect(parsed.code).toBe("RENAME_PROFILE_OK");
+			expect(parsed.data.result).toBe("renamed");
+			expect(parsed.data.oldName).toBe("old");
+			expect(parsed.data.newName).toBe("new");
+			expect(parsed.data.rulesUpdated).toBeTypeOf("number");
+			expect(parsed.data.profile.name).toBe("new");
+			expect(parsed.errors).toEqual([]);
+			expect(parsed.meta.schemaVersion).toBe("1.0.0");
+			expect(parsed.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(parsed.meta.traceId).toBeTypeOf("string");
+		} finally {
+			restoreConsole();
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns envelope error and exit code 1 when source profile is missing with --json-envelope", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreConsole = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "old",
+				gitName: "Old User",
+				email: "old@example.com",
+			});
+
+			await runCli(
+				[renameProfileCommand.command],
+				["node", "gitface", "rename", "missing", "new", "--json-envelope"],
+			);
+
+			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as {
+				status: string;
+				code: string;
+				message: string;
+				data: null;
+				errors: Array<{ code: string; message: string }>;
+			};
+			expect(parsed.status).toBe("error");
+			expect(parsed.code).toBe("RENAME_PROFILE_NOT_FOUND");
+			expect(parsed.message).toContain("'missing' does not exist.");
+			expect(parsed.message).toContain("Did you mean");
+			expect(parsed.data).toBeNull();
+			expect(parsed.errors).toEqual([
+				{
+					code: "RENAME_PROFILE_NOT_FOUND",
+					message: parsed.message,
+				},
+			]);
+			expect(process.exitCode).toBe(1);
+		} finally {
+			restoreConsole();
+			process.argv = originalArgv;
+			if (originalXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+			else process.env.XDG_CONFIG_HOME = originalXdg;
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("migrates rules to renamed profile and reports rulesUpdated in json output", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;

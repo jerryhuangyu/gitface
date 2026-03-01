@@ -84,7 +84,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports legacy `--json` summary and `--json-envelope` unified output. |
 | `gitface import <file>`  | Import profiles from JSON; supports `--dry-run`, `--strict`, `--atomic`, plus `--json` / `--json-envelope` for automation and CI gating.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
-| `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
+| `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run`, `rename --json`, and `rename --json-envelope` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
 | `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`, `prune`) with optional `--json`; `rules apply` also supports `--json-envelope`; mutations support `--dry-run`; `rules list` supports `--query`, `--limit`, and `--health` (`--concurrency` in health mode); `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor/prune --strict` support CI gating; `rules doctor/prune --concurrency` tune integrity scan parallelism. |
 
@@ -207,6 +207,8 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "pruned", "dryRun": false, "strict": false, "summary": { "scanned": 3, "prunable": 1, "pruned": 1, "skipped": 0 }, "metrics": { "concurrency": 3, "scanned": 3, "uniqueProfilesChecked": 2, "uniqueDirectoriesChecked": 0, "scanDurationMs": 3 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "pruned" }] }`.
 - `gitface rename <old> <new> --json` emits machine-readable status:
   `{ "status": "renamed", "oldName": "old", "name": "new", "rulesUpdated": 2, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface rename <old> <new> --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "RENAME_PROFILE_OK", "message": "Profile renamed successfully.", "data": { "result": "renamed", "oldName": "old", "newName": "new", "rulesUpdated": 2, "profile": { "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface rename <old> <new> --dry-run --json` previews rename metadata without writing:
   `{ "status": "dry-run", "oldName": "old", "newName": "new", "overwrite": false, "rulesToUpdate": 2, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface rename` automatically migrates folder rules that reference the old profile name.
