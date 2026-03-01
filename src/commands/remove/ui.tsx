@@ -1,4 +1,8 @@
 import chalk from "chalk";
+import {
+	buildResultEnvelope,
+	type ResultEnvelope,
+} from "@/core/result-envelope";
 import type { Profile } from "@/domain/profile";
 
 const infoIcon = chalk.blue("ℹ");
@@ -89,3 +93,63 @@ export const sendProfileRemoveFailedJson = (
 		}),
 	);
 };
+
+interface RemoveEnvelopeProfile {
+	name: string;
+	gitName: string;
+	email: string;
+	signingKey: string | null;
+}
+
+interface RemoveEnvelopeData {
+	result: "removed" | "dry-run" | "skipped";
+	name: string;
+	force: boolean;
+	profile: RemoveEnvelopeProfile | null;
+	reason: string | null;
+}
+
+export const sendProfileRemoveEnvelopeSuccess = (
+	code: string,
+	message: string,
+	data: RemoveEnvelopeData,
+	durationMs: number,
+	traceId: string,
+): void => {
+	writeRemoveEnvelope(
+		buildResultEnvelope({
+			status: "success",
+			code,
+			message,
+			data,
+			errors: [],
+			durationMs,
+			traceId,
+		}),
+	);
+};
+
+export const sendProfileRemoveEnvelopeError = (
+	code: string,
+	message: string,
+	durationMs: number,
+	traceId: string,
+): void => {
+	writeRemoveEnvelope(
+		buildResultEnvelope({
+			status: "error",
+			code,
+			message,
+			data: null,
+			errors: [{ code, message }],
+			durationMs,
+			traceId,
+		}),
+	);
+};
+
+function writeRemoveEnvelope(
+	envelope: ResultEnvelope<RemoveEnvelopeData | null>,
+): void {
+	console.log(JSON.stringify(envelope));
+}

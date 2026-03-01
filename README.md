@@ -85,7 +85,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface import <file>`  | Import profiles from JSON; supports `--dry-run`, `--strict`, `--atomic`, plus `--json` / `--json-envelope` for automation and CI gating.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run`, `rename --json`, and `rename --json-envelope` for safer automation. |
-| `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
+| `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, plus `remove --json` and `remove --json-envelope` for safer automation. |
 | `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`, `prune`) with optional `--json`; `rules add/remove/resolve/apply` also support `--json-envelope`; mutations support `--dry-run`; `rules list` supports `--query`, `--limit`, and `--health` (`--concurrency` in health mode); `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor/prune --strict` support CI gating; `rules doctor/prune --concurrency` tune integrity scan parallelism. |
 
 ## Profiles & Storage
@@ -136,6 +136,10 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface remove <name> --dry-run --json` previews deletion without writing:
   `{ "status": "dry-run", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `gitface remove <name> --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "REMOVE_PROFILE_OK", "message": "Profile removed successfully.", "data": { "result": "removed", "name": "work", "force": false, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "reason": null }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
+- `gitface remove missing --force --json-envelope` emits skipped Result Envelope output:
+  `{ "status": "success", "code": "REMOVE_PROFILE_SKIPPED", "message": "Profile removal skipped due to --force missing profile.", "data": { "result": "skipped", "name": "missing", "force": true, "profile": null, "reason": "Profile not found." }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
 - Missing-profile failures in `use`/`clone`/`rename`/`remove`/`rules add` now include best-effort `Did you mean ...` suggestions.
 - `gitface use <profile> --dry-run --json` previews scope-specific git config changes without writing:
   `{ "status": "dry-run", "scope": "local", "hasChanges": true, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.

@@ -9,6 +9,10 @@ const command: Command = new Command("rm")
 	.option("-f, --force", "Ignore missing profile errors")
 	.option("--dry-run", "Preview profile removal without deleting files")
 	.option("--json", "Output machine-readable JSON")
+	.option(
+		"--json-envelope",
+		"Output remove result with a unified Result Envelope",
+	)
 	.action(action);
 
 const removeProfileCommand: CliCommand = {

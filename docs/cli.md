@@ -228,6 +228,14 @@ dot segments (`.`/`..`).
   `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `--dry-run --json` emits machine-readable preview output:
   `{ "status": "dry-run", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
+- `--json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "REMOVE_PROFILE_OK", "message": "Profile removed successfully.", "data": { "result": "removed", "name": "work", "force": false, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "reason": null }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
+- `--dry-run --json-envelope` emits machine-readable preview envelope output:
+  `{ "status": "success", "code": "REMOVE_PROFILE_DRY_RUN", "message": "Profile remove dry-run completed.", "data": { "result": "dry-run", "name": "work", "force": false, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "reason": null }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
+- `remove missing --force --json-envelope` emits:
+  `{ "status": "success", "code": "REMOVE_PROFILE_SKIPPED", "message": "Profile removal skipped due to --force missing profile.", "data": { "result": "skipped", "name": "missing", "force": true, "profile": null, "reason": "Profile not found." }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
+- `--json-envelope` failures return a consistent envelope error shape with exit code `1`:
+  `{ "status": "error", "code": "REMOVE_PROFILE_NOT_FOUND", "message": "'missing' does not exist.", "data": null, "errors": [{ "code": "REMOVE_PROFILE_NOT_FOUND", "message": "'missing' does not exist." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
 - Missing-profile failures (except `--force`) append best-effort suggestions in the `reason` message.
 
 ## `gitface rules <subcommand>`
