@@ -240,6 +240,124 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("adds and removes rules with --json-envelope payloads", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-mutation-envelope-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const projectDir = path.join(homeDir, "project-envelope");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(projectDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "eng-profile",
+				gitName: "Eng User",
+				email: "eng@example.com",
+			});
+
+			const restoreLog = spyConsole(logs);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"add",
+					projectDir,
+					"eng-profile",
+					"--json-envelope",
+				],
+			);
+			restoreLog();
+
+			const addOutput = stripAnsi(logs.join("\n")).trim();
+			const addParsed = JSON.parse(addOutput) as {
+				status: string;
+				code: string;
+				data: {
+					result: string;
+					directory: string;
+					profileName: string;
+					overwrite: boolean;
+				};
+				meta: { schemaVersion: string; durationMs: number; traceId: string };
+			};
+			expect(addParsed.status).toBe("success");
+			expect(addParsed.code).toBe("RULE_ADD_OK");
+			expect(addParsed.data).toEqual({
+				result: "added",
+				directory: `${projectDir}${path.sep}`,
+				profileName: "eng-profile",
+				overwrite: false,
+			});
+			expect(addParsed.meta.schemaVersion).toBe("1.0.0");
+			expect(addParsed.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(addParsed.meta.traceId).toMatch(
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+			);
+
+			logs.length = 0;
+			const restoreLog2 = spyConsole(logs);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "remove", projectDir, "--json-envelope"],
+			);
+			restoreLog2();
+
+			const removeOutput = stripAnsi(logs.join("\n")).trim();
+			const removeParsed = JSON.parse(removeOutput) as {
+				status: string;
+				code: string;
+				data: {
+					result: string;
+					directory: string;
+					exists: boolean | null;
+				};
+				meta: { schemaVersion: string; durationMs: number; traceId: string };
+			};
+			expect(removeParsed.status).toBe("success");
+			expect(removeParsed.code).toBe("RULE_REMOVE_OK");
+			expect(removeParsed.data).toEqual({
+				result: "removed",
+				directory: `${projectDir}${path.sep}`,
+				exists: null,
+			});
+			expect(removeParsed.meta.schemaVersion).toBe("1.0.0");
+			expect(removeParsed.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(removeParsed.meta.traceId).toMatch(
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+			);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("returns json error when adding rule with missing profile", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;
@@ -292,6 +410,100 @@ describe("rules command e2e", () => {
 			expect(parsed.reason).toContain("not found");
 			expect(parsed.reason).toContain("Did you mean");
 			expect(parsed.reason).toContain("'work-profile'");
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns envelope error when adding rule with missing profile", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-add-error-envelope-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const projectDir = path.join(homeDir, "project-envelope-error");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(projectDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-profile",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			const restoreLog = spyConsole(logs);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"add",
+					projectDir,
+					"missing",
+					"--json-envelope",
+				],
+			);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				code: string;
+				message: string;
+				data: {
+					result: string;
+					directory: string;
+					profileName: string;
+					overwrite: boolean;
+				};
+				errors: Array<{ code: string; message: string }>;
+				meta: { schemaVersion: string; durationMs: number; traceId: string };
+			};
+
+			expect(parsed.status).toBe("error");
+			expect(parsed.code).toBe("RULE_ADD_FAILED");
+			expect(parsed.message).toContain("not found");
+			expect(parsed.message).toContain("'work-profile'");
+			expect(parsed.data).toEqual({
+				result: "added",
+				directory: `${projectDir}${path.sep}`,
+				profileName: "missing",
+				overwrite: false,
+			});
+			expect(parsed.errors).toEqual([
+				{ code: "RULE_ADD_FAILED", message: parsed.message },
+			]);
+			expect(parsed.meta.schemaVersion).toBe("1.0.0");
+			expect(parsed.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(parsed.meta.traceId).toMatch(
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+			);
 			expect(process.exitCode).toBe(1);
 		} finally {
 			process.chdir(originalCwd);
@@ -834,6 +1046,104 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("resolves most specific matching rule with --json-envelope", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-resolve-envelope-match-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const workDir = path.join(homeDir, "work");
+		const monorepoDir = path.join(workDir, "monorepo");
+		const packageDir = path.join(monorepoDir, "packages", "api");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(workDir, { recursive: true });
+		await fs.mkdir(monorepoDir, { recursive: true });
+		await fs.mkdir(packageDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-profile",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await service.createProfile({
+				name: "mono-profile",
+				gitName: "Monorepo User",
+				email: "mono@example.com",
+			});
+
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", workDir, "work-profile"],
+			);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", monorepoDir, "mono-profile"],
+			);
+
+			const restoreLog = spyConsole(logs);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "resolve", packageDir, "--json-envelope"],
+			);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				code: string;
+				data: {
+					result: string;
+					directory: string;
+					matchedRule: { directory: string; profileName: string };
+					profileExists: boolean;
+				};
+				meta: { schemaVersion: string; durationMs: number; traceId: string };
+			};
+
+			expect(parsed.status).toBe("success");
+			expect(parsed.code).toBe("RULE_RESOLVE_MATCHED");
+			expect(parsed.data).toEqual({
+				result: "matched",
+				directory: `${packageDir}${path.sep}`,
+				matchedRule: {
+					directory: `${monorepoDir}${path.sep}`,
+					profileName: "mono-profile",
+				},
+				profileExists: true,
+			});
+			expect(parsed.meta.schemaVersion).toBe("1.0.0");
+			expect(parsed.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(parsed.meta.traceId.length).toBeGreaterThan(0);
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("returns unmatched status when no rule matches target directory", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;
@@ -892,6 +1202,89 @@ describe("rules command e2e", () => {
 				matchedRule: null,
 				profileExists: null,
 			});
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns unmatched envelope when no rule matches target directory", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-resolve-envelope-unmatched-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const ruleDir = path.join(homeDir, "work");
+		const targetDir = path.join(homeDir, "personal");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(ruleDir, { recursive: true });
+		await fs.mkdir(targetDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-profile",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", ruleDir, "work-profile"],
+			);
+
+			const restoreLog = spyConsole(logs);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "resolve", targetDir, "--json-envelope"],
+			);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				code: string;
+				data: {
+					result: string;
+					directory: string;
+					matchedRule: null;
+					profileExists: null;
+				};
+				meta: { schemaVersion: string; durationMs: number; traceId: string };
+			};
+			expect(parsed.status).toBe("success");
+			expect(parsed.code).toBe("RULE_RESOLVE_UNMATCHED");
+			expect(parsed.data).toEqual({
+				result: "unmatched",
+				directory: `${targetDir}${path.sep}`,
+				matchedRule: null,
+				profileExists: null,
+			});
+			expect(parsed.meta.schemaVersion).toBe("1.0.0");
+			expect(parsed.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(parsed.meta.traceId.length).toBeGreaterThan(0);
 			expect(process.exitCode).toBeUndefined();
 		} finally {
 			process.chdir(originalCwd);

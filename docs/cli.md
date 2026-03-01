@@ -257,15 +257,23 @@ dot segments (`.`/`..`).
   `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
 - `gitface rules add <directory> <profile> --dry-run --json` emits:
   `{ "status": "dry-run", "directory": "/abs/path/", "profileName": "work", "overwrite": false }`.
+- `gitface rules add <directory> <profile> --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "RULE_ADD_OK", "message": "Rule added successfully.", "data": { "result": "added", "directory": "/abs/path/", "profileName": "work", "overwrite": false }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface rules add <directory> <profile> --json` failures emit:
   `{ "status": "error", "directory": "/abs/path/", "profileName": "work", "reason": "..." }` with exit code `1`.
+- `gitface rules add <directory> <profile> --json-envelope` failures emit:
+  `{ "status": "error", "code": "RULE_ADD_FAILED", "message": "...", "data": { "result": "added", "directory": "/abs/path/", "profileName": "work", "overwrite": false }, "errors": [{ "code": "RULE_ADD_FAILED", "message": "..." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }` with exit code `1`.
 - Missing-profile failures append best-effort profile suggestions in `reason`.
 - `gitface rules remove <directory> --json` emits:
   `{ "status": "removed", "directory": "/abs/path/" }`.
 - `gitface rules remove <directory> --dry-run --json` emits:
   `{ "status": "dry-run", "directory": "/abs/path/", "exists": true }`.
+- `gitface rules remove <directory> --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "RULE_REMOVE_OK", "message": "Rule removed successfully.", "data": { "result": "removed", "directory": "/abs/path/", "exists": null }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface rules remove <directory> --json` failures emit:
   `{ "status": "error", "directory": "/abs/path/", "reason": "..." }` with exit code `1`.
+- `gitface rules remove <directory> --json-envelope` failures emit:
+  `{ "status": "error", "code": "RULE_REMOVE_FAILED", "message": "...", "data": { "result": "removed", "directory": "/abs/path/", "exists": null }, "errors": [{ "code": "RULE_REMOVE_FAILED", "message": "..." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }` with exit code `1`.
 - `gitface rules list --json` emits a machine-readable JSON array:
   `[{ "directory": "/abs/path/", "profileName": "work" }]`.
 - `gitface rules list --query work --limit 2 --json` applies filter + cap and
@@ -279,6 +287,8 @@ dot segments (`.`/`..`).
   match common filesystem behavior; Linux remains case-sensitive.
 - `gitface rules resolve [directory] --json` emits:
   `{ "status": "matched", "directory": "/abs/path/repo/", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profileExists": true }`.
+- `gitface rules resolve [directory] --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "RULE_RESOLVE_MATCHED", "message": "Rule resolved successfully.", "data": { "result": "matched", "directory": "/abs/path/repo/", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profileExists": true }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface rules resolve [directory] --strict` treats unmatched results and
   missing matched profiles (`profileExists: false`) as failures (`exit code 1`)
   while keeping the same output shape.

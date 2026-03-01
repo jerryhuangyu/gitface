@@ -202,6 +202,7 @@ gitface import ./profiles-backup.json --json-envelope
 gitface rules add ~/code/work work
 gitface rules add ~/code/work work --dry-run
 gitface rules add ~/code/work work --dry-run --json
+gitface rules add ~/code/work work --json-envelope
 ```
 
 查看規則：
@@ -218,6 +219,7 @@ gitface rules list --limit 10 --json
 gitface rules remove ~/code/work
 gitface rules remove ~/code/work --dry-run
 gitface rules remove ~/code/work --dry-run --json
+gitface rules remove ~/code/work --json-envelope
 ```
 
 解析某個目錄最終會命中的規則：
@@ -225,6 +227,7 @@ gitface rules remove ~/code/work --dry-run --json
 ```bash
 gitface rules resolve ~/code/work/monorepo
 gitface rules resolve ~/code/work/monorepo --json
+gitface rules resolve ~/code/work/monorepo --json-envelope
 gitface rules resolve ~/code/work/monorepo --strict --json
 ```
 
@@ -251,6 +254,8 @@ gitface rules prune --json
 - GitFace 會把目錄正規化成絕對路徑並加上結尾 `/`。
 - 規則對「該資料夾與其子目錄內的 repo」生效。
 - `rules add/remove --dry-run` 可先預覽結果，不會修改 global git config。
+- `rules add/remove/resolve --json-envelope` 會輸出統一 Result Envelope
+  （含 `schemaVersion/durationMs/traceId`），建議 CI/agent 優先採用。
 - `rules list` 會依目錄路徑排序；可用 `--query`（目錄或 profile 子字串）
   與 `--limit`（正整數）縮小輸出範圍。
 - `rules resolve [directory]` 會回傳最具體（最長路徑前綴）命中的規則；

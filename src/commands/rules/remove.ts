@@ -1,19 +1,26 @@
+import { randomUUID } from "node:crypto";
 import { RuleService } from "@/core/rule-service";
 import { Rule } from "@/domain/rule";
 import { withCommandHandling } from "../command-runner";
 import {
 	sendRuleRemoveDryRunJson,
 	sendRuleRemoveDryRunMsg,
+	sendRuleRemoveDryRunResultEnvelope,
 	sendRuleRemoveFailedJson,
 	sendRuleRemoveFailedMsg,
+	sendRuleRemoveFailedResultEnvelope,
 	sendRuleRemoveSuccessJson,
 	sendRuleRemoveSuccessMsg,
+	sendRuleRemoveSuccessResultEnvelope,
 } from "./ui";
 
 interface RemoveRuleOptions {
 	dryRun?: boolean;
 	json?: boolean;
+	jsonEnvelope?: boolean;
 }
+
+type RemoveOutputMode = "text" | "json" | "json-envelope";
 
 const isMissingGlobalConfigError = (error: unknown): boolean => {
 	return (
@@ -28,6 +35,14 @@ export const removeRuleAction: (
 ) => Promise<void> = withCommandHandling(
 	"command:rules:remove",
 	async (directory, options) => {
+		const startedAtMs = Date.now();
+		const traceId = randomUUID();
+		const outputMode: RemoveOutputMode =
+			options.jsonEnvelope === true
+				? "json-envelope"
+				: options.json === true
+					? "json"
+					: "text";
 		const ruleService = RuleService.create();
 		const normalizedDirectory = Rule.create(directory, "dummy").directory;
 		try {
@@ -41,7 +56,16 @@ export const removeRuleAction: (
 				const exists = existingRules.some(
 					(rule) => rule.directory === normalizedDirectory,
 				);
-				if (options.json) {
+				if (outputMode === "json-envelope") {
+					sendRuleRemoveDryRunResultEnvelope(
+						normalizedDirectory,
+						exists,
+						Date.now() - startedAtMs,
+						traceId,
+					);
+					return;
+				}
+				if (outputMode === "json") {
 					sendRuleRemoveDryRunJson(normalizedDirectory, exists);
 					return;
 				}
@@ -51,7 +75,15 @@ export const removeRuleAction: (
 
 			// removeRule is idempotent and silently ignores missing keys.
 			await ruleService.removeRule(directory);
-			if (options.json) {
+			if (outputMode === "json-envelope") {
+				sendRuleRemoveSuccessResultEnvelope(
+					normalizedDirectory,
+					Date.now() - startedAtMs,
+					traceId,
+				);
+				return;
+			}
+			if (outputMode === "json") {
 				sendRuleRemoveSuccessJson(normalizedDirectory);
 				return;
 			}
@@ -61,7 +93,14 @@ export const removeRuleAction: (
 				error instanceof Error
 					? error.message
 					: `Unexpected error ${JSON.stringify(error)}`;
-			if (options.json) {
+			if (outputMode === "json-envelope") {
+				sendRuleRemoveFailedResultEnvelope(
+					normalizedDirectory,
+					reason,
+					Date.now() - startedAtMs,
+					traceId,
+				);
+			} else if (outputMode === "json") {
 				sendRuleRemoveFailedJson(normalizedDirectory, reason);
 			} else {
 				sendRuleRemoveFailedMsg(`Failed to remove rule: ${reason}`);

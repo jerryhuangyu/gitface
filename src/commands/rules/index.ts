@@ -66,6 +66,7 @@ command
 	.description("Add a folder rule")
 	.option("--dry-run", "Preview rule addition without changing git config")
 	.option("--json", "Output add result as JSON")
+	.option("--json-envelope", "Output add result with a unified Result Envelope")
 	.action(addRuleAction);
 
 command
@@ -75,6 +76,10 @@ command
 	.description("Remove a folder rule")
 	.option("--dry-run", "Preview rule removal without changing git config")
 	.option("--json", "Output remove result as JSON")
+	.option(
+		"--json-envelope",
+		"Output remove result with a unified Result Envelope",
+	)
 	.action(removeRuleAction);
 
 command
@@ -89,6 +94,10 @@ command
 		"Treat unmatched or missing-profile matches as failures (exit code 1)",
 	)
 	.option("--json", "Output resolve result as JSON")
+	.option(
+		"--json-envelope",
+		"Output resolve result with a unified Result Envelope",
+	)
 	.action(resolveRuleAction);
 
 command

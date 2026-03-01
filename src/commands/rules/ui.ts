@@ -62,6 +62,26 @@ export interface RuleScanMetrics {
 	scanDurationMs: number;
 }
 
+interface RuleAddEnvelopeData {
+	result: "added" | "dry-run";
+	directory: string;
+	profileName: string;
+	overwrite: boolean;
+}
+
+interface RuleRemoveEnvelopeData {
+	result: "removed" | "dry-run";
+	directory: string;
+	exists: boolean | null;
+}
+
+interface RuleResolveEnvelopeData {
+	result: "matched" | "unmatched";
+	directory: string;
+	matchedRule: FolderRule | null;
+	profileExists: boolean | null;
+}
+
 export function sendRuleAddSuccessMsg(
 	directory: string,
 	profileName: string,
@@ -141,6 +161,86 @@ export function sendRuleAddFailedJson(
 	);
 }
 
+const writeRuleAddEnvelope = (
+	envelope: ResultEnvelope<RuleAddEnvelopeData | null>,
+): void => {
+	console.log(JSON.stringify(envelope));
+};
+
+export function sendRuleAddSuccessResultEnvelope(
+	directory: string,
+	profileName: string,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleAddEnvelope(
+		buildResultEnvelope({
+			status: "success",
+			code: "RULE_ADD_OK",
+			message: "Rule added successfully.",
+			data: {
+				result: "added",
+				directory,
+				profileName,
+				overwrite: false,
+			},
+			errors: [],
+			durationMs,
+			traceId,
+		}),
+	);
+}
+
+export function sendRuleAddDryRunResultEnvelope(
+	directory: string,
+	profileName: string,
+	overwrite: boolean,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleAddEnvelope(
+		buildResultEnvelope({
+			status: "success",
+			code: "RULE_ADD_DRY_RUN",
+			message: "Rule add dry-run completed.",
+			data: {
+				result: "dry-run",
+				directory,
+				profileName,
+				overwrite,
+			},
+			errors: [],
+			durationMs,
+			traceId,
+		}),
+	);
+}
+
+export function sendRuleAddFailedResultEnvelope(
+	directory: string,
+	profileName: string,
+	reason: string,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleAddEnvelope(
+		buildResultEnvelope({
+			status: "error",
+			code: "RULE_ADD_FAILED",
+			message: reason,
+			data: {
+				result: "added",
+				directory,
+				profileName,
+				overwrite: false,
+			},
+			errors: [{ code: "RULE_ADD_FAILED", message: reason }],
+			durationMs,
+			traceId,
+		}),
+	);
+}
+
 export function sendRuleRemoveSuccessMsg(directory: string): void {
 	console.log(
 		chalk.green(`Rule removed for directory: ${chalk.cyan(directory)}`),
@@ -200,6 +300,80 @@ export function sendRuleRemoveFailedJson(
 			status: "error",
 			directory,
 			reason,
+		}),
+	);
+}
+
+const writeRuleRemoveEnvelope = (
+	envelope: ResultEnvelope<RuleRemoveEnvelopeData | null>,
+): void => {
+	console.log(JSON.stringify(envelope));
+};
+
+export function sendRuleRemoveSuccessResultEnvelope(
+	directory: string,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleRemoveEnvelope(
+		buildResultEnvelope({
+			status: "success",
+			code: "RULE_REMOVE_OK",
+			message: "Rule removed successfully.",
+			data: {
+				result: "removed",
+				directory,
+				exists: null,
+			},
+			errors: [],
+			durationMs,
+			traceId,
+		}),
+	);
+}
+
+export function sendRuleRemoveDryRunResultEnvelope(
+	directory: string,
+	exists: boolean,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleRemoveEnvelope(
+		buildResultEnvelope({
+			status: "success",
+			code: "RULE_REMOVE_DRY_RUN",
+			message: "Rule remove dry-run completed.",
+			data: {
+				result: "dry-run",
+				directory,
+				exists,
+			},
+			errors: [],
+			durationMs,
+			traceId,
+		}),
+	);
+}
+
+export function sendRuleRemoveFailedResultEnvelope(
+	directory: string,
+	reason: string,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleRemoveEnvelope(
+		buildResultEnvelope({
+			status: "error",
+			code: "RULE_REMOVE_FAILED",
+			message: reason,
+			data: {
+				result: "removed",
+				directory,
+				exists: null,
+			},
+			errors: [{ code: "RULE_REMOVE_FAILED", message: reason }],
+			durationMs,
+			traceId,
 		}),
 	);
 }
@@ -267,6 +441,84 @@ export function sendRuleResolveFailedJson(
 			status: "error",
 			directory,
 			reason,
+		}),
+	);
+}
+
+const writeRuleResolveEnvelope = (
+	envelope: ResultEnvelope<RuleResolveEnvelopeData | null>,
+): void => {
+	console.log(JSON.stringify(envelope));
+};
+
+export function sendRuleResolveMatchedResultEnvelope(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	profileExists: boolean,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleResolveEnvelope(
+		buildResultEnvelope({
+			status: "success",
+			code: "RULE_RESOLVE_MATCHED",
+			message: "Rule resolved successfully.",
+			data: {
+				result: "matched",
+				directory: targetDirectory,
+				matchedRule,
+				profileExists,
+			},
+			errors: [],
+			durationMs,
+			traceId,
+		}),
+	);
+}
+
+export function sendRuleResolveUnmatchedResultEnvelope(
+	targetDirectory: string,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleResolveEnvelope(
+		buildResultEnvelope({
+			status: "success",
+			code: "RULE_RESOLVE_UNMATCHED",
+			message: "No matching rule found for target directory.",
+			data: {
+				result: "unmatched",
+				directory: targetDirectory,
+				matchedRule: null,
+				profileExists: null,
+			},
+			errors: [],
+			durationMs,
+			traceId,
+		}),
+	);
+}
+
+export function sendRuleResolveFailedResultEnvelope(
+	directory: string,
+	reason: string,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleResolveEnvelope(
+		buildResultEnvelope({
+			status: "error",
+			code: "RULE_RESOLVE_FAILED",
+			message: reason,
+			data: {
+				result: "unmatched",
+				directory,
+				matchedRule: null,
+				profileExists: null,
+			},
+			errors: [{ code: "RULE_RESOLVE_FAILED", message: reason }],
+			durationMs,
+			traceId,
 		}),
 	);
 }

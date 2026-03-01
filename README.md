@@ -86,7 +86,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run`, `rename --json`, and `rename --json-envelope` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
-| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`, `prune`) with optional `--json`; `rules apply` also supports `--json-envelope`; mutations support `--dry-run`; `rules list` supports `--query`, `--limit`, and `--health` (`--concurrency` in health mode); `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor/prune --strict` support CI gating; `rules doctor/prune --concurrency` tune integrity scan parallelism. |
+| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`, `prune`) with optional `--json`; `rules add/remove/resolve/apply` also support `--json-envelope`; mutations support `--dry-run`; `rules list` supports `--query`, `--limit`, and `--health` (`--concurrency` in health mode); `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor/prune --strict` support CI gating; `rules doctor/prune --concurrency` tune integrity scan parallelism. |
 
 ## Profiles & Storage
 
@@ -160,10 +160,14 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
 - `gitface rules add <dir> <profile> --dry-run --json` previews add/update without writing:
   `{ "status": "dry-run", "directory": "/abs/path/", "profileName": "work", "overwrite": false }`.
+- `gitface rules add <dir> <profile> --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "RULE_ADD_OK", "message": "Rule added successfully.", "data": { "result": "added", "directory": "/abs/path/", "profileName": "work", "overwrite": false }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface rules remove <dir> --json` emits machine-readable status:
   `{ "status": "removed", "directory": "/abs/path/" }`.
 - `gitface rules remove <dir> --dry-run --json` previews removal without writing:
   `{ "status": "dry-run", "directory": "/abs/path/", "exists": true }`.
+- `gitface rules remove <dir> --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "RULE_REMOVE_OK", "message": "Rule removed successfully.", "data": { "result": "removed", "directory": "/abs/path/", "exists": null }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface rules list --query work --limit 10 --json` filters by
   directory/profile substring, returns deterministic directory-sorted rows, and
   caps output size for scripts.
@@ -175,6 +179,8 @@ Run `gitface <command> --help` to see all flags and examples.
   rule resolution responsive in large `.gitconfig` setups.
 - `gitface rules resolve [dir] --json` resolves the most specific matching rule for a target directory:
   `{ "status": "matched", "directory": "/abs/path/repo/", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profileExists": true }`.
+- `gitface rules resolve [dir] --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "RULE_RESOLVE_MATCHED", "message": "Rule resolved successfully.", "data": { "result": "matched", "directory": "/abs/path/repo/", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profileExists": true }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - On macOS/Windows, `rules resolve/apply` treat directory matching as case-insensitive to align with common filesystem behavior; Linux keeps case-sensitive matching.
 - `gitface rules resolve [dir] --json` when no rule matches:
   `{ "status": "unmatched", "directory": "/abs/path/repo/", "matchedRule": null, "profileExists": null }`.
