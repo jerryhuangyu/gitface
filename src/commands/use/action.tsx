@@ -58,24 +58,21 @@ export const runUseAction = async (
 	const scope = normalizedScope as ConfigScope;
 
 	let profileName = name;
-	if (options.json && !profileName) {
-		sendProfileUseFailedJson(
-			"Profile name is required when using --json output mode.",
-		);
-		process.exitCode = 1;
-		return;
-	}
-
 	const service = ProfileService.create();
 	if (!profileName) {
 		const resolved = await resolveProfileName({
 			service,
 			query: options.query,
 			promptForSelection,
+			allowInteractive: !options.json,
 		});
 
 		if ("reason" in resolved) {
-			sendProfileUseFailedMsg(resolved.reason);
+			if (options.json) {
+				sendProfileUseFailedJson(resolved.reason);
+			} else {
+				sendProfileUseFailedMsg(resolved.reason);
+			}
 			process.exitCode = 1;
 			return;
 		}
@@ -186,10 +183,12 @@ async function resolveProfileName({
 	service,
 	query,
 	promptForSelection,
+	allowInteractive,
 }: {
 	service: ProfileService;
 	query?: string;
 	promptForSelection: PromptForProfileSelection;
+	allowInteractive: boolean;
 }): Promise<{ profileName: string } | { reason: string }> {
 	const names = (await service.listProfileNames()).sort((a, b) =>
 		a.localeCompare(b),
@@ -219,7 +218,7 @@ async function resolveProfileName({
 		return { profileName: candidates[0] };
 	}
 
-	if (!process.stdout.isTTY) {
+	if (!allowInteractive || !process.stdout.isTTY) {
 		if (normalizedQuery) {
 			return {
 				reason: `Multiple profiles matched query "${normalizedQuery}". Re-run with an explicit profile name, for example: \`gitface use ${candidates[0]}\`.`,

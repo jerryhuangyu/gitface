@@ -45,4 +45,65 @@ describe("runUseAction scoped identity reads", () => {
 
 		logSpy.mockRestore();
 	});
+
+	test("json mode resolves single query match without interactive prompt", async () => {
+		const profile = {
+			name: "work-main",
+			gitName: "Work User",
+			email: "work@example.com",
+			signingKey: null,
+		};
+		const service = {
+			listProfileNames: vi
+				.fn()
+				.mockResolvedValue(["work-main", "personal-main"]),
+			getProfile: vi.fn().mockResolvedValue(profile),
+			getScopedIdentity: vi.fn().mockResolvedValue({
+				gitName: "Current User",
+				email: "current@example.com",
+				signingKey: null,
+			}),
+			applyProfile: vi.fn(),
+		};
+		vi.spyOn(ProfileService, "create").mockReturnValue(
+			service as unknown as ProfileService,
+		);
+		const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+		const promptSpy = vi.fn().mockResolvedValue("personal-main");
+
+		await runUseAction(undefined, { json: true, query: "work" }, promptSpy);
+
+		expect(service.listProfileNames).toHaveBeenCalledTimes(1);
+		expect(promptSpy).not.toHaveBeenCalled();
+		expect(service.getProfile).toHaveBeenCalledWith("work-main");
+		expect(service.applyProfile).toHaveBeenCalledWith("work-main", "local");
+		expect(process.exitCode).toBeUndefined();
+
+		logSpy.mockRestore();
+	});
+
+	test("json mode returns machine-readable error when query is ambiguous", async () => {
+		const service = {
+			listProfileNames: vi.fn().mockResolvedValue(["work-main", "work-admin"]),
+			getProfile: vi.fn(),
+			getScopedIdentity: vi.fn(),
+			applyProfile: vi.fn(),
+		};
+		vi.spyOn(ProfileService, "create").mockReturnValue(
+			service as unknown as ProfileService,
+		);
+		const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+		const promptSpy = vi.fn().mockResolvedValue("work-main");
+
+		await runUseAction(undefined, { json: true, query: "work" }, promptSpy);
+
+		expect(promptSpy).not.toHaveBeenCalled();
+		expect(service.getProfile).not.toHaveBeenCalled();
+		expect(service.applyProfile).not.toHaveBeenCalled();
+		expect(logSpy).toHaveBeenCalledOnce();
+		expect(logSpy.mock.calls[0][0]).toContain('"error"');
+		expect(process.exitCode).toBe(1);
+
+		logSpy.mockRestore();
+	});
 });

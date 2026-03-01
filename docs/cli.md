@@ -100,6 +100,10 @@ dot segments (`.`/`..`).
   - `--dry-run` previews planned writes/unsets for the target scope without mutating Git config.
 - `--json` emits machine-readable output:
   `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
+- In JSON mode, when `<name>` is omitted, GitFace still resolves candidates:
+  - `1` candidate: auto-applies and returns success JSON.
+  - `0` or `2+` candidates: returns JSON error with exit code `1`.
+  - Interactive selector is not used in JSON mode.
 - `--dry-run --json` emits a machine-readable change plan:
   `{ "status": "dry-run", "scope": "local", "hasChanges": true, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
 - Scoped reads for dry-run/no-op planning use one `git config --list` snapshot

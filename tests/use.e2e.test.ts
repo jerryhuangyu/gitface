@@ -212,6 +212,135 @@ describe("use command e2e", () => {
 		}
 	});
 
+	test("emits JSON output when --query resolves to a single profile", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
+		const repoDir = path.join(tmpRoot, "repo");
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		await fs.mkdir(repoDir);
+		const git = simpleGit({ baseDir: repoDir });
+		await git.init();
+
+		try {
+			process.chdir(repoDir);
+			process.env.XDG_CONFIG_HOME = configDir;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-main",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await service.createProfile({
+				name: "personal",
+				gitName: "Personal User",
+				email: "personal@example.com",
+			});
+
+			await runCli(
+				[useProfileCommand.command],
+				["node", "gitface", "use", "--query", "work", "--json"],
+			);
+
+			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
+				string,
+				unknown
+			>;
+			expect(parsed).toEqual({
+				name: "work-main",
+				gitName: "Work User",
+				email: "work@example.com",
+				signingKey: null,
+				scope: "local",
+			});
+
+			const config = await git.listConfig();
+			expect(config.all["user.name"]).toBe("Work User");
+			expect(config.all["user.email"]).toBe("work@example.com");
+			expect(process.exitCode).toBeUndefined();
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreLog();
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns JSON error when --json query matches multiple profiles", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-use-"));
+		const repoDir = path.join(tmpRoot, "repo");
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		await fs.mkdir(repoDir);
+		const git = simpleGit({ baseDir: repoDir });
+		await git.init();
+
+		try {
+			process.chdir(repoDir);
+			process.env.XDG_CONFIG_HOME = configDir;
+			process.exitCode = undefined;
+
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work-main",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await service.createProfile({
+				name: "work-admin",
+				gitName: "Work Admin",
+				email: "work-admin@example.com",
+			});
+
+			await runCli(
+				[useProfileCommand.command],
+				["node", "gitface", "use", "--query", "work", "--json"],
+			);
+
+			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as {
+				error: string;
+			};
+			expect(parsed.error).toContain("Multiple profiles matched query");
+			expect(process.exitCode).toBe(1);
+
+			const localConfig = await fs.readFile(
+				path.join(repoDir, ".git", "config"),
+				"utf8",
+			);
+			expect(localConfig.includes("name =")).toBe(false);
+			expect(localConfig.includes("email =")).toBe(false);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			restoreLog();
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("interactive selection applies chosen profile", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
