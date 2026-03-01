@@ -93,6 +93,7 @@ export class GitService {
 		scope: ConfigScope = "local",
 	): Promise<void> {
 		const gitScope = scope as GitConfigScope;
+		const previousIdentity = await this.getScopedIdentity(scope);
 		logger.info("git-service:applyIdentity", {
 			scope,
 			name: identity.gitName,
@@ -100,18 +101,40 @@ export class GitService {
 			hasSigningKey: Boolean(identity.signingKey),
 		});
 
-		await this.git.addConfig("user.name", identity.gitName, false, gitScope);
-		await this.git.addConfig("user.email", identity.email, false, gitScope);
+		try {
+			await this.git.addConfig("user.name", identity.gitName, false, gitScope);
+			await this.git.addConfig("user.email", identity.email, false, gitScope);
 
-		if (identity.signingKey) {
-			await this.git.addConfig(
-				"user.signingkey",
-				identity.signingKey,
-				false,
-				gitScope,
+			if (identity.signingKey) {
+				await this.git.addConfig(
+					"user.signingkey",
+					identity.signingKey,
+					false,
+					gitScope,
+				);
+			} else {
+				await this.unsetConfig("user.signingkey", scope);
+			}
+		} catch (applyError) {
+			logger.error("git-service:applyIdentity failed; rolling back", {
+				scope,
+				error: applyError,
+			});
+			let rollbackError: unknown;
+			try {
+				await this.restoreIdentity(previousIdentity, scope);
+			} catch (errorDuringRollback) {
+				rollbackError = errorDuringRollback;
+			}
+			if (!rollbackError) {
+				throw new Error(
+					"Failed to apply identity changes. Git config was rolled back to previous state.",
+					{ cause: applyError },
+				);
+			}
+			throw new Error(
+				`Rollback after apply failure also failed. applyError=${formatUnknownError(applyError)} rollbackError=${formatUnknownError(rollbackError)}`,
 			);
-		} else {
-			await this.unsetConfig("user.signingkey", scope);
 		}
 	}
 
@@ -224,6 +247,33 @@ export class GitService {
 			throw error;
 		}
 	}
+
+	private async restoreIdentity(
+		identity: GitIdentity,
+		scope: ConfigScope,
+	): Promise<void> {
+		const gitScope = scope as GitConfigScope;
+		if (identity.gitName) {
+			await this.git.addConfig("user.name", identity.gitName, false, gitScope);
+		} else {
+			await this.unsetConfig("user.name", scope);
+		}
+		if (identity.email) {
+			await this.git.addConfig("user.email", identity.email, false, gitScope);
+		} else {
+			await this.unsetConfig("user.email", scope);
+		}
+		if (identity.signingKey) {
+			await this.git.addConfig(
+				"user.signingkey",
+				identity.signingKey,
+				false,
+				gitScope,
+			);
+			return;
+		}
+		await this.unsetConfig("user.signingkey", scope);
+	}
 }
 
 type RequiredPick<T, K extends keyof T> = Required<Pick<T, K>> & Omit<T, K>;
@@ -257,4 +307,11 @@ function hasExitCode(error: Error, expected: number): boolean {
 	return (
 		typeof maybeError.exitCode === "number" && maybeError.exitCode === expected
 	);
+}
+
+function formatUnknownError(error: unknown): string {
+	if (error instanceof Error) {
+		return error.message;
+	}
+	return String(error);
 }

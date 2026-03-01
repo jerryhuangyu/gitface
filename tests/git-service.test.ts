@@ -113,3 +113,124 @@ describe("GitService.getConfigByRegexp", () => {
 		expect(result).toEqual({});
 	});
 });
+
+describe("GitService.applyIdentity", () => {
+	beforeEach(() => {
+		mocks.raw.mockReset();
+		mocks.listConfig.mockReset();
+		mocks.addConfig.mockReset();
+		mocks.simpleGit.mockClear();
+	});
+
+	test("applies name/email/signing key when signing key is provided", async () => {
+		mocks.raw.mockResolvedValueOnce(
+			"user.name=Old Name\nuser.email=old@example.com\nuser.signingkey=OLDKEY\n",
+		);
+		mocks.addConfig.mockResolvedValue(undefined);
+
+		const service = new GitService();
+		await service.applyIdentity(
+			{
+				gitName: "New Name",
+				email: "new@example.com",
+				signingKey: "NEWKEY",
+			},
+			"global",
+		);
+
+		expect(mocks.raw).toHaveBeenCalledTimes(1);
+		expect(mocks.raw).toHaveBeenCalledWith(["config", "--global", "--list"]);
+		expect(mocks.addConfig.mock.calls).toEqual([
+			["user.name", "New Name", false, "global"],
+			["user.email", "new@example.com", false, "global"],
+			["user.signingkey", "NEWKEY", false, "global"],
+		]);
+	});
+
+	test("unsets signing key when target identity has no signing key", async () => {
+		mocks.raw
+			.mockResolvedValueOnce(
+				"user.name=Old Name\nuser.email=old@example.com\nuser.signingkey=OLDKEY\n",
+			)
+			.mockResolvedValueOnce("");
+		mocks.addConfig.mockResolvedValue(undefined);
+
+		const service = new GitService();
+		await service.applyIdentity(
+			{
+				gitName: "New Name",
+				email: "new@example.com",
+				signingKey: null,
+			},
+			"global",
+		);
+
+		expect(mocks.addConfig.mock.calls).toEqual([
+			["user.name", "New Name", false, "global"],
+			["user.email", "new@example.com", false, "global"],
+		]);
+		expect(mocks.raw.mock.calls).toEqual([
+			[["config", "--global", "--list"]],
+			[["config", "--global", "--unset-all", "user.signingkey"]],
+		]);
+	});
+
+	test("rolls back to previous scoped identity when apply fails", async () => {
+		mocks.raw
+			.mockResolvedValueOnce(
+				"user.name=Old Name\nuser.email=old@example.com\nuser.signingkey=OLDKEY\n",
+			)
+			.mockResolvedValueOnce("");
+		mocks.addConfig
+			.mockResolvedValueOnce(undefined)
+			.mockRejectedValueOnce(new Error("write user.email failed"))
+			.mockResolvedValueOnce(undefined)
+			.mockResolvedValueOnce(undefined)
+			.mockResolvedValueOnce(undefined);
+
+		const service = new GitService();
+		await expect(
+			service.applyIdentity(
+				{
+					gitName: "New Name",
+					email: "new@example.com",
+					signingKey: null,
+				},
+				"global",
+			),
+		).rejects.toThrow(
+			"Failed to apply identity changes. Git config was rolled back to previous state.",
+		);
+
+		expect(mocks.addConfig.mock.calls).toEqual([
+			["user.name", "New Name", false, "global"],
+			["user.email", "new@example.com", false, "global"],
+			["user.name", "Old Name", false, "global"],
+			["user.email", "old@example.com", false, "global"],
+			["user.signingkey", "OLDKEY", false, "global"],
+		]);
+		expect(mocks.raw.mock.calls).toEqual([[["config", "--global", "--list"]]]);
+	});
+
+	test("reports both apply and rollback errors when rollback also fails", async () => {
+		mocks.raw.mockResolvedValueOnce(
+			"user.name=Old Name\nuser.email=old@example.com\n",
+		);
+		mocks.addConfig
+			.mockResolvedValueOnce(undefined)
+			.mockRejectedValueOnce(new Error("write user.email failed"))
+			.mockRejectedValueOnce(new Error("rollback user.name failed"));
+
+		const service = new GitService();
+		await expect(
+			service.applyIdentity(
+				{
+					gitName: "New Name",
+					email: "new@example.com",
+					signingKey: null,
+				},
+				"global",
+			),
+		).rejects.toThrow("Rollback after apply failure also failed");
+	});
+});

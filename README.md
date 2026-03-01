@@ -238,6 +238,8 @@ Run `gitface <command> --help` to see all flags and examples.
 - Scoped identity reads (`current --scope`, `use` planning, and doctor global checks)
   use a single `git config --list` snapshot per scope by default, with safe
   fallback behavior when listing fails.
+- `gitface use <profile>` guards multi-key writes with rollback: if any write
+  fails, GitFace restores the previous scoped identity before exiting.
 - `gitface doctor --strict` treats warnings as CI-failing results (exit code `1`)
   while keeping default doctor behavior unchanged.
 - `gitface use <profile> --dry-run` previews planned scoped config updates and
