@@ -1,5 +1,9 @@
 import chalk from "chalk";
 import type { ConfigScope } from "@/core/git-service";
+import {
+	buildResultEnvelope,
+	type ResultEnvelope,
+} from "@/core/result-envelope";
 import type { FolderRule } from "@/core/rule-service";
 import type { Profile } from "@/domain/profile";
 import type { UseChangeStep } from "../use/output";
@@ -619,6 +623,297 @@ export function sendRuleApplyFailedJson(
 			status: "error",
 			directory,
 			reason,
+		}),
+	);
+}
+
+interface RuleApplyEnvelopeProfile {
+	name: string;
+	gitName: string;
+	email: string;
+	signingKey: string | null;
+}
+
+interface RuleApplyEnvelopeData {
+	result: "applied" | "dry-run" | "unchanged" | "unmatched";
+	resolution: "matched" | "fallback" | "none";
+	directory: string;
+	scope: ConfigScope;
+	matchedRule: FolderRule | null;
+	fallbackProfileName: string | null;
+	profile: RuleApplyEnvelopeProfile | null;
+	hasChanges: boolean;
+	changes: UseChangeStep[];
+	current?: {
+		gitName: string | null;
+		email: string | null;
+		signingKey: string | null;
+	};
+}
+
+const toRuleApplyEnvelopeProfile = (
+	profile: Profile,
+): RuleApplyEnvelopeProfile => {
+	return {
+		name: profile.name,
+		gitName: profile.gitName,
+		email: profile.email,
+		signingKey: profile.signingKey ?? null,
+	};
+};
+
+const toRuleApplyEnvelopeChanges = (
+	changes: UseChangeStep[],
+): UseChangeStep[] => {
+	return changes.map((item) => ({
+		key: item.key,
+		action: item.action,
+		before: item.before,
+		after: item.after,
+	}));
+};
+
+const writeRuleApplyEnvelope = (
+	envelope: ResultEnvelope<RuleApplyEnvelopeData | null>,
+): void => {
+	console.log(JSON.stringify(envelope));
+};
+
+const writeRuleApplySuccessEnvelope = (
+	code: string,
+	message: string,
+	data: RuleApplyEnvelopeData,
+	durationMs: number,
+	traceId: string,
+): void => {
+	writeRuleApplyEnvelope(
+		buildResultEnvelope({
+			status: "success",
+			code,
+			message,
+			data,
+			errors: [],
+			durationMs,
+			traceId,
+		}),
+	);
+};
+
+export function sendRuleApplyMatchedAppliedEnvelope(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	scope: ConfigScope,
+	profile: Profile,
+	changes: UseChangeStep[],
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleApplySuccessEnvelope(
+		"RULE_APPLY_APPLIED",
+		"Matched rule profile applied successfully.",
+		{
+			result: "applied",
+			resolution: "matched",
+			directory: targetDirectory,
+			scope,
+			matchedRule,
+			fallbackProfileName: null,
+			profile: toRuleApplyEnvelopeProfile(profile),
+			hasChanges: true,
+			changes: toRuleApplyEnvelopeChanges(changes),
+		},
+		durationMs,
+		traceId,
+	);
+}
+
+export function sendRuleApplyMatchedUnchangedEnvelope(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	scope: ConfigScope,
+	profile: Profile,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleApplySuccessEnvelope(
+		"RULE_APPLY_UNCHANGED",
+		"Matched rule profile already active for target scope.",
+		{
+			result: "unchanged",
+			resolution: "matched",
+			directory: targetDirectory,
+			scope,
+			matchedRule,
+			fallbackProfileName: null,
+			profile: toRuleApplyEnvelopeProfile(profile),
+			hasChanges: false,
+			changes: [],
+		},
+		durationMs,
+		traceId,
+	);
+}
+
+export function sendRuleApplyMatchedDryRunEnvelope(
+	targetDirectory: string,
+	matchedRule: FolderRule,
+	scope: ConfigScope,
+	profile: Profile,
+	current: {
+		gitName: string | null;
+		email: string | null;
+		signingKey: string | null;
+	},
+	changes: UseChangeStep[],
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleApplySuccessEnvelope(
+		"RULE_APPLY_DRY_RUN",
+		"Matched rule dry-run plan generated.",
+		{
+			result: "dry-run",
+			resolution: "matched",
+			directory: targetDirectory,
+			scope,
+			matchedRule,
+			fallbackProfileName: null,
+			profile: toRuleApplyEnvelopeProfile(profile),
+			current,
+			hasChanges: changes.length > 0,
+			changes: toRuleApplyEnvelopeChanges(changes),
+		},
+		durationMs,
+		traceId,
+	);
+}
+
+export function sendRuleApplyFallbackAppliedEnvelope(
+	targetDirectory: string,
+	scope: ConfigScope,
+	profile: Profile,
+	changes: UseChangeStep[],
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleApplySuccessEnvelope(
+		"RULE_APPLY_APPLIED",
+		"Fallback profile applied successfully.",
+		{
+			result: "applied",
+			resolution: "fallback",
+			directory: targetDirectory,
+			scope,
+			matchedRule: null,
+			fallbackProfileName: profile.name,
+			profile: toRuleApplyEnvelopeProfile(profile),
+			hasChanges: true,
+			changes: toRuleApplyEnvelopeChanges(changes),
+		},
+		durationMs,
+		traceId,
+	);
+}
+
+export function sendRuleApplyFallbackUnchangedEnvelope(
+	targetDirectory: string,
+	scope: ConfigScope,
+	profile: Profile,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleApplySuccessEnvelope(
+		"RULE_APPLY_UNCHANGED",
+		"Fallback profile already active for target scope.",
+		{
+			result: "unchanged",
+			resolution: "fallback",
+			directory: targetDirectory,
+			scope,
+			matchedRule: null,
+			fallbackProfileName: profile.name,
+			profile: toRuleApplyEnvelopeProfile(profile),
+			hasChanges: false,
+			changes: [],
+		},
+		durationMs,
+		traceId,
+	);
+}
+
+export function sendRuleApplyFallbackDryRunEnvelope(
+	targetDirectory: string,
+	scope: ConfigScope,
+	profile: Profile,
+	current: {
+		gitName: string | null;
+		email: string | null;
+		signingKey: string | null;
+	},
+	changes: UseChangeStep[],
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleApplySuccessEnvelope(
+		"RULE_APPLY_DRY_RUN",
+		"Fallback profile dry-run plan generated.",
+		{
+			result: "dry-run",
+			resolution: "fallback",
+			directory: targetDirectory,
+			scope,
+			matchedRule: null,
+			fallbackProfileName: profile.name,
+			profile: toRuleApplyEnvelopeProfile(profile),
+			current,
+			hasChanges: changes.length > 0,
+			changes: toRuleApplyEnvelopeChanges(changes),
+		},
+		durationMs,
+		traceId,
+	);
+}
+
+export function sendRuleApplyUnmatchedEnvelope(
+	targetDirectory: string,
+	scope: ConfigScope,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleApplySuccessEnvelope(
+		"RULE_APPLY_UNMATCHED",
+		"No rule matched target directory and no fallback profile was provided.",
+		{
+			result: "unmatched",
+			resolution: "none",
+			directory: targetDirectory,
+			scope,
+			matchedRule: null,
+			fallbackProfileName: null,
+			profile: null,
+			hasChanges: false,
+			changes: [],
+		},
+		durationMs,
+		traceId,
+	);
+}
+
+export function sendRuleApplyEnvelopeError(
+	code: string,
+	message: string,
+	durationMs: number,
+	traceId: string,
+): void {
+	writeRuleApplyEnvelope(
+		buildResultEnvelope({
+			status: "error",
+			code,
+			message,
+			data: null,
+			errors: [{ code, message }],
+			durationMs,
+			traceId,
 		}),
 	);
 }

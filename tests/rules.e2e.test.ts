@@ -1152,6 +1152,127 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("applies matched rule profile with --json-envelope", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-apply-envelope-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const ruleDir = path.join(homeDir, "work");
+		const repoDir = path.join(ruleDir, "repo");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(ruleDir, { recursive: true });
+		await fs.mkdir(repoDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "rule-profile",
+				gitName: "Rule User",
+				email: "rule@example.com",
+			});
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", ruleDir, "rule-profile"],
+			);
+
+			const git = simpleGit({ baseDir: repoDir });
+			await git.init();
+			await git.addConfig("user.name", "Legacy User");
+			await git.addConfig("user.email", "legacy@example.com");
+
+			const restoreLog = spyConsole(logs);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "apply", repoDir, "--json-envelope"],
+			);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				code: string;
+				message: string;
+				data: {
+					result: string;
+					resolution: string;
+					directory: string;
+					scope: string;
+					matchedRule: {
+						directory: string;
+						profileName: string;
+					};
+					fallbackProfileName: string | null;
+					profile: {
+						name: string;
+						gitName: string;
+						email: string;
+						signingKey: string | null;
+					};
+					hasChanges: boolean;
+					changes: Array<{ key: string; action: string }>;
+				};
+				errors: unknown[];
+				meta: {
+					schemaVersion: string;
+					durationMs: number;
+					traceId: string;
+				};
+			};
+
+			expect(parsed.status).toBe("success");
+			expect(parsed.code).toBe("RULE_APPLY_APPLIED");
+			expect(parsed.data.result).toBe("applied");
+			expect(parsed.data.resolution).toBe("matched");
+			expect(parsed.data.directory).toBe(`${repoDir}${path.sep}`);
+			expect(parsed.data.scope).toBe("local");
+			expect(parsed.data.matchedRule).toEqual({
+				directory: `${ruleDir}${path.sep}`,
+				profileName: "rule-profile",
+			});
+			expect(parsed.data.fallbackProfileName).toBeNull();
+			expect(parsed.data.profile.name).toBe("rule-profile");
+			expect(parsed.data.hasChanges).toBe(true);
+			expect(parsed.data.changes.some((item) => item.key === "user.name")).toBe(
+				true,
+			);
+			expect(parsed.errors).toEqual([]);
+			expect(parsed.meta.schemaVersion).toBe("1.0.0");
+			expect(parsed.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(parsed.meta.traceId).toMatch(
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+			);
+
+			const localConfig = await git.listConfig();
+			expect(localConfig.all["user.name"]).toBe("Rule User");
+			expect(localConfig.all["user.email"]).toBe("rule@example.com");
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("applies matched rule without mutating process cwd", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;
@@ -1347,6 +1468,90 @@ describe("rules command e2e", () => {
 				scope: "local",
 				matchedRule: null,
 			});
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("returns envelope error for rules apply --json-envelope invalid scope", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-apply-envelope-scope-error-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const targetDir = path.join(homeDir, "personal");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(targetDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const restoreLog = spyConsole(logs);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"apply",
+					targetDir,
+					"--scope",
+					"workspace",
+					"--json-envelope",
+				],
+			);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				code: string;
+				message: string;
+				data: null;
+				errors: Array<{ code: string; message: string }>;
+				meta: {
+					schemaVersion: string;
+					durationMs: number;
+					traceId: string;
+				};
+			};
+
+			expect(parsed.status).toBe("error");
+			expect(parsed.code).toBe("RULE_APPLY_SCOPE_INVALID");
+			expect(parsed.message).toContain("Scope must be one of");
+			expect(parsed.data).toBeNull();
+			expect(parsed.errors).toEqual([
+				{
+					code: "RULE_APPLY_SCOPE_INVALID",
+					message: "Scope must be one of: local, global, system.",
+				},
+			]);
+			expect(parsed.meta.schemaVersion).toBe("1.0.0");
+			expect(parsed.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(parsed.meta.traceId).toMatch(
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+			);
 			expect(process.exitCode).toBe(1);
 		} finally {
 			process.chdir(originalCwd);

@@ -86,7 +86,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
-| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`, `prune`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query`, `--limit`, and `--health` (`--concurrency` in health mode); `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor/prune --strict` support CI gating; `rules doctor/prune --concurrency` tune integrity scan parallelism. |
+| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`, `prune`) with optional `--json`; `rules apply` also supports `--json-envelope`; mutations support `--dry-run`; `rules list` supports `--query`, `--limit`, and `--health` (`--concurrency` in health mode); `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor/prune --strict` support CI gating; `rules doctor/prune --concurrency` tune integrity scan parallelism. |
 
 ## Profiles & Storage
 
@@ -177,6 +177,8 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface rules resolve [dir] --strict` treats `unmatched` and `matched + profileExists=false` as non-zero exit results for CI gating.
 - `gitface rules apply [dir] --json` resolves and applies matched profile in one step:
   `{ "status": "applied", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }`.
+- `gitface rules apply [dir] --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "RULE_APPLY_APPLIED", "message": "Matched rule profile applied successfully.", "data": { "result": "applied", "resolution": "matched", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "fallbackProfileName": null, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface rules apply [dir]` applies local scope against the target directory directly and does not mutate the caller process working directory.
 - `gitface rules apply [dir] --dry-run --json` previews scope-specific changes without writing:
   `{ "status": "dry-run", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.

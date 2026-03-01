@@ -273,6 +273,8 @@ dot segments (`.`/`..`).
   does not mutate Git config.
 - `gitface rules apply [directory] --json` emits:
   `{ "status": "applied", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }`.
+- `gitface rules apply [directory] --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "RULE_APPLY_APPLIED", "message": "Matched rule profile applied successfully.", "data": { "result": "applied", "resolution": "matched", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "fallbackProfileName": null, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
 - `gitface rules apply [directory] --dry-run --json` emits:
   `{ "status": "dry-run", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
 - `gitface rules apply [directory] --json` when no rule matches emits:
@@ -282,6 +284,8 @@ dot segments (`.`/`..`).
   `{ "status": "applied", "resolution": "fallback", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null, "fallbackProfileName": "work", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }`.
 - `gitface rules apply [directory] --strict` treats unmatched results as
   failures (`exit code 1`) for CI gating.
+- `--json-envelope` validation or runtime failures return envelope errors and exit code `1`, for example:
+  `{ "status": "error", "code": "RULE_APPLY_SCOPE_INVALID", "message": "Scope must be one of: local, global, system.", "data": null, "errors": [{ "code": "RULE_APPLY_SCOPE_INVALID", "message": "Scope must be one of: local, global, system." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
 - `gitface rules doctor` checks all folder rules for stale profile references
   and missing directories.
 - `gitface rules doctor --json` emits:

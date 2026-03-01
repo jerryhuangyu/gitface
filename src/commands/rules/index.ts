@@ -33,6 +33,10 @@ command
 		"Treat unmatched rules as failures (exit code 1) for CI gating",
 	)
 	.option("--json", "Output apply result as JSON")
+	.option(
+		"--json-envelope",
+		"Output apply result with a unified Result Envelope",
+	)
 	.action(applyRuleAction);
 
 command

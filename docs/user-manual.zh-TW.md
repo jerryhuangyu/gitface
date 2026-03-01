@@ -228,6 +228,7 @@ gitface rules resolve ~/code/work/monorepo --strict --json
 ```bash
 gitface rules apply ~/code/work/monorepo
 gitface rules apply ~/code/work/monorepo --dry-run --json
+gitface rules apply ~/code/work/monorepo --json-envelope
 gitface rules apply ~/code/work/monorepo --scope global --json
 gitface rules apply ~/code/work/monorepo --strict --json
 gitface rules apply ~/code/work/monorepo --fallback-profile work --json
@@ -255,6 +256,7 @@ gitface rules prune --json
   （`profileExists=false`）視為失敗並回傳 exit code `1`，適合 CI gate。
 - `rules apply [directory]` 會直接以命中的規則套用 profile（等同 resolve + use）。
 - `rules apply --dry-run` 只輸出預計變更，不會寫入 Git config。
+- `rules apply --json-envelope` 會輸出統一 Result Envelope（含 `schemaVersion/durationMs/traceId`），建議 CI/agent 優先採用。
 - `rules apply --fallback-profile <name>` 在 `unmatched` 時改套用指定 profile，
   適合新目錄第一次使用或 CI/agent 防呆。
 - `rules apply --strict` 會把 `unmatched` 視為失敗並回傳 exit code `1`。
@@ -313,7 +315,8 @@ gitface completion profiles --prefix wo --limit 5 --json-envelope
 5. `gitface list --json-envelope` 會輸出統一 Result Envelope（含 `schemaVersion/durationMs/traceId`）  
 成功範例：`{ "status": "success", "code": "LIST_PROFILES_OK", "message": "Profiles listed successfully.", "data": { "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }], "query": "wo", "sort": "updated", "limit": 10, "count": 1 }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`。  
 錯誤範例：`{ "status": "error", "code": "LIST_LIMIT_INVALID", "message": "Limit must be a positive integer.", "data": null, "errors": [{ "code": "LIST_LIMIT_INVALID", "message": "Limit must be a positive integer." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`。
-6. `gitface doctor --strict --json` 會在有 `warn` 或 `fail` 時回傳 exit code `1`，
+6. `gitface rules apply --json-envelope` 會輸出統一 Result Envelope，並提供 `RULE_APPLY_APPLIED/RULE_APPLY_DRY_RUN/RULE_APPLY_UNCHANGED/RULE_APPLY_UNMATCHED` 成功碼與 `RULE_APPLY_SCOPE_INVALID/RULE_APPLY_FAILED` 錯誤碼，便於工作流分流與告警。
+7. `gitface doctor --strict --json` 會在有 `warn` 或 `fail` 時回傳 exit code `1`，
    並在 JSON 內提供 `hasWarnings`/`hasFailures` 方便流程判斷。
 
 ## 資料存放位置
