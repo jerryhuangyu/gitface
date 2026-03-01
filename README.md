@@ -149,6 +149,7 @@ Run `gitface <command> --help` to see all flags and examples.
   rule resolution responsive in large `.gitconfig` setups.
 - `gitface rules resolve [dir] --json` resolves the most specific matching rule for a target directory:
   `{ "status": "matched", "directory": "/abs/path/repo/", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profileExists": true }`.
+- On macOS/Windows, `rules resolve/apply` treat directory matching as case-insensitive to align with common filesystem behavior; Linux keeps case-sensitive matching.
 - `gitface rules resolve [dir] --json` when no rule matches:
   `{ "status": "unmatched", "directory": "/abs/path/repo/", "matchedRule": null, "profileExists": null }`.
 - `gitface rules resolve [dir] --strict` treats `unmatched` and `matched + profileExists=false` as non-zero exit results for CI gating.

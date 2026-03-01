@@ -212,6 +212,8 @@ dot segments (`.`/`..`).
 - `gitface rules resolve [directory]` resolves the most specific matching
   directory rule (longest prefix wins). `directory` defaults to current working
   directory.
+- On macOS/Windows, `resolve`/`apply` directory matching is case-insensitive to
+  match common filesystem behavior; Linux remains case-sensitive.
 - `gitface rules resolve [directory] --json` emits:
   `{ "status": "matched", "directory": "/abs/path/repo/", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profileExists": true }`.
 - `gitface rules resolve [directory] --strict` treats unmatched results and

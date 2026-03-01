@@ -249,6 +249,8 @@ gitface rules prune --json
   與 `--limit`（正整數）縮小輸出範圍。
 - `rules resolve [directory]` 會回傳最具體（最長路徑前綴）命中的規則；
   未命中時會回傳 `unmatched`（不視為錯誤）。
+- 在 macOS / Windows 上，`rules resolve` 與 `rules apply` 的目錄比對採不分大小寫；
+  Linux 維持大小寫敏感。
 - `rules resolve --strict` 會把 `unmatched` 或命中不存在 profile
   （`profileExists=false`）視為失敗並回傳 exit code `1`，適合 CI gate。
 - `rules apply [directory]` 會直接以命中的規則套用 profile（等同 resolve + use）。

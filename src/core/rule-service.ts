@@ -5,6 +5,33 @@ import { logger } from "@/infra/logger";
 
 export type { FolderRule };
 
+const CASE_INSENSITIVE_PLATFORMS = new Set(["darwin", "win32"]);
+
+const normalizeDirectoryForMatch = (
+	directory: string,
+	platform: NodeJS.Platform,
+): string => {
+	return CASE_INSENSITIVE_PLATFORMS.has(platform)
+		? directory.toLowerCase()
+		: directory;
+};
+
+export const ruleDirectoryMatchesTarget = (
+	ruleDirectory: string,
+	targetDirectory: string,
+	platform: NodeJS.Platform = process.platform,
+): boolean => {
+	const normalizedRuleDirectory = normalizeDirectoryForMatch(
+		ruleDirectory,
+		platform,
+	);
+	const normalizedTargetDirectory = normalizeDirectoryForMatch(
+		targetDirectory,
+		platform,
+	);
+	return normalizedTargetDirectory.startsWith(normalizedRuleDirectory);
+};
+
 export class RuleService {
 	constructor(
 		private readonly profileService: ProfileService,
@@ -45,7 +72,7 @@ export class RuleService {
 		const normalizedDirectory = Rule.create(directory, "dummy").directory;
 		const rules = await this.listRules();
 		const matchedRules = rules.filter((rule) =>
-			normalizedDirectory.startsWith(rule.directory),
+			ruleDirectoryMatchesTarget(rule.directory, normalizedDirectory),
 		);
 
 		if (matchedRules.length === 0) {
