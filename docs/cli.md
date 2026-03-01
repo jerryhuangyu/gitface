@@ -140,8 +140,14 @@ dot segments (`.`/`..`).
   `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123" }`.
 - `gitface current --scope global --json` emits:
   `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }`.
+- `gitface current --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "CURRENT_IDENTITY_RESOLVED", "message": "Current Git identity resolved.", "data": { "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123" }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
+- `gitface current --scope global --json-envelope` emits:
+  `{ "status": "success", "code": "CURRENT_IDENTITY_RESOLVED", "message": "Current Git identity resolved.", "data": { "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
 - Invalid scopes return JSON with exit code `1` in JSON mode:
   `{ "status": "error", "reason": "Scope must be one of: local, global, system." }`.
+- Invalid scopes return envelope error output with exit code `1` in `--json-envelope` mode:
+  `{ "status": "error", "code": "CURRENT_SCOPE_INVALID", "message": "Scope must be one of: local, global, system.", "data": null, "errors": [{ "code": "CURRENT_SCOPE_INVALID", "message": "Scope must be one of: local, global, system." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
 
 ## `gitface doctor`
 

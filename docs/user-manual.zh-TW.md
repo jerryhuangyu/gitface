@@ -307,7 +307,10 @@ gitface completion profiles --prefix wo --limit 5 --json-envelope
 3. `gitface use --json-envelope` 會輸出統一 Result Envelope（含 `schemaVersion/durationMs/traceId`）  
 成功範例：`{ "status": "success", "code": "USE_PROFILE_APPLIED", "message": "Profile applied to Git config.", "data": { "result": "applied", "scope": "local", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "hasChanges": true, "changes": [...] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`。  
 錯誤範例：`{ "status": "error", "code": "USE_PROFILE_SELECTION_FAILED", "message": "...", "data": null, "errors": [{ "code": "USE_PROFILE_SELECTION_FAILED", "message": "..." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`。
-4. `gitface doctor --strict --json` 會在有 `warn` 或 `fail` 時回傳 exit code `1`，
+4. `gitface current --json-envelope` 會輸出統一 Result Envelope（含 `schemaVersion/durationMs/traceId`）  
+成功範例：`{ "status": "success", "code": "CURRENT_IDENTITY_RESOLVED", "message": "Current Git identity resolved.", "data": { "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`。  
+錯誤範例：`{ "status": "error", "code": "CURRENT_SCOPE_INVALID", "message": "Scope must be one of: local, global, system.", "data": null, "errors": [{ "code": "CURRENT_SCOPE_INVALID", "message": "Scope must be one of: local, global, system." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`。
+5. `gitface doctor --strict --json` 會在有 `warn` 或 `fail` 時回傳 exit code `1`，
    並在 JSON 內提供 `hasWarnings`/`hasFailures` 方便流程判斷。
 
 ## 資料存放位置

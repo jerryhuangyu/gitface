@@ -9,6 +9,10 @@ const command = new Command("current")
 		"Read identity from one scope only (local, global, system)",
 	)
 	.option("--json", "Output current identity as JSON")
+	.option(
+		"--json-envelope",
+		"Output current identity with a unified Result Envelope",
+	)
 	.action(action);
 
 const currentIdentityCommand: CliCommand = {

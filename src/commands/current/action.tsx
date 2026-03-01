@@ -1,7 +1,10 @@
+import { randomUUID } from "node:crypto";
 import type { ConfigScope } from "@/core/git-service";
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
 import {
+	sendCurrentIdentityEnvelopeError,
+	sendCurrentIdentityEnvelopeSuccess,
 	sendCurrentIdentityFailedJson,
 	sendCurrentIdentityFailedMsg,
 	sendCurrentIdentityJson,
@@ -10,16 +13,32 @@ import {
 
 interface CurrentOptions {
 	json?: boolean;
+	jsonEnvelope?: boolean;
 	scope?: string;
 }
 
 const action: (options: CurrentOptions) => Promise<void> = withCommandHandling(
 	"command:current",
 	async (options) => {
+		const startedAtMs = Date.now();
+		const traceId = randomUUID();
+		const outputMode =
+			options.jsonEnvelope === true
+				? "json-envelope"
+				: options.json === true
+					? "json"
+					: "text";
 		const normalizedScope = options.scope?.toLowerCase();
 		if (normalizedScope && !isValidScope(normalizedScope)) {
 			const reason = "Scope must be one of: local, global, system.";
-			if (options.json) {
+			if (outputMode === "json-envelope") {
+				sendCurrentIdentityEnvelopeError(
+					"CURRENT_SCOPE_INVALID",
+					reason,
+					Date.now() - startedAtMs,
+					traceId,
+				);
+			} else if (outputMode === "json") {
 				sendCurrentIdentityFailedJson(reason);
 			} else {
 				sendCurrentIdentityFailedMsg(reason);
@@ -34,7 +53,16 @@ const action: (options: CurrentOptions) => Promise<void> = withCommandHandling(
 			? await service.getScopedIdentity(scope)
 			: await service.getCurrentIdentity();
 
-		if (options.json) {
+		if (outputMode === "json-envelope") {
+			sendCurrentIdentityEnvelopeSuccess(
+				identity,
+				scope,
+				Date.now() - startedAtMs,
+				traceId,
+			);
+			return;
+		}
+		if (outputMode === "json") {
 			sendCurrentIdentityJson(identity, scope);
 			return;
 		}
