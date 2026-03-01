@@ -132,6 +132,8 @@ Run `gitface <command> --help` to see all flags and examples.
 - Missing-profile failures in `use`/`clone`/`rename`/`remove`/`rules add` now include best-effort `Did you mean ...` suggestions.
 - `gitface use <profile> --dry-run --json` previews scope-specific git config changes without writing:
   `{ "status": "dry-run", "scope": "local", "hasChanges": true, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
+- `gitface use <profile> --json` emits machine-readable success output:
+  `{ "status": "applied", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
 - `gitface use <profile> --json` returns an explicit no-op payload when the
   active scope already matches the profile:
   `{ "status": "unchanged", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "changes": [] }`.
@@ -224,7 +226,7 @@ Run `gitface <command> --help` to see all flags and examples.
 - GitFace automatically wipes `user.signingkey` when the target profile has no
   key.
 - `gitface use <profile> --json` emits machine-readable output:
-  `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
+  `{ "status": "applied", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
 - `gitface use` (without `<profile>`) opens an interactive selector and applies
   the selected profile immediately.
 - `gitface use --query <text>` pre-filters profile candidates by case-insensitive

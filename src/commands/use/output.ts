@@ -76,15 +76,24 @@ export const sendProfileUseNoopMsg = (
 export const sendProfileUseSuccessJson = (
 	profile: Profile,
 	scope: ConfigScope,
+	changes: UseChangeStep[],
 ): void => {
 	console.log(
 		JSON.stringify(
 			{
+				status: "applied",
 				name: profile.name,
 				gitName: profile.gitName,
 				email: profile.email,
 				signingKey: profile.signingKey ?? null,
 				scope,
+				hasChanges: true,
+				changes: changes.map((item) => ({
+					key: item.key,
+					action: item.action,
+					before: item.before,
+					after: item.after,
+				})),
 			},
 			null,
 			2,

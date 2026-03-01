@@ -187,13 +187,27 @@ describe("use command e2e", () => {
 				string,
 				unknown
 			>;
-			expect(parsed).toEqual({
+			expect(parsed).toMatchObject({
+				status: "applied",
 				name: "work",
 				gitName: "Work User",
 				email: "work@example.com",
 				signingKey: null,
 				scope: "local",
+				hasChanges: true,
 			});
+			expect(parsed.changes).toMatchObject([
+				{
+					key: "user.name",
+					action: "set",
+					after: "Work User",
+				},
+				{
+					key: "user.email",
+					action: "set",
+					after: "work@example.com",
+				},
+			]);
 
 			const config = await git.listConfig();
 			expect(config.all["user.name"]).toBe("Work User");
@@ -252,13 +266,27 @@ describe("use command e2e", () => {
 				string,
 				unknown
 			>;
-			expect(parsed).toEqual({
+			expect(parsed).toMatchObject({
+				status: "applied",
 				name: "work-main",
 				gitName: "Work User",
 				email: "work@example.com",
 				signingKey: null,
 				scope: "local",
+				hasChanges: true,
 			});
+			expect(parsed.changes).toMatchObject([
+				{
+					key: "user.name",
+					action: "set",
+					after: "Work User",
+				},
+				{
+					key: "user.email",
+					action: "set",
+					after: "work@example.com",
+				},
+			]);
 
 			const config = await git.listConfig();
 			expect(config.all["user.name"]).toBe("Work User");

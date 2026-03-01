@@ -99,7 +99,7 @@ dot segments (`.`/`..`).
   - `--query <text>` / `-q` filters candidates by case-insensitive profile-name substring matching when `<name>` is omitted.
   - `--dry-run` previews planned writes/unsets for the target scope without mutating Git config.
 - `--json` emits machine-readable output:
-  `{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local" }`.
+  `{ "status": "applied", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
 - In JSON mode, when `<name>` is omitted, GitFace still resolves candidates:
   - `1` candidate: auto-applies and returns success JSON.
   - `0` or `2+` candidates: returns JSON error with exit code `1`.

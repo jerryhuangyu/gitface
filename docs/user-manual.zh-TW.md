@@ -299,6 +299,7 @@ gitface completion profiles --prefix wo --limit 5 --json
 例如 `--git-name`、`--email`、`--signing-key`、`--unset-signing-key`。
 2. `gitface use --json` 若未提供 profile，會先做候選解析（可搭配 `--query`）  
 若唯一命中會直接套用；若 0 筆或多筆命中，會回傳 JSON 錯誤與 exit code `1`。  
+`use --json` 成功結構為 `{ "status": "applied", "name": "...", "scope": "local", "hasChanges": true, "changes": [...] }`。  
 `use --json` 的錯誤結構為 `{ "status": "error", "reason": "..." }`。
 3. `gitface doctor --strict --json` 會在有 `warn` 或 `fail` 時回傳 exit code `1`，
    並在 JSON 內提供 `hasWarnings`/`hasFailures` 方便流程判斷。

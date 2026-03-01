@@ -113,7 +113,7 @@ export const runUseAction = async (
 		await service.applyProfile(profileName, scope);
 
 		if (options.json) {
-			sendProfileUseSuccessJson(profile, scope);
+			sendProfileUseSuccessJson(profile, scope, effectiveChanges);
 			return;
 		}
 

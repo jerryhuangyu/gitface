@@ -77,6 +77,18 @@ describe("runUseAction scoped identity reads", () => {
 		expect(promptSpy).not.toHaveBeenCalled();
 		expect(service.getProfile).toHaveBeenCalledWith("work-main");
 		expect(service.applyProfile).toHaveBeenCalledWith("work-main", "local");
+		expect(logSpy).toHaveBeenCalledOnce();
+		const payload = JSON.parse(String(logSpy.mock.calls[0][0])) as {
+			status: string;
+			hasChanges: boolean;
+			changes: Array<{ key: string; action: string }>;
+		};
+		expect(payload.status).toBe("applied");
+		expect(payload.hasChanges).toBe(true);
+		expect(payload.changes).toMatchObject([
+			{ key: "user.name", action: "set" },
+			{ key: "user.email", action: "set" },
+		]);
 		expect(process.exitCode).toBeUndefined();
 
 		logSpy.mockRestore();
