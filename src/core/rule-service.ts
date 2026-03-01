@@ -17,7 +17,15 @@ export class RuleService {
 
 	async listRules(): Promise<FolderRule[]> {
 		logger.debug("rule-service:listRules invoked");
-		const allConfig = await this.gitService.getAllConfig("global");
+		const rulesConfigPattern = "^includeif\\.gitdir:.*\\.path$";
+		const allConfig = await this.gitService
+			.getConfigByRegexp(rulesConfigPattern, "global")
+			.catch(async (error) => {
+				logger.warn("rule-service:listRules regexp scan failed, fallback", {
+					error,
+				});
+				return this.gitService.getAllConfig("global");
+			});
 		const rules: FolderRule[] = [];
 
 		for (const [key, value] of Object.entries(allConfig)) {
@@ -26,6 +34,9 @@ export class RuleService {
 				rules.push(rule);
 			}
 		}
+		logger.debug("rule-service:listRules completed", {
+			count: rules.length,
+		});
 
 		return rules;
 	}

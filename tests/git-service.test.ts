@@ -67,3 +67,49 @@ describe("GitService.getScopedIdentity", () => {
 		]);
 	});
 });
+
+describe("GitService.getConfigByRegexp", () => {
+	beforeEach(() => {
+		mocks.raw.mockReset();
+		mocks.listConfig.mockReset();
+		mocks.addConfig.mockReset();
+		mocks.simpleGit.mockClear();
+	});
+
+	test("parses regexp config output and preserves spaces in value", async () => {
+		mocks.raw.mockResolvedValueOnce(
+			"includeif.gitdir:/work/.path /Users/test/.config/gitface/identities/work.gitconfig\n",
+		);
+
+		const service = new GitService();
+		const result = await service.getConfigByRegexp(
+			"^includeif\\.gitdir:.*\\.path$",
+			"global",
+		);
+
+		expect(result).toEqual({
+			"includeif.gitdir:/work/.path":
+				"/Users/test/.config/gitface/identities/work.gitconfig",
+		});
+		expect(mocks.raw).toHaveBeenCalledWith([
+			"config",
+			"--global",
+			"--get-regexp",
+			"^includeif\\.gitdir:.*\\.path$",
+		]);
+	});
+
+	test("returns empty object when regexp match is missing", async () => {
+		const noMatch = new Error("no match");
+		(noMatch as Error & { exitCode?: number }).exitCode = 1;
+		mocks.raw.mockRejectedValueOnce(noMatch);
+
+		const service = new GitService();
+		const result = await service.getConfigByRegexp(
+			"^includeif\\.gitdir:.*\\.path$",
+			"global",
+		);
+
+		expect(result).toEqual({});
+	});
+});

@@ -143,6 +143,45 @@ export class GitService {
 		return config;
 	}
 
+	async getConfigByRegexp(
+		pattern: string,
+		scope: ConfigScope = "local",
+	): Promise<Record<string, string>> {
+		const args = ["config", ...scopeArgs(scope), "--get-regexp", pattern];
+		try {
+			const result = await this.git.raw(args);
+			const config: Record<string, string> = {};
+			for (const line of result.split("\n")) {
+				const trimmedLine = line.trim();
+				if (!trimmedLine) {
+					continue;
+				}
+				const firstWhitespaceIndex = trimmedLine.search(/\s/);
+				if (firstWhitespaceIndex === -1) {
+					continue;
+				}
+				const key = trimmedLine.slice(0, firstWhitespaceIndex).trim();
+				const value = trimmedLine.slice(firstWhitespaceIndex).trim();
+				if (key) {
+					config[key] = value;
+				}
+			}
+			return config;
+		} catch (error) {
+			if (error instanceof Error) {
+				const message = error.message.toLowerCase();
+				if (
+					hasExitCode(error, 1) ||
+					message.includes("no such section or key") ||
+					message.includes("not found")
+				) {
+					return {};
+				}
+			}
+			throw error;
+		}
+	}
+
 	async addConfig(
 		key: string,
 		value: string,

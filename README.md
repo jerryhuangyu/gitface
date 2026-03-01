@@ -144,6 +144,9 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface rules list --query work --limit 10 --json` filters by
   directory/profile substring, returns deterministic directory-sorted rows, and
   caps output size for scripts.
+- Rules commands read `includeIf.gitdir:*` entries via targeted regexp lookup
+  (with fallback to full global config scan on unexpected Git errors), keeping
+  rule resolution responsive in large `.gitconfig` setups.
 - `gitface rules resolve [dir] --json` resolves the most specific matching rule for a target directory:
   `{ "status": "matched", "directory": "/abs/path/repo/", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profileExists": true }`.
 - `gitface rules resolve [dir] --json` when no rule matches:

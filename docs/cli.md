@@ -189,6 +189,9 @@ dot segments (`.`/`..`).
   match on `directory` and `profileName`.
 - `gitface rules list --limit <number>` caps result rows (must be a positive integer).
 - Rules are rendered in deterministic `directory` ascending order before query/limit.
+- Rule scans use a targeted global config regexp lookup for
+  `includeIf.gitdir:*` keys, with safe fallback to full config scan on
+  unexpected Git errors.
 - `gitface rules add <directory> <profile> --json` emits:
   `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
 - `gitface rules add <directory> <profile> --dry-run --json` emits:
