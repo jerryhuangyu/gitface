@@ -83,7 +83,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
-| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query` and `--limit`; `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor --strict` support CI gating. |
+| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`, `prune`) with optional `--json`; mutations support `--dry-run`; `rules list` supports `--query` and `--limit`; `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor --strict` support CI gating. |
 
 ## Profiles & Storage
 
@@ -163,6 +163,10 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface rules doctor --json` checks every rule for missing profile/directory and emits:
   `{ "status": "issues", "strict": false, "summary": { "total": 2, "pass": 1, "warn": 1, "fail": 0 }, "results": [{ "directory": "/abs/path/", "profileName": "work", "status": "warn", "profileExists": true, "directoryExists": false }] }`.
 - `gitface rules doctor --strict` treats both `warn` and `fail` as non-zero exit results for CI gating.
+- `gitface rules prune --dry-run --json` previews stale rules that reference missing profiles:
+  `{ "status": "dry-run", "dryRun": true, "summary": { "scanned": 3, "prunable": 1, "pruned": 0, "skipped": 0 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "candidate" }] }`.
+- `gitface rules prune --json` removes stale rules and emits:
+  `{ "status": "pruned", "dryRun": false, "summary": { "scanned": 3, "prunable": 1, "pruned": 1, "skipped": 0 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "pruned" }] }`.
 - `gitface rename <old> <new> --json` emits machine-readable status:
   `{ "status": "renamed", "oldName": "old", "name": "new", "rulesUpdated": 2, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
 - `gitface rename <old> <new> --dry-run --json` previews rename metadata without writing:

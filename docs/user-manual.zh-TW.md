@@ -233,6 +233,8 @@ gitface rules apply ~/code/work/monorepo --strict --json
 gitface rules apply ~/code/work/monorepo --fallback-profile work --json
 gitface rules doctor --json
 gitface rules doctor --strict --json
+gitface rules prune --dry-run --json
+gitface rules prune --json
 ```
 
 說明：
@@ -254,6 +256,8 @@ gitface rules doctor --strict --json
 - `rules apply --strict` 會把 `unmatched` 視為失敗並回傳 exit code `1`。
 - `rules doctor` 可批次檢查規則健康度（profile 是否存在、目錄是否存在）。
 - `rules doctor --strict` 會把 `warn`/`fail` 都視為失敗並回傳 exit code `1`，適合 CI gate。
+- `rules prune` 會清除「指向不存在 profile」的失效規則，降低後續 `rules apply` 失敗率。
+- `rules prune --dry-run` 可先預覽待清理清單，不會改動 global git config。
 
 ### 情境 H：啟用 Shell 補全（bash/zsh）
 
@@ -278,6 +282,7 @@ gitface completion profiles --prefix wo --limit 5 --json
 - `clone`, `rename`, `rm/remove`
 - `export`, `import`
 - `rules list/add/remove/resolve/apply/doctor`
+- `rules prune`
 - `completion profiles`
 
 注意兩個常見限制：

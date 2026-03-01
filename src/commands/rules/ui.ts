@@ -23,6 +23,26 @@ export interface RuleDoctorReport {
 	results: RuleDoctorResult[];
 }
 
+export interface RulePruneResult {
+	directory: string;
+	profileName: string;
+	profileExists: false;
+	status: "candidate" | "pruned" | "skipped";
+	reason?: string;
+}
+
+export interface RulePruneReport {
+	status: "dry-run" | "pruned" | "partial";
+	dryRun: boolean;
+	summary: {
+		scanned: number;
+		prunable: number;
+		pruned: number;
+		skipped: number;
+	};
+	results: RulePruneResult[];
+}
+
 export function sendRuleAddSuccessMsg(
 	directory: string,
 	profileName: string,
@@ -648,6 +668,51 @@ export function sendRuleDoctorFailedMsg(reason: string): void {
 }
 
 export function sendRuleDoctorFailedJson(reason: string): void {
+	console.log(
+		JSON.stringify({
+			status: "error",
+			reason,
+		}),
+	);
+}
+
+export function sendRulePruneReportMsg(report: RulePruneReport): void {
+	console.log(chalk.bold("Folder rule prune report:"));
+	console.log(
+		chalk.gray(
+			`Summary: scanned=${report.summary.scanned} prunable=${report.summary.prunable} pruned=${report.summary.pruned} skipped=${report.summary.skipped}${report.dryRun ? " (dry-run)" : ""}`,
+		),
+	);
+	if (report.results.length === 0) {
+		console.log(chalk.green("No stale rules found."));
+		return;
+	}
+
+	for (const result of report.results) {
+		const label =
+			result.status === "candidate"
+				? chalk.yellow("CANDIDATE")
+				: result.status === "pruned"
+					? chalk.green("PRUNED")
+					: chalk.red("SKIPPED");
+		const reasonText = result.reason
+			? chalk.gray(` (${result.reason})`)
+			: chalk.gray(" (profile missing)");
+		console.log(
+			`${label} ${chalk.cyan(result.directory)} -> ${chalk.bold(result.profileName)}${reasonText}`,
+		);
+	}
+}
+
+export function sendRulePruneReportJson(report: RulePruneReport): void {
+	console.log(JSON.stringify(report));
+}
+
+export function sendRulePruneFailedMsg(reason: string): void {
+	console.error(chalk.red(reason));
+}
+
+export function sendRulePruneFailedJson(reason: string): void {
 	console.log(
 		JSON.stringify({
 			status: "error",

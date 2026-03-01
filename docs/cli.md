@@ -182,6 +182,7 @@ dot segments (`.`/`..`).
   - `gitface rules resolve [directory]`
   - `gitface rules apply [directory]`
   - `gitface rules doctor`
+  - `gitface rules prune`
   - `gitface rules list` (human-readable)
 - `rules add/remove --dry-run` previews mutation results without changing global Git config.
 - `gitface rules list --query <text>` filters by case-insensitive substring
@@ -240,6 +241,11 @@ dot segments (`.`/`..`).
 - `gitface rules doctor --json` emits:
   `{ "status": "issues", "strict": false, "summary": { "total": 2, "pass": 1, "warn": 1, "fail": 0 }, "results": [{ "directory": "/abs/path/", "profileName": "work", "status": "warn", "profileExists": true, "directoryExists": false }] }`.
 - `gitface rules doctor --strict` treats `warn` and `fail` as failures (exit code `1`) for CI gating.
+- `gitface rules prune --dry-run` scans stale rules (missing profile only) without mutating global config.
+- `gitface rules prune --dry-run --json` emits:
+  `{ "status": "dry-run", "dryRun": true, "summary": { "scanned": 3, "prunable": 1, "pruned": 0, "skipped": 0 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "candidate" }] }`.
+- `gitface rules prune --json` removes stale rules and emits:
+  `{ "status": "pruned", "dryRun": false, "summary": { "scanned": 3, "prunable": 1, "pruned": 1, "skipped": 0 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "pruned" }] }`.
 - Empty JSON output is `[]`, which is safe for CI/script parsing.
 
 ## `gitface completion <topic>`

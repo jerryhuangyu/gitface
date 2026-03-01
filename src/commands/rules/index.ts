@@ -4,6 +4,7 @@ import { addRuleAction } from "./add";
 import { applyRuleAction } from "./apply";
 import doctorRuleAction from "./doctor";
 import { listRulesAction } from "./list";
+import { pruneRuleAction } from "./prune";
 import { removeRuleAction } from "./remove";
 import { resolveRuleAction } from "./resolve";
 
@@ -84,6 +85,13 @@ command
 	.option("--strict", "Treat warnings as failures (exit code 1) for CI gating")
 	.option("--json", "Output doctor report as JSON")
 	.action(doctorRuleAction);
+
+command
+	.command("prune")
+	.description("Remove stale folder rules whose profile no longer exists")
+	.option("--dry-run", "Preview stale rules without removing them")
+	.option("--json", "Output prune report as JSON")
+	.action(pruneRuleAction);
 
 const rulesCommand: CliCommand = {
 	command,
