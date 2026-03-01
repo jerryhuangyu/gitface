@@ -81,7 +81,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface use <profile>`  | Apply a profile to Git config; supports `--scope`, `--query`, `--dry-run`, plus `use --json` and `use --json-envelope` output.      |
 | `gitface current`        | Display active Git identity; supports `--scope`, `current --json`, and `current --json-envelope` machine-readable output. |
 | `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--strict` available). |
-| `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports `--json` summary output.              |
+| `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports legacy `--json` summary and `--json-envelope` unified output. |
 | `gitface import <file>`  | Import profiles from JSON; supports `--dry-run`, `--strict`, `--atomic`, plus `--json` / `--json-envelope` for automation and CI gating.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
@@ -218,6 +218,12 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "exported", "count": 2, "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }] }`.
 - `gitface export ./profiles.json --json` emits machine-readable file result:
   `{ "status": "exported", "count": 2, "file": "./profiles.json" }`.
+- `gitface export --json-envelope` emits unified Result Envelope output:
+  `{ "status": "success", "code": "EXPORT_PROFILES_STDOUT", "message": "Profiles exported to stdout successfully.", "data": { "count": 2, "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
+- `gitface export ./profiles.json --json-envelope` emits unified file result:
+  `{ "status": "success", "code": "EXPORT_PROFILES_WRITTEN", "message": "Profiles exported to file successfully.", "data": { "count": 2, "file": "./profiles.json" }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
+- `--json-envelope` write failures return envelope errors with exit code `1`:
+  `{ "status": "error", "code": "EXPORT_WRITE_FAILED", "message": "...", "data": { "count": 0, "file": "./profiles.json" }, "errors": [{ "code": "EXPORT_WRITE_FAILED", "message": "..." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
 
 ### Example profile file
 

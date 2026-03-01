@@ -175,8 +175,13 @@ dot segments (`.`/`..`).
 - `--json` emits machine-readable output:
   - stdout mode: `{ "status": "exported", "count": 2, "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }] }`
   - file mode: `{ "status": "exported", "count": 2, "file": "./profiles.json" }`
+- `--json-envelope` emits unified Result Envelope output:
+  - stdout mode: `{ "status": "success", "code": "EXPORT_PROFILES_STDOUT", "message": "Profiles exported to stdout successfully.", "data": { "count": 2, "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`
+  - file mode: `{ "status": "success", "code": "EXPORT_PROFILES_WRITTEN", "message": "Profiles exported to file successfully.", "data": { "count": 2, "file": "./profiles.json" }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`
 - JSON failures return:
   `{ "status": "error", "reason": "..." }` (and include `file` when provided) with exit code `1`.
+- `--json-envelope` failures return:
+  `{ "status": "error", "code": "EXPORT_WRITE_FAILED", "message": "...", "data": { "count": 0, "file": "./profiles.json" }, "errors": [{ "code": "EXPORT_WRITE_FAILED", "message": "..." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }` with exit code `1`.
 
 ## `gitface import <file>`
 

@@ -178,6 +178,7 @@ gitface rm work-archive
 
 ```bash
 gitface export ./profiles-backup.json
+gitface export --json-envelope
 ```
 
 匯入（先模擬）：
@@ -190,6 +191,8 @@ gitface import ./profiles-backup.json --json-envelope
 
 如果 profile 同名，要覆蓋請加 `--overwrite`。
 在 CI/agent 中，建議優先用 `--json-envelope` 取得統一 Result Envelope（含 `schemaVersion/durationMs/traceId`）。
+`gitface export --json-envelope` 成功範例：
+`{ "status": "success", "code": "EXPORT_PROFILES_STDOUT", "message": "Profiles exported to stdout successfully.", "data": { "count": 2, "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`。
 
 ### 情境 G：依資料夾自動套用身份（rules）
 

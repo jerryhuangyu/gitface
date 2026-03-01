@@ -67,6 +67,67 @@ describe("export/import e2e", () => {
 		}
 	});
 
+	test("emits unified envelope with profiles for export --json-envelope", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-e2e-"));
+		const configDir = path.join(tmpRoot, "config");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await runCli(
+				[exportProfileCommand.command],
+				["node", "gitface", "export", "--json-envelope"],
+			);
+
+			const summary = JSON.parse(logs.join("\n")) as {
+				status: string;
+				code: string;
+				message: string;
+				data: {
+					count: number;
+					profiles: Array<{
+						name: string;
+					}>;
+				};
+				errors: Array<{ code: string; message: string }>;
+				meta: {
+					schemaVersion: string;
+					durationMs: number;
+					traceId: string;
+				};
+			};
+
+			expect(summary.status).toBe("success");
+			expect(summary.code).toBe("EXPORT_PROFILES_STDOUT");
+			expect(summary.message).toBe("Profiles exported to stdout successfully.");
+			expect(summary.data.count).toBe(1);
+			expect(summary.data.profiles[0]?.name).toBe("work");
+			expect(summary.errors).toEqual([]);
+			expect(summary.meta.schemaVersion).toBe("1.0.0");
+			expect(summary.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(summary.meta.traceId.length).toBeGreaterThan(0);
+		} finally {
+			restoreLog();
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("emits structured export summary with file path for export <file> --json", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
@@ -119,6 +180,72 @@ describe("export/import e2e", () => {
 		}
 	});
 
+	test("emits unified envelope with file path for export <file> --json-envelope", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-e2e-"));
+		const configDir = path.join(tmpRoot, "config");
+		const exportFile = path.join(tmpRoot, "profiles.json");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await runCli(
+				[exportProfileCommand.command],
+				["node", "gitface", "export", exportFile, "--json-envelope"],
+			);
+
+			const summary = JSON.parse(logs.join("\n")) as {
+				status: string;
+				code: string;
+				data: {
+					count: number;
+					file: string;
+				};
+				errors: unknown[];
+				meta: {
+					schemaVersion: string;
+					durationMs: number;
+					traceId: string;
+				};
+			};
+
+			expect(summary.status).toBe("success");
+			expect(summary.code).toBe("EXPORT_PROFILES_WRITTEN");
+			expect(summary.data).toEqual({
+				count: 1,
+				file: exportFile,
+			});
+			expect(summary.errors).toEqual([]);
+			expect(summary.meta.schemaVersion).toBe("1.0.0");
+			expect(summary.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(summary.meta.traceId.length).toBeGreaterThan(0);
+
+			const exportedContent = JSON.parse(
+				await fs.readFile(exportFile, "utf8"),
+			) as Array<Record<string, unknown>>;
+			expect(exportedContent).toHaveLength(1);
+			expect(exportedContent[0]?.name).toBe("work");
+		} finally {
+			restoreLog();
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("emits JSON error and exit code when export --json write fails", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
@@ -151,6 +278,73 @@ describe("export/import e2e", () => {
 			expect(summary.status).toBe("error");
 			expect(summary.file).toBe(invalidOutput);
 			expect(summary.reason.length).toBeGreaterThan(0);
+			expect(process.exitCode).toBe(1);
+		} finally {
+			restoreLog();
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("emits envelope error and exit code when export --json-envelope write fails", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-e2e-"));
+		const configDir = path.join(tmpRoot, "config");
+		const invalidOutput = path.join(tmpRoot, "output-dir");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+			await fs.mkdir(invalidOutput, { recursive: true });
+
+			await runCli(
+				[exportProfileCommand.command],
+				["node", "gitface", "export", invalidOutput, "--json-envelope"],
+			);
+
+			const summary = JSON.parse(logs.join("\n")) as {
+				status: string;
+				code: string;
+				message: string;
+				data: {
+					count: number;
+					file: string;
+				} | null;
+				errors: Array<{
+					code: string;
+					message: string;
+				}>;
+				meta: {
+					schemaVersion: string;
+					durationMs: number;
+					traceId: string;
+				};
+			};
+			expect(summary.status).toBe("error");
+			expect(summary.code).toBe("EXPORT_WRITE_FAILED");
+			expect(summary.message.length).toBeGreaterThan(0);
+			expect(summary.data).toEqual({
+				count: 0,
+				file: invalidOutput,
+			});
+			expect(summary.errors).toHaveLength(1);
+			expect(summary.errors[0]?.code).toBe("EXPORT_WRITE_FAILED");
+			expect(summary.meta.schemaVersion).toBe("1.0.0");
+			expect(summary.meta.durationMs).toBeGreaterThanOrEqual(0);
+			expect(summary.meta.traceId.length).toBeGreaterThan(0);
 			expect(process.exitCode).toBe(1);
 		} finally {
 			restoreLog();
