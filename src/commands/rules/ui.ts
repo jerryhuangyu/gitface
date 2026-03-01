@@ -681,11 +681,14 @@ export function sendRuleDoctorFailedJson(reason: string): void {
 	);
 }
 
-export function sendRulePruneReportMsg(report: RulePruneReport): void {
+export function sendRulePruneReportMsg(
+	report: RulePruneReport,
+	strict: boolean,
+): void {
 	console.log(chalk.bold("Folder rule prune report:"));
 	console.log(
 		chalk.gray(
-			`Summary: scanned=${report.summary.scanned} prunable=${report.summary.prunable} pruned=${report.summary.pruned} skipped=${report.summary.skipped}${report.dryRun ? " (dry-run)" : ""}`,
+			`Summary: scanned=${report.summary.scanned} prunable=${report.summary.prunable} pruned=${report.summary.pruned} skipped=${report.summary.skipped}${report.dryRun ? " (dry-run)" : ""}${strict ? " (strict mode)" : ""}`,
 		),
 	);
 	if (report.results.length === 0) {
@@ -709,8 +712,16 @@ export function sendRulePruneReportMsg(report: RulePruneReport): void {
 	}
 }
 
-export function sendRulePruneReportJson(report: RulePruneReport): void {
-	console.log(JSON.stringify(report));
+export function sendRulePruneReportJson(
+	report: RulePruneReport,
+	strict: boolean,
+): void {
+	console.log(
+		JSON.stringify({
+			...report,
+			strict,
+		}),
+	);
 }
 
 export function sendRulePruneFailedMsg(reason: string): void {

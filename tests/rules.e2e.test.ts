@@ -1814,6 +1814,90 @@ describe("rules command e2e", () => {
 		}
 	});
 
+	test("prune --dry-run --strict --json returns exit code 1 when stale rules are detected", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-prune-dry-run-strict-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const staleDir = path.join(homeDir, "stale");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(staleDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "stale-profile",
+				gitName: "Stale User",
+				email: "stale@example.com",
+			});
+
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				staleDir,
+				"stale-profile",
+			]);
+			await service.removeProfile("stale-profile");
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"prune",
+				"--dry-run",
+				"--strict",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				dryRun: boolean;
+				strict: boolean;
+				summary: {
+					scanned: number;
+					prunable: number;
+					pruned: number;
+					skipped: number;
+				};
+			};
+			expect(parsed.status).toBe("dry-run");
+			expect(parsed.dryRun).toBe(true);
+			expect(parsed.strict).toBe(true);
+			expect(parsed.summary.prunable).toBe(1);
+			expect(process.exitCode).toBe(1);
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
 	test("prune --json removes stale rules and keeps healthy rules", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalHome = process.env.HOME;
@@ -1937,6 +2021,94 @@ describe("rules command e2e", () => {
 				directory: `${staleDir}${path.sep}`,
 				profileName: "stale-profile",
 			});
+		} finally {
+			process.chdir(originalCwd);
+			process.argv = originalArgv;
+			process.env.HOME = originalHome;
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("prune --strict --json keeps exit code 0 when stale rules are fully pruned", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalHome = process.env.HOME;
+		const originalArgv = process.argv.slice();
+		const originalExitCode = process.exitCode;
+		const originalCwd = process.cwd();
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-prune-apply-strict-"),
+		);
+		const tmpRoot = await fs.realpath(tmpRootRaw);
+		const homeDir = path.join(tmpRoot, "home");
+		const configDir = path.join(tmpRoot, "config");
+		const staleDir = path.join(homeDir, "stale");
+		const logs: string[] = [];
+
+		await fs.mkdir(homeDir, { recursive: true });
+		await fs.mkdir(configDir, { recursive: true });
+		await fs.mkdir(staleDir, { recursive: true });
+
+		process.env.HOME = homeDir;
+		process.env.XDG_CONFIG_HOME = configDir;
+
+		try {
+			process.chdir(homeDir);
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "stale-profile",
+				gitName: "Stale User",
+				email: "stale@example.com",
+			});
+
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"add",
+				staleDir,
+				"stale-profile",
+			]);
+			await service.removeProfile("stale-profile");
+
+			const restoreLog = spyConsole(logs);
+			await runCli([rulesCommand.command], [
+				"node",
+				"gitface",
+				"rules",
+				"prune",
+				"--strict",
+				"--json",
+			]);
+			restoreLog();
+
+			const output = stripAnsi(logs.join("\n")).trim();
+			const parsed = JSON.parse(output) as {
+				status: string;
+				dryRun: boolean;
+				strict: boolean;
+				summary: {
+					scanned: number;
+					prunable: number;
+					pruned: number;
+					skipped: number;
+				};
+			};
+			expect(parsed.status).toBe("pruned");
+			expect(parsed.dryRun).toBe(false);
+			expect(parsed.strict).toBe(true);
+			expect(parsed.summary).toEqual({
+				scanned: 1,
+				prunable: 1,
+				pruned: 1,
+				skipped: 0,
+			});
+			expect(process.exitCode).not.toBe(1);
 		} finally {
 			process.chdir(originalCwd);
 			process.argv = originalArgv;

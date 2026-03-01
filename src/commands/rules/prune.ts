@@ -17,6 +17,7 @@ interface RulePruneOptions {
 	dryRun?: boolean;
 	json?: boolean;
 	includeMissingDirectory?: boolean;
+	strict?: boolean;
 }
 
 const isMissingGlobalConfigError = (error: unknown): boolean => {
@@ -181,12 +182,15 @@ export const pruneRuleAction: (options: RulePruneOptions) => Promise<void> =
 				? await buildDryRunReportWithOptions(options)
 				: await buildApplyReport(options);
 			if (options.json) {
-				sendRulePruneReportJson(report);
+				sendRulePruneReportJson(report, options.strict ?? false);
 			} else {
-				sendRulePruneReportMsg(report);
+				sendRulePruneReportMsg(report, options.strict ?? false);
 			}
 
-			if (!options.dryRun && report.summary.skipped > 0) {
+			if (
+				(options.dryRun && options.strict && report.summary.prunable > 0) ||
+				(!options.dryRun && report.summary.skipped > 0)
+			) {
 				process.exitCode = 1;
 			}
 		} catch (error) {

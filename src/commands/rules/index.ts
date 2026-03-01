@@ -93,6 +93,10 @@ command
 	)
 	.option("--dry-run", "Preview stale rules without removing them")
 	.option(
+		"--strict",
+		"Treat unresolved prune findings as failures for CI gating",
+	)
+	.option(
 		"--include-missing-directory",
 		"Also prune rules whose target directory no longer exists",
 	)

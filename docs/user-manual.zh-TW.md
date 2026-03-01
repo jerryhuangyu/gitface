@@ -234,6 +234,7 @@ gitface rules apply ~/code/work/monorepo --fallback-profile work --json
 gitface rules doctor --json
 gitface rules doctor --strict --json
 gitface rules prune --dry-run --json
+gitface rules prune --dry-run --strict --json
 gitface rules prune --dry-run --include-missing-directory --json
 gitface rules prune --json
 ```
@@ -259,6 +260,9 @@ gitface rules prune --json
 - `rules doctor --strict` 會把 `warn`/`fail` 都視為失敗並回傳 exit code `1`，適合 CI gate。
 - `rules prune` 會清除「指向不存在 profile」的失效規則，降低後續 `rules apply` 失敗率。
 - `rules prune --dry-run` 可先預覽待清理清單，不會改動 global git config。
+- `rules prune --strict` 可做 CI gate：
+  - `--dry-run` 時，只要有候選（`summary.prunable > 0`）就回傳 exit code `1`。
+  - 實際 prune 時，若有清理失敗（`summary.skipped > 0`）才回傳 exit code `1`。
 - `rules prune --include-missing-directory` 可額外把「目錄已不存在」規則納入清理；建議先搭配 `--dry-run` 進行審核。
 
 ### 情境 H：啟用 Shell 補全（bash/zsh）
