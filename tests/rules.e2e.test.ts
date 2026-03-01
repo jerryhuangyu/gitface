@@ -1,10 +1,10 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, test } from "vitest";
 import simpleGit from "simple-git";
-import { ProfileService } from "../src/core/profile-service";
+import { describe, expect, test } from "vitest";
 import { rulesCommand } from "../src/commands/index";
+import { ProfileService } from "../src/core/profile-service";
 import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
 
 describe("rules command e2e", () => {
@@ -14,7 +14,9 @@ describe("rules command e2e", () => {
 		const originalArgv = process.argv.slice();
 		const originalExitCode = process.exitCode;
 		const originalCwd = process.cwd();
-		const tmpRootRaw = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-rules-"));
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-"),
+		);
 		const tmpRoot = await fs.realpath(tmpRootRaw);
 		const homeDir = path.join(tmpRoot, "home");
 		const configDir = path.join(tmpRoot, "config");
@@ -37,14 +39,10 @@ describe("rules command e2e", () => {
 				email: "work@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				projectDir,
-				"work-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", projectDir, "work-profile"],
+			);
 
 			const gitGlobal = simpleGit({ baseDir: homeDir });
 			const globalConfig = await gitGlobal.listConfig("global");
@@ -60,13 +58,10 @@ describe("rules command e2e", () => {
 			expect(projectConfig.all["user.name"]).toBe("Work User");
 			expect(projectConfig.all["user.email"]).toBe("work@example.com");
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"remove",
-				projectDir,
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "remove", projectDir],
+			);
 
 			const globalConfigAfter = await gitGlobal.listConfig("global");
 			const includeIfKeyAfter = Object.keys(globalConfigAfter.all).find((key) =>
@@ -93,7 +88,9 @@ describe("rules command e2e", () => {
 		const originalArgv = process.argv.slice();
 		const originalExitCode = process.exitCode;
 		const originalCwd = process.cwd();
-		const tmpRootRaw = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-rules-json-"));
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-json-"),
+		);
 		const tmpRoot = await fs.realpath(tmpRootRaw);
 		const homeDir = path.join(tmpRoot, "home");
 		const configDir = path.join(tmpRoot, "config");
@@ -117,23 +114,16 @@ describe("rules command e2e", () => {
 				email: "ops@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				projectDir,
-				"ops-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", projectDir, "ops-profile"],
+			);
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"list",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "list", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -166,7 +156,9 @@ describe("rules command e2e", () => {
 		const originalArgv = process.argv.slice();
 		const originalExitCode = process.exitCode;
 		const originalCwd = process.cwd();
-		const tmpRootRaw = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-rules-mutation-json-"));
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-mutation-json-"),
+		);
 		const tmpRoot = await fs.realpath(tmpRootRaw);
 		const homeDir = path.join(tmpRoot, "home");
 		const configDir = path.join(tmpRoot, "config");
@@ -191,15 +183,18 @@ describe("rules command e2e", () => {
 			});
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				projectDir,
-				"eng-profile",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"add",
+					projectDir,
+					"eng-profile",
+					"--json",
+				],
+			);
 			restoreLog();
 
 			const addOutput = stripAnsi(logs.join("\n")).trim();
@@ -216,14 +211,10 @@ describe("rules command e2e", () => {
 
 			logs.length = 0;
 			const restoreLog2 = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"remove",
-				projectDir,
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "remove", projectDir, "--json"],
+			);
 			restoreLog2();
 
 			const removeOutput = stripAnsi(logs.join("\n")).trim();
@@ -255,7 +246,9 @@ describe("rules command e2e", () => {
 		const originalArgv = process.argv.slice();
 		const originalExitCode = process.exitCode;
 		const originalCwd = process.cwd();
-		const tmpRootRaw = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-rules-add-error-json-"));
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rules-add-error-json-"),
+		);
 		const tmpRoot = await fs.realpath(tmpRootRaw);
 		const homeDir = path.join(tmpRoot, "home");
 		const configDir = path.join(tmpRoot, "config");
@@ -279,15 +272,10 @@ describe("rules command e2e", () => {
 			});
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				projectDir,
-				"missing",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", projectDir, "missing", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -351,16 +339,19 @@ describe("rules command e2e", () => {
 			});
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				projectDir,
-				"preview-profile",
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"add",
+					projectDir,
+					"preview-profile",
+					"--dry-run",
+					"--json",
+				],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -427,25 +418,24 @@ describe("rules command e2e", () => {
 				gitName: "Ops User",
 				email: "ops@example.com",
 			});
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				projectDir,
-				"ops-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", projectDir, "ops-profile"],
+			);
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"remove",
-				projectDir,
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"remove",
+					projectDir,
+					"--dry-run",
+					"--json",
+				],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -515,43 +505,34 @@ describe("rules command e2e", () => {
 				email: "work@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				zetaDir,
-				"work-profile",
-			]);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				alphaDir,
-				"work-profile",
-			]);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				betaDir,
-				"work-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", zetaDir, "work-profile"],
+			);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", alphaDir, "work-profile"],
+			);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", betaDir, "work-profile"],
+			);
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"list",
-				"--json",
-				"--query",
-				"project",
-				"--limit",
-				"2",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"list",
+					"--json",
+					"--query",
+					"project",
+					"--limit",
+					"2",
+				],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -620,45 +601,50 @@ describe("rules command e2e", () => {
 				email: "deprecated@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				healthyDir,
-				"healthy-profile",
-			]);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				missingDirectory,
-				"healthy-profile",
-			]);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				missingProfileDir,
-				"deprecated-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", healthyDir, "healthy-profile"],
+			);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"add",
+					missingDirectory,
+					"healthy-profile",
+				],
+			);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"add",
+					missingProfileDir,
+					"deprecated-profile",
+				],
+			);
 
 			await fs.rm(missingDirectory, { recursive: true, force: true });
 			await service.removeProfile("deprecated-profile");
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"list",
-				"--health",
-				"--concurrency",
-				"2",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"list",
+					"--health",
+					"--concurrency",
+					"2",
+					"--json",
+				],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -701,9 +687,9 @@ describe("rules command e2e", () => {
 			expect(byDirectory.get(`${missingDirectory}${path.sep}`)?.status).toBe(
 				"warn",
 			);
-			expect(
-				byDirectory.get(`${missingProfileDir}${path.sep}`)?.status,
-			).toBe("fail");
+			expect(byDirectory.get(`${missingProfileDir}${path.sep}`)?.status).toBe(
+				"fail",
+			);
 		} finally {
 			process.chdir(originalCwd);
 			process.argv = originalArgv;
@@ -738,14 +724,10 @@ describe("rules command e2e", () => {
 
 		try {
 			process.chdir(homeDir);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"list",
-				"--concurrency",
-				"2",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "list", "--concurrency", "2"],
+			);
 			expect(process.exitCode).toBe(1);
 		} finally {
 			process.chdir(originalCwd);
@@ -801,32 +783,20 @@ describe("rules command e2e", () => {
 				email: "mono@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				workDir,
-				"work-profile",
-			]);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				monorepoDir,
-				"mono-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", workDir, "work-profile"],
+			);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", monorepoDir, "mono-profile"],
+			);
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"resolve",
-				packageDir,
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "resolve", packageDir, "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -897,24 +867,16 @@ describe("rules command e2e", () => {
 				email: "work@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				ruleDir,
-				"work-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", ruleDir, "work-profile"],
+			);
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"resolve",
-				targetDir,
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "resolve", targetDir, "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -970,15 +932,18 @@ describe("rules command e2e", () => {
 		try {
 			process.chdir(homeDir);
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"resolve",
-				targetDir,
-				"--strict",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"resolve",
+					targetDir,
+					"--strict",
+					"--json",
+				],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -1042,26 +1007,17 @@ describe("rules command e2e", () => {
 				email: "stale@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				ruleDir,
-				"stale-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", ruleDir, "stale-profile"],
+			);
 			await service.removeProfile("stale-profile");
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"resolve",
-				repoDir,
-				"--strict",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "resolve", repoDir, "--strict", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -1130,14 +1086,10 @@ describe("rules command e2e", () => {
 				gitName: "Rule User",
 				email: "rule@example.com",
 			});
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				ruleDir,
-				"rule-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", ruleDir, "rule-profile"],
+			);
 
 			const git = simpleGit({ baseDir: repoDir });
 			await git.init();
@@ -1145,14 +1097,10 @@ describe("rules command e2e", () => {
 			await git.addConfig("user.email", "legacy@example.com");
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"apply",
-				repoDir,
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "apply", repoDir, "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -1236,26 +1184,19 @@ describe("rules command e2e", () => {
 				gitName: "Rule User",
 				email: "rule@example.com",
 			});
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				ruleDir,
-				"rule-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", ruleDir, "rule-profile"],
+			);
 
 			const git = simpleGit({ baseDir: repoDir });
 			await git.init();
 
 			const cwdBefore = process.cwd();
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"apply",
-				repoDir,
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "apply", repoDir],
+			);
 			const cwdAfter = process.cwd();
 
 			expect(cwdAfter).toBe(cwdBefore);
@@ -1308,14 +1249,10 @@ describe("rules command e2e", () => {
 				gitName: "Rule User",
 				email: "rule@example.com",
 			});
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				ruleDir,
-				"rule-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", ruleDir, "rule-profile"],
+			);
 
 			const git = simpleGit({ baseDir: repoDir });
 			await git.init();
@@ -1323,15 +1260,10 @@ describe("rules command e2e", () => {
 			await git.addConfig("user.email", "current@example.com");
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"apply",
-				repoDir,
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "apply", repoDir, "--dry-run", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -1344,10 +1276,13 @@ describe("rules command e2e", () => {
 			expect(parsed.status).toBe("dry-run");
 			expect(parsed.scope).toBe("local");
 			expect(parsed.hasChanges).toBe(true);
-			expect(parsed.changes.some((item) => item.key === "user.name")).toBe(true);
+			expect(parsed.changes.some((item) => item.key === "user.name")).toBe(
+				true,
+			);
 			expect(
 				parsed.changes.some(
-					(item) => item.key === "user.signingkey" && item.action === "unchanged",
+					(item) =>
+						item.key === "user.signingkey" && item.action === "unchanged",
 				),
 			).toBe(false);
 
@@ -1393,15 +1328,10 @@ describe("rules command e2e", () => {
 		try {
 			process.chdir(homeDir);
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"apply",
-				targetDir,
-				"--strict",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "apply", targetDir, "--strict", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -1467,17 +1397,20 @@ describe("rules command e2e", () => {
 			await git.init();
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"apply",
-				targetDir,
-				"--strict",
-				"--fallback-profile",
-				"fallback-work",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"apply",
+					targetDir,
+					"--strict",
+					"--fallback-profile",
+					"fallback-work",
+					"--json",
+				],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -1547,16 +1480,19 @@ describe("rules command e2e", () => {
 			process.chdir(homeDir);
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"apply",
-				targetDir,
-				"--fallback-profile",
-				"not-exist",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"apply",
+					targetDir,
+					"--fallback-profile",
+					"not-exist",
+					"--json",
+				],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -1615,25 +1551,17 @@ describe("rules command e2e", () => {
 				gitName: "Stale User",
 				email: "stale@example.com",
 			});
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				ruleDir,
-				"stale-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", ruleDir, "stale-profile"],
+			);
 			await service.removeProfile("stale-profile");
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"apply",
-				repoDir,
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "apply", repoDir, "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -1690,23 +1618,16 @@ describe("rules command e2e", () => {
 				gitName: "Doctor User",
 				email: "doctor@example.com",
 			});
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				ruleDir,
-				"doctor-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", ruleDir, "doctor-profile"],
+			);
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"doctor",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "doctor", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -1785,24 +1706,17 @@ describe("rules command e2e", () => {
 				gitName: "Warn User",
 				email: "warn@example.com",
 			});
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				ruleDir,
-				"warn-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", ruleDir, "warn-profile"],
+			);
 			await safeRemove(ruleDir);
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"doctor",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "doctor", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -1833,14 +1747,10 @@ describe("rules command e2e", () => {
 			logs.length = 0;
 			process.exitCode = undefined;
 			const restoreLogStrict = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"doctor",
-				"--strict",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "doctor", "--strict", "--json"],
+			);
 			restoreLogStrict();
 
 			const strictOutput = stripAnsi(logs.join("\n")).trim();
@@ -1895,24 +1805,17 @@ describe("rules command e2e", () => {
 				gitName: "Stale User",
 				email: "stale@example.com",
 			});
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				ruleDir,
-				"stale-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", ruleDir, "stale-profile"],
+			);
 			await service.removeProfile("stale-profile");
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"doctor",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "doctor", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -1959,15 +1862,10 @@ describe("rules command e2e", () => {
 
 		try {
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"doctor",
-				"--json",
-				"--concurrency",
-				"0",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "doctor", "--json", "--concurrency", "0"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -2024,33 +1922,21 @@ describe("rules command e2e", () => {
 				email: "stale@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				healthyDir,
-				"healthy-profile",
-			]);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				staleDir,
-				"stale-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", healthyDir, "healthy-profile"],
+			);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", staleDir, "stale-profile"],
+			);
 			await service.removeProfile("stale-profile");
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"prune",
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "prune", "--dry-run", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -2100,13 +1986,10 @@ describe("rules command e2e", () => {
 
 			logs.length = 0;
 			const restoreLogRules = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"list",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "list", "--json"],
+			);
 			restoreLogRules();
 			const rulesOutput = stripAnsi(logs.join("\n")).trim();
 			const listedRules = JSON.parse(rulesOutput) as Array<{
@@ -2142,16 +2025,19 @@ describe("rules command e2e", () => {
 
 		try {
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"prune",
-				"--dry-run",
-				"--json",
-				"--concurrency",
-				"invalid",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"prune",
+					"--dry-run",
+					"--json",
+					"--concurrency",
+					"invalid",
+				],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -2201,26 +2087,25 @@ describe("rules command e2e", () => {
 				email: "stale@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				staleDir,
-				"stale-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", staleDir, "stale-profile"],
+			);
 			await service.removeProfile("stale-profile");
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"prune",
-				"--dry-run",
-				"--strict",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"prune",
+					"--dry-run",
+					"--strict",
+					"--json",
+				],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -2292,32 +2177,21 @@ describe("rules command e2e", () => {
 				email: "stale@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				healthyDir,
-				"healthy-profile",
-			]);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				staleDir,
-				"stale-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", healthyDir, "healthy-profile"],
+			);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", staleDir, "stale-profile"],
+			);
 			await service.removeProfile("stale-profile");
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"prune",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "prune", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -2367,13 +2241,10 @@ describe("rules command e2e", () => {
 
 			logs.length = 0;
 			const restoreLogRules = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"list",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "list", "--json"],
+			);
 			restoreLogRules();
 			const rulesOutput = stripAnsi(logs.join("\n")).trim();
 			const listedRules = JSON.parse(rulesOutput) as Array<{
@@ -2433,25 +2304,17 @@ describe("rules command e2e", () => {
 				email: "stale@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				staleDir,
-				"stale-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", staleDir, "stale-profile"],
+			);
 			await service.removeProfile("stale-profile");
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"prune",
-				"--strict",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "prune", "--strict", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -2528,34 +2391,29 @@ describe("rules command e2e", () => {
 				email: "missing-dir@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				healthyDir,
-				"healthy-profile",
-			]);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				missingDir,
-				"missing-dir-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", healthyDir, "healthy-profile"],
+			);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", missingDir, "missing-dir-profile"],
+			);
 			await safeRemove(missingDir);
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"prune",
-				"--dry-run",
-				"--include-missing-directory",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"prune",
+					"--dry-run",
+					"--include-missing-directory",
+					"--json",
+				],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -2599,13 +2457,10 @@ describe("rules command e2e", () => {
 
 			logs.length = 0;
 			const restoreLogRules = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"list",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "list", "--json"],
+			);
 			restoreLogRules();
 			const rulesOutput = stripAnsi(logs.join("\n")).trim();
 			const listedRules = JSON.parse(rulesOutput) as Array<{
@@ -2673,33 +2528,28 @@ describe("rules command e2e", () => {
 				email: "missing-dir@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				healthyDir,
-				"healthy-profile",
-			]);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				missingDir,
-				"missing-dir-profile",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", healthyDir, "healthy-profile"],
+			);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", missingDir, "missing-dir-profile"],
+			);
 			await safeRemove(missingDir);
 
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"prune",
-				"--include-missing-directory",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				[
+					"node",
+					"gitface",
+					"rules",
+					"prune",
+					"--include-missing-directory",
+					"--json",
+				],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -2743,13 +2593,10 @@ describe("rules command e2e", () => {
 
 			logs.length = 0;
 			const restoreLogRules = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"list",
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "list", "--json"],
+			);
 			restoreLogRules();
 			const rulesOutput = stripAnsi(logs.join("\n")).trim();
 			const listedRules = JSON.parse(rulesOutput) as Array<{
@@ -2801,14 +2648,10 @@ describe("rules command e2e", () => {
 		try {
 			process.chdir(homeDir);
 			const restoreLog = spyConsole(logs);
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"list",
-				"--limit",
-				"0",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "list", "--limit", "0"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n"));

@@ -256,6 +256,9 @@ pnpm run build        # tsc + tsdown bundle
 - `pnpm run dev` runs tsdown in watch mode for local hacking.
 - CI requires `pnpm run lint` to pass before test workflow continues. Use
   `pnpm exec biome check --write .` for safe auto-fixes.
+- Biome configuration is pinned to the local CLI schema and includes both
+  `src/**` and `tests/**` TypeScript files so test code also stays under the
+  same quality gate.
 - Vitest is configured with serial file execution (`fileParallelism: false`)
   because E2E tests intentionally mutate process globals (`cwd/env/argv`) and
   parallel file runs can produce flaky timeouts.

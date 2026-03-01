@@ -28,16 +28,15 @@ export interface ProfileStore {
 export class FileProfileStore implements ProfileStore {
 	private readonly baseDir: string;
 	private readonly profilesDir: string;
-	private readonly ready: Promise<void>;
+	private ready: Promise<void> | null = null;
 
 	constructor(customDirectory?: string) {
 		this.baseDir = customDirectory ?? resolveConfigDirectory();
 		this.profilesDir = path.join(this.baseDir, "profiles");
-		this.ready = this.ensureDirectories();
 	}
 
 	async listNames(): Promise<string[]> {
-		await this.ready;
+		await this.ensureReady();
 		logger.debug("profile-store:listNames entries", {
 			baseDir: this.profilesDir,
 		});
@@ -76,7 +75,7 @@ export class FileProfileStore implements ProfileStore {
 	}
 
 	async load(name: string): Promise<ProfileRecord> {
-		await this.ready;
+		await this.ensureReady();
 		logger.debug("profile-store:load invoked", { name });
 		const filePath = this.profilePath(name);
 		try {
@@ -95,7 +94,7 @@ export class FileProfileStore implements ProfileStore {
 	}
 
 	async save(profile: Profile): Promise<void> {
-		await this.ready;
+		await this.ensureReady();
 		const filePath = this.profilePath(profile.name);
 		const payload = JSON.stringify(profile.snapshot(), null, 2);
 		logger.info("profile-store:save profile", {
@@ -106,7 +105,7 @@ export class FileProfileStore implements ProfileStore {
 	}
 
 	async remove(name: string): Promise<void> {
-		await this.ready;
+		await this.ensureReady();
 		const filePath = this.profilePath(name);
 		try {
 			await unlink(filePath);
@@ -122,7 +121,7 @@ export class FileProfileStore implements ProfileStore {
 	}
 
 	async exists(name: string): Promise<boolean> {
-		await this.ready;
+		await this.ensureReady();
 		const filePath = this.profilePath(name);
 		try {
 			await access(filePath, fsConstants.F_OK);
@@ -145,6 +144,13 @@ export class FileProfileStore implements ProfileStore {
 		});
 		await mkdir(this.baseDir, { recursive: true });
 		await mkdir(this.profilesDir, { recursive: true });
+	}
+
+	private async ensureReady(): Promise<void> {
+		if (!this.ready) {
+			this.ready = this.ensureDirectories();
+		}
+		await this.ready;
 	}
 
 	private profilePath(name: string): string {

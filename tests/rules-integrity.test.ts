@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { ProfileService } from "../src/core/profile-service";
 import {
 	parseConcurrency,
 	scanRuleIntegrity,
 } from "../src/commands/rules/integrity";
+import { ProfileService } from "../src/core/profile-service";
 
 describe("rules integrity scan", () => {
 	afterEach(() => {

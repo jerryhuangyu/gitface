@@ -2,22 +2,20 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
-import { describe, expect, test } from "vitest";
-import React from "react";
 import { render } from "ink";
+import React from "react";
+import { describe, expect, test } from "vitest";
 import { listProfilesCommand } from "../src/commands/index";
 import { ProfileService } from "../src/core/profile-service";
 import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
 
 describe("list command e2e", () => {
-	test(
-		"renders profiles list via CLI",
-		async () => {
+	test("renders profiles list via CLI", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalArgv = process.argv.slice();
 		const originalExitCode = process.exitCode;
 		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-"));
-			const configDir = path.join(tmpRoot, "config");
+		const configDir = path.join(tmpRoot, "config");
 
 		try {
 			process.env.XDG_CONFIG_HOME = configDir;
@@ -33,11 +31,7 @@ describe("list command e2e", () => {
 				email: "me@example.com",
 			});
 
-			await runCli([listProfilesCommand.command], [
-				"node",
-				"gitface",
-				"list",
-			]);
+			await runCli([listProfilesCommand.command], ["node", "gitface", "list"]);
 
 			// Render the list component with Ink to capture real output (including table)
 			const capture = createWritableCapture();
@@ -66,15 +60,15 @@ describe("list command e2e", () => {
 			process.exitCode = originalExitCode;
 			await safeRemove(tmpRoot);
 		}
-	},
-		10_000,
-	);
+	}, 10_000);
 
 	test("outputs profiles as json with --json sorted by updatedAt desc", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalArgv = process.argv.slice();
 		const originalExitCode = process.exitCode;
-		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-cli-json-"));
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-cli-json-"),
+		);
 		const configDir = path.join(tmpRoot, "config");
 		const logs: string[] = [];
 
@@ -94,12 +88,10 @@ describe("list command e2e", () => {
 			});
 
 			const restoreLog = spyConsole(logs);
-			await runCli([listProfilesCommand.command], [
-				"node",
-				"gitface",
-				"list",
-				"--json",
-			]);
+			await runCli(
+				[listProfilesCommand.command],
+				["node", "gitface", "list", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -150,14 +142,10 @@ describe("list command e2e", () => {
 			});
 
 			const restoreLog = spyConsole(logs);
-			await runCli([listProfilesCommand.command], [
-				"node",
-				"gitface",
-				"list",
-				"--json",
-				"--query",
-				"wor",
-			]);
+			await runCli(
+				[listProfilesCommand.command],
+				["node", "gitface", "list", "--json", "--query", "wor"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -199,14 +187,10 @@ describe("list command e2e", () => {
 			});
 
 			const restoreLog = spyConsole(logs);
-			await runCli([listProfilesCommand.command], [
-				"node",
-				"gitface",
-				"list",
-				"--json",
-				"--limit",
-				"1",
-			]);
+			await runCli(
+				[listProfilesCommand.command],
+				["node", "gitface", "list", "--json", "--limit", "1"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -242,13 +226,10 @@ describe("list command e2e", () => {
 			});
 
 			const restoreLog = spyConsole(logs);
-			await runCli([listProfilesCommand.command], [
-				"node",
-				"gitface",
-				"list",
-				"--limit",
-				"0",
-			]);
+			await runCli(
+				[listProfilesCommand.command],
+				["node", "gitface", "list", "--limit", "0"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n"));
@@ -293,11 +274,7 @@ describe("list command e2e", () => {
 			});
 
 			const restoreLog = spyConsole(logs);
-			await runCli([listProfilesCommand.command], [
-				"node",
-				"gitface",
-				"list",
-			]);
+			await runCli([listProfilesCommand.command], ["node", "gitface", "list"]);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n"));

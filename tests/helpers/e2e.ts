@@ -9,7 +9,9 @@ export function buildProgram(commands: Command[]): Command {
 		.description("A simple CLI tool to change your “face” in Git")
 		.version("test");
 
-	commands.forEach((c) => program.addCommand(c));
+	for (const command of commands) {
+		program.addCommand(command);
+	}
 	return program;
 }
 
@@ -22,7 +24,8 @@ export async function runCli(
 }
 
 export function stripAnsi(value: string): string {
-	return value.replace(/\u001b\[[0-9;]*m/g, "");
+	const ansiEscape = String.fromCharCode(27);
+	return value.replaceAll(new RegExp(`${ansiEscape}\\[[0-9;]*m`, "g"), "");
 }
 
 export function spyConsole(logs: string[]): () => void {

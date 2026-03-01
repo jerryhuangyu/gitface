@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
 import type { ConfigScope, GitIdentity } from "../src/core/git-service";
-import type { Profile } from "../src/domain/profile";
 import { type GitGateway, ProfileService } from "../src/core/profile-service";
+import type { Profile } from "../src/domain/profile";
 import {
 	InvalidProfileError,
 	ProfileAlreadyExistsError,

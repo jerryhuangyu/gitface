@@ -1,15 +1,15 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, test } from "vitest";
 import simpleGit from "simple-git";
-import { ProfileService } from "../src/core/profile-service";
-import { runUseAction } from "../src/commands/use/action";
+import { describe, expect, test } from "vitest";
 import { useProfileCommand } from "../src/commands/index";
+import { runUseAction } from "../src/commands/use/action";
+import { ProfileService } from "../src/core/profile-service";
 import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
 
 function setStdoutTTY(value: boolean): () => void {
-	const hadOwn = Object.prototype.hasOwnProperty.call(process.stdout, "isTTY");
+	const hadOwn = Object.hasOwn(process.stdout, "isTTY");
 	const previous = (process.stdout as { isTTY?: boolean }).isTTY;
 
 	Object.defineProperty(process.stdout, "isTTY", {
@@ -62,12 +62,10 @@ describe("use command e2e", () => {
 				email: "me@example.com",
 			});
 
-			await runCli([useProfileCommand.command], [
-				"node",
-				"gitface",
-				"use",
-				"work",
-			]);
+			await runCli(
+				[useProfileCommand.command],
+				["node", "gitface", "use", "work"],
+			);
 			const afterWork = await git.listConfig();
 			expect(afterWork.all["user.name"]).toBe("Work User");
 			expect(afterWork.all["user.email"]).toBe("work@example.com");
@@ -75,12 +73,10 @@ describe("use command e2e", () => {
 			expect(stripAnsi(logs.join("\n"))).toMatch(/Used profile 'work'/i);
 			logs.length = 0;
 
-			await runCli([useProfileCommand.command], [
-				"node",
-				"gitface",
-				"use",
-				"personal",
-			]);
+			await runCli(
+				[useProfileCommand.command],
+				["node", "gitface", "use", "personal"],
+			);
 			const afterPersonal = await git.listConfig();
 			expect(afterPersonal.all["user.name"]).toBe("Personal User");
 			expect(afterPersonal.all["user.email"]).toBe("me@example.com");
@@ -126,12 +122,10 @@ describe("use command e2e", () => {
 				email: "work@example.com",
 			});
 
-			await runCli([useProfileCommand.command], [
-				"node",
-				"gitface",
-				"use",
-				"missing",
-			]);
+			await runCli(
+				[useProfileCommand.command],
+				["node", "gitface", "use", "missing"],
+			);
 
 			const gitConfig = await fs.readFile(
 				path.join(repoDir, ".git", "config"),
@@ -184,13 +178,10 @@ describe("use command e2e", () => {
 				email: "work@example.com",
 			});
 
-			await runCli([useProfileCommand.command], [
-				"node",
-				"gitface",
-				"use",
-				"work",
-				"--json",
-			]);
+			await runCli(
+				[useProfileCommand.command],
+				["node", "gitface", "use", "work", "--json"],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
 				string,
@@ -483,14 +474,10 @@ describe("use command e2e", () => {
 				email: "work@example.com",
 			});
 
-			await runCli([useProfileCommand.command], [
-				"node",
-				"gitface",
-				"use",
-				"work",
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[useProfileCommand.command],
+				["node", "gitface", "use", "work", "--dry-run", "--json"],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as {
 				status: string;
@@ -595,13 +582,10 @@ describe("use command e2e", () => {
 			const beforeContent = await fs.readFile(gitConfigPath, "utf8");
 			await new Promise((resolve) => setTimeout(resolve, 1100));
 
-			await runCli([useProfileCommand.command], [
-				"node",
-				"gitface",
-				"use",
-				"work",
-				"--json",
-			]);
+			await runCli(
+				[useProfileCommand.command],
+				["node", "gitface", "use", "work", "--json"],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as {
 				status: string;
@@ -662,14 +646,10 @@ describe("use command e2e", () => {
 				email: "work@example.com",
 			});
 
-			await runCli([useProfileCommand.command], [
-				"node",
-				"gitface",
-				"use",
-				"work",
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[useProfileCommand.command],
+				["node", "gitface", "use", "work", "--dry-run", "--json"],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as {
 				status: string;

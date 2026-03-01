@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, test, vi } from "vitest";
-import { ProfileService } from "../src/core/profile-service";
 import { cloneProfileCommand } from "../src/commands/index";
+import { ProfileService } from "../src/core/profile-service";
 import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
 
 describe("clone command e2e", () => {
@@ -31,13 +31,10 @@ describe("clone command e2e", () => {
 				signingKey: "SRC",
 			});
 
-			await runCli([cloneProfileCommand.command], [
-				"node",
-				"gitface",
-				"clone",
-				"source",
-				"target",
-			]);
+			await runCli(
+				[cloneProfileCommand.command],
+				["node", "gitface", "clone", "source", "target"],
+			);
 
 			const cloned = await service.getProfile("target");
 			expect(cloned.gitName).toBe("Source User");
@@ -74,14 +71,10 @@ describe("clone command e2e", () => {
 				signingKey: "SRC",
 			});
 
-			await runCli([cloneProfileCommand.command], [
-				"node",
-				"gitface",
-				"clone",
-				"source",
-				"target",
-				"--json",
-			]);
+			await runCli(
+				[cloneProfileCommand.command],
+				["node", "gitface", "clone", "source", "target", "--json"],
+			);
 
 			const cloned = await service.getProfile("target");
 			expect(cloned.gitName).toBe("Source User");
@@ -129,14 +122,10 @@ describe("clone command e2e", () => {
 			});
 			process.exitCode = undefined;
 
-			await runCli([cloneProfileCommand.command], [
-				"node",
-				"gitface",
-				"clone",
-				"missing",
-				"target",
-				"--json",
-			]);
+			await runCli(
+				[cloneProfileCommand.command],
+				["node", "gitface", "clone", "missing", "target", "--json"],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
 				string,
@@ -184,14 +173,10 @@ describe("clone command e2e", () => {
 			});
 			process.exitCode = undefined;
 
-			await runCli([cloneProfileCommand.command], [
-				"node",
-				"gitface",
-				"clone",
-				"source",
-				"target",
-				"--json",
-			]);
+			await runCli(
+				[cloneProfileCommand.command],
+				["node", "gitface", "clone", "source", "target", "--json"],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
 				string,
@@ -233,15 +218,10 @@ describe("clone command e2e", () => {
 				signingKey: "SRC",
 			});
 
-			await runCli([cloneProfileCommand.command], [
-				"node",
-				"gitface",
-				"clone",
-				"source",
-				"target",
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[cloneProfileCommand.command],
+				["node", "gitface", "clone", "source", "target", "--dry-run", "--json"],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
 				string,
@@ -295,16 +275,19 @@ describe("clone command e2e", () => {
 				email: "target@example.com",
 			});
 
-			await runCli([cloneProfileCommand.command], [
-				"node",
-				"gitface",
-				"clone",
-				"source",
-				"target",
-				"--dry-run",
-				"--force",
-				"--json",
-			]);
+			await runCli(
+				[cloneProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"clone",
+					"source",
+					"target",
+					"--dry-run",
+					"--force",
+					"--json",
+				],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
 				string,

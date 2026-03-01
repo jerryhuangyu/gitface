@@ -32,12 +32,10 @@ describe("export/import e2e", () => {
 				email: "me@example.com",
 			});
 
-			await runCli([exportProfileCommand.command], [
-				"node",
-				"gitface",
-				"export",
-				"--json",
-			]);
+			await runCli(
+				[exportProfileCommand.command],
+				["node", "gitface", "export", "--json"],
+			);
 
 			const summary = JSON.parse(logs.join("\n")) as {
 				status: string;
@@ -87,13 +85,10 @@ describe("export/import e2e", () => {
 				email: "work@example.com",
 			});
 
-			await runCli([exportProfileCommand.command], [
-				"node",
-				"gitface",
-				"export",
-				exportFile,
-				"--json",
-			]);
+			await runCli(
+				[exportProfileCommand.command],
+				["node", "gitface", "export", exportFile, "--json"],
+			);
 
 			const summary = JSON.parse(logs.join("\n")) as {
 				status: string;
@@ -143,13 +138,10 @@ describe("export/import e2e", () => {
 			});
 			await fs.mkdir(invalidOutput, { recursive: true });
 
-			await runCli([exportProfileCommand.command], [
-				"node",
-				"gitface",
-				"export",
-				invalidOutput,
-				"--json",
-			]);
+			await runCli(
+				[exportProfileCommand.command],
+				["node", "gitface", "export", invalidOutput, "--json"],
+			);
 
 			const summary = JSON.parse(logs.join("\n")) as {
 				status: string;
@@ -217,10 +209,7 @@ describe("export/import e2e", () => {
 
 			const importService = ProfileService.create();
 			const imported = await importService.listProfiles();
-			expect(imported.map((p) => p.name).sort()).toEqual([
-				"personal",
-				"work",
-			]);
+			expect(imported.map((p) => p.name).sort()).toEqual(["personal", "work"]);
 
 			const work = imported.find((p) => p.name === "work");
 			expect(work?.gitName).toBe("Work User");
@@ -278,17 +267,16 @@ describe("export/import e2e", () => {
 				"utf8",
 			);
 
-			await runCli([importProfileCommand.command], [
-				"node",
-				"gitface",
-				"import",
-				importFile,
-				"--dry-run",
-			]);
+			await runCli(
+				[importProfileCommand.command],
+				["node", "gitface", "import", importFile, "--dry-run"],
+			);
 
 			const output = stripAnsi(logs.join("\n"));
 			expect(output).toMatch(/\[dry-run\] Profile 'work' already exists/i);
-			expect(output).toMatch(/Dry-run complete\. 1 profiles ready to import\./i);
+			expect(output).toMatch(
+				/Dry-run complete\. 1 profiles ready to import\./i,
+			);
 
 			const profiles = await service.listProfiles();
 			expect(profiles.map((profile) => profile.name)).toEqual(["work"]);
@@ -343,13 +331,10 @@ describe("export/import e2e", () => {
 				"utf8",
 			);
 
-			await runCli([importProfileCommand.command], [
-				"node",
-				"gitface",
-				"import",
-				importFile,
-				"--json",
-			]);
+			await runCli(
+				[importProfileCommand.command],
+				["node", "gitface", "import", importFile, "--json"],
+			);
 
 			const summary = JSON.parse(logs.join("\n")) as {
 				dryRun: boolean;
@@ -432,14 +417,10 @@ describe("export/import e2e", () => {
 				"utf8",
 			);
 
-			await runCli([importProfileCommand.command], [
-				"node",
-				"gitface",
-				"import",
-				importFile,
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[importProfileCommand.command],
+				["node", "gitface", "import", importFile, "--dry-run", "--json"],
+			);
 
 			const summary = JSON.parse(logs.join("\n")) as {
 				dryRun: boolean;

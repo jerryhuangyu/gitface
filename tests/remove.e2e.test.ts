@@ -25,13 +25,10 @@ describe("remove command e2e", () => {
 				email: "temp@example.com",
 			});
 
-			await runCli([removeProfileCommand.command], [
-				"node",
-				"gitface",
-				"remove",
-				"temp",
-				"--dry-run",
-			]);
+			await runCli(
+				[removeProfileCommand.command],
+				["node", "gitface", "remove", "temp", "--dry-run"],
+			);
 
 			const profile = await service.getProfile("temp");
 			expect(profile.name).toBe("temp");
@@ -65,14 +62,10 @@ describe("remove command e2e", () => {
 				email: "temp@example.com",
 			});
 
-			await runCli([removeProfileCommand.command], [
-				"node",
-				"gitface",
-				"remove",
-				"temp",
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[removeProfileCommand.command],
+				["node", "gitface", "remove", "temp", "--dry-run", "--json"],
+			);
 
 			const profile = await service.getProfile("temp");
 			expect(profile.name).toBe("temp");
@@ -116,12 +109,10 @@ describe("remove command e2e", () => {
 				email: "temp@example.com",
 			});
 
-			await runCli([removeProfileCommand.command], [
-				"node",
-				"gitface",
-				"remove",
-				"temp",
-			]);
+			await runCli(
+				[removeProfileCommand.command],
+				["node", "gitface", "remove", "temp"],
+			);
 
 			await expect(service.getProfile("temp")).rejects.toThrow();
 			expect(stripAnsi(logs.join("\n"))).toMatch(/Removed profile 'temp'/i);
@@ -153,13 +144,10 @@ describe("remove command e2e", () => {
 				email: "temp@example.com",
 			});
 
-			await runCli([removeProfileCommand.command], [
-				"node",
-				"gitface",
-				"remove",
-				"temp",
-				"--json",
-			]);
+			await runCli(
+				[removeProfileCommand.command],
+				["node", "gitface", "remove", "temp", "--json"],
+			);
 
 			await expect(service.getProfile("temp")).rejects.toThrow();
 
@@ -203,13 +191,10 @@ describe("remove command e2e", () => {
 			});
 			process.exitCode = undefined;
 
-			await runCli([removeProfileCommand.command], [
-				"node",
-				"gitface",
-				"remove",
-				"missing",
-				"--json",
-			]);
+			await runCli(
+				[removeProfileCommand.command],
+				["node", "gitface", "remove", "missing", "--json"],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
 				string,

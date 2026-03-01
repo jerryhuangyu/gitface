@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { ProfileService } from "../src/core/profile-service";
 import { runUseAction } from "../src/commands/use/action";
+import { ProfileService } from "../src/core/profile-service";
 
 describe("runUseAction scoped identity reads", () => {
 	const originalExitCode = process.exitCode;

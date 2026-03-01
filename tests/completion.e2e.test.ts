@@ -3,20 +3,18 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, test, vi } from "vitest";
 import { completionCommand } from "../src/commands/index";
-import { runCli, safeRemove } from "./helpers/e2e";
 import { ProfileService } from "../src/core/profile-service";
+import { runCli, safeRemove } from "./helpers/e2e";
 
 function captureStdout(buffer: string[]): () => void {
-	const spy = vi
-		.spyOn(process.stdout, "write")
-		.mockImplementation(((chunk: string | Uint8Array) => {
-			buffer.push(
-				typeof chunk === "string"
-					? chunk
-					: Buffer.from(chunk).toString("utf8"),
-			);
-			return true;
-		}) as typeof process.stdout.write);
+	const spy = vi.spyOn(process.stdout, "write").mockImplementation(((
+		chunk: string | Uint8Array,
+	) => {
+		buffer.push(
+			typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8"),
+		);
+		return true;
+	}) as typeof process.stdout.write);
 
 	return () => spy.mockRestore();
 }
@@ -25,7 +23,9 @@ describe("completion command e2e", () => {
 	test("returns prefix-filtered profile names for profiles topic", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
-		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-completion-"),
+		);
 		const configDir = path.join(tmpRoot, "config");
 		const output: string[] = [];
 		const restoreStdout = captureStdout(output);
@@ -46,14 +46,10 @@ describe("completion command e2e", () => {
 				email: "home@example.com",
 			});
 
-			await runCli([completionCommand.command], [
-				"node",
-				"gitface",
-				"completion",
-				"profiles",
-				"--prefix",
-				"wo",
-			]);
+			await runCli(
+				[completionCommand.command],
+				["node", "gitface", "completion", "profiles", "--prefix", "wo"],
+			);
 
 			expect(output.join("")).toBe("work\n");
 			expect(process.exitCode).toBeUndefined();
@@ -72,7 +68,9 @@ describe("completion command e2e", () => {
 	test("matches --prefix case-insensitively", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
-		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-completion-"),
+		);
 		const configDir = path.join(tmpRoot, "config");
 		const output: string[] = [];
 		const restoreStdout = captureStdout(output);
@@ -88,14 +86,10 @@ describe("completion command e2e", () => {
 				email: "work-admin@example.com",
 			});
 
-			await runCli([completionCommand.command], [
-				"node",
-				"gitface",
-				"completion",
-				"profiles",
-				"--prefix",
-				"wo",
-			]);
+			await runCli(
+				[completionCommand.command],
+				["node", "gitface", "completion", "profiles", "--prefix", "wo"],
+			);
 
 			expect(output.join("")).toBe("WorkAdmin\n");
 			expect(process.exitCode).toBeUndefined();
@@ -114,7 +108,9 @@ describe("completion command e2e", () => {
 	test("limits returned profile names with --limit", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
-		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-completion-"),
+		);
 		const configDir = path.join(tmpRoot, "config");
 		const output: string[] = [];
 		const restoreStdout = captureStdout(output);
@@ -140,16 +136,19 @@ describe("completion command e2e", () => {
 				email: "alps@example.com",
 			});
 
-			await runCli([completionCommand.command], [
-				"node",
-				"gitface",
-				"completion",
-				"profiles",
-				"--prefix",
-				"al",
-				"--limit",
-				"2",
-			]);
+			await runCli(
+				[completionCommand.command],
+				[
+					"node",
+					"gitface",
+					"completion",
+					"profiles",
+					"--prefix",
+					"al",
+					"--limit",
+					"2",
+				],
+			);
 
 			expect(output.join("")).toBe("alpha\nalpine\n");
 			expect(process.exitCode).toBeUndefined();
@@ -168,7 +167,9 @@ describe("completion command e2e", () => {
 	test("emits machine-readable payload with --json", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
-		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-completion-"),
+		);
 		const configDir = path.join(tmpRoot, "config");
 		const output: string[] = [];
 		const restoreStdout = captureStdout(output);
@@ -189,17 +190,20 @@ describe("completion command e2e", () => {
 				email: "home@example.com",
 			});
 
-			await runCli([completionCommand.command], [
-				"node",
-				"gitface",
-				"completion",
-				"profiles",
-				"--prefix",
-				"wo",
-				"--limit",
-				"1",
-				"--json",
-			]);
+			await runCli(
+				[completionCommand.command],
+				[
+					"node",
+					"gitface",
+					"completion",
+					"profiles",
+					"--prefix",
+					"wo",
+					"--limit",
+					"1",
+					"--json",
+				],
+			);
 
 			expect(JSON.parse(output.join(""))).toEqual({
 				topic: "profiles",
@@ -224,7 +228,9 @@ describe("completion command e2e", () => {
 	test("emits empty json payload when no completion matches", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
-		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-completion-"),
+		);
 		const configDir = path.join(tmpRoot, "config");
 		const output: string[] = [];
 		const restoreStdout = captureStdout(output);
@@ -240,15 +246,18 @@ describe("completion command e2e", () => {
 				email: "home@example.com",
 			});
 
-			await runCli([completionCommand.command], [
-				"node",
-				"gitface",
-				"completion",
-				"profiles",
-				"--prefix",
-				"wo",
-				"--json",
-			]);
+			await runCli(
+				[completionCommand.command],
+				[
+					"node",
+					"gitface",
+					"completion",
+					"profiles",
+					"--prefix",
+					"wo",
+					"--json",
+				],
+			);
 
 			expect(JSON.parse(output.join(""))).toEqual({
 				topic: "profiles",
@@ -273,7 +282,9 @@ describe("completion command e2e", () => {
 	test("sets exit code and writes no output for invalid --limit", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
-		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-completion-"),
+		);
 		const configDir = path.join(tmpRoot, "config");
 		const output: string[] = [];
 		const restoreStdout = captureStdout(output);
@@ -289,16 +300,19 @@ describe("completion command e2e", () => {
 				email: "work@example.com",
 			});
 
-			await runCli([completionCommand.command], [
-				"node",
-				"gitface",
-				"completion",
-				"profiles",
-				"--prefix",
-				"wo",
-				"--limit",
-				"0",
-			]);
+			await runCli(
+				[completionCommand.command],
+				[
+					"node",
+					"gitface",
+					"completion",
+					"profiles",
+					"--prefix",
+					"wo",
+					"--limit",
+					"0",
+				],
+			);
 
 			expect(process.exitCode).toBe(1);
 			expect(output.join("")).toBe("");
@@ -317,7 +331,9 @@ describe("completion command e2e", () => {
 	test("returns filtered profile names even when unrelated profile JSON is malformed", async () => {
 		const originalXdg = process.env.XDG_CONFIG_HOME;
 		const originalExitCode = process.exitCode;
-		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-completion-"));
+		const tmpRoot = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-completion-"),
+		);
 		const configDir = path.join(tmpRoot, "config");
 		const output: string[] = [];
 		const restoreStdout = captureStdout(output);
@@ -334,16 +350,15 @@ describe("completion command e2e", () => {
 			});
 
 			const profilesDir = path.join(configDir, "gitface", "profiles");
-			await fs.writeFile(path.join(profilesDir, "oops.json"), "{not-valid-json");
+			await fs.writeFile(
+				path.join(profilesDir, "oops.json"),
+				"{not-valid-json",
+			);
 
-			await runCli([completionCommand.command], [
-				"node",
-				"gitface",
-				"completion",
-				"profiles",
-				"--prefix",
-				"wo",
-			]);
+			await runCli(
+				[completionCommand.command],
+				["node", "gitface", "completion", "profiles", "--prefix", "wo"],
+			);
 
 			expect(output.join("")).toBe("work\n");
 			expect(process.exitCode).toBeUndefined();
@@ -366,12 +381,10 @@ describe("completion command e2e", () => {
 
 		try {
 			process.exitCode = undefined;
-			await runCli([completionCommand.command], [
-				"node",
-				"gitface",
-				"completion",
-				"invalid-topic",
-			]);
+			await runCli(
+				[completionCommand.command],
+				["node", "gitface", "completion", "invalid-topic"],
+			);
 
 			expect(process.exitCode).toBe(1);
 			expect(output.join("")).toBe("");
@@ -386,14 +399,10 @@ describe("completion command e2e", () => {
 		const restoreStdout = captureStdout(output);
 
 		try {
-			await runCli([completionCommand.command], [
-				"node",
-				"gitface",
-				"completion",
-				"snippet",
-				"--shell",
-				"bash",
-			]);
+			await runCli(
+				[completionCommand.command],
+				["node", "gitface", "completion", "snippet", "--shell", "bash"],
+			);
 
 			const snippet = output.join("");
 			expect(snippet).toContain("COMP_CWORD -eq 2");
@@ -404,7 +413,7 @@ describe("completion command e2e", () => {
 			expect(snippet).toContain('"$sub" == "clone"');
 			expect(snippet).toContain('"$sub" == "rename"');
 			expect(snippet).toContain('"$sub" == "mv"');
-			expect(snippet).toContain('$COMP_CWORD -eq 4');
+			expect(snippet).toContain("$COMP_CWORD -eq 4");
 			expect(snippet).toContain('"$sub" == "rules"');
 			expect(snippet).toContain('"$nested" == "add"');
 			expect(snippet).toContain("--limit 50");
@@ -418,21 +427,17 @@ describe("completion command e2e", () => {
 		const restoreStdout = captureStdout(output);
 
 		try {
-			await runCli([completionCommand.command], [
-				"node",
-				"gitface",
-				"completion",
-				"snippet",
-				"--shell",
-				"zsh",
-			]);
+			await runCli(
+				[completionCommand.command],
+				["node", "gitface", "completion", "snippet", "--shell", "zsh"],
+			);
 
 			const snippet = output.join("");
 			expect(snippet).toContain("(( CURRENT == 3 )) || return 1");
 			expect(snippet).toContain("(( CURRENT == 5 )) || return 1");
 			expect(snippet).toContain("rm|remove|use|edit|clone|rename|mv");
 			expect(snippet).toContain("rules) [[ $nested == add ]] && ok=1 ;;");
-			expect(snippet).toContain('compadd -- "${names[@]}"');
+			expect(snippet).toContain(`compadd -- "\${names[@]}"`);
 			expect(snippet).toContain("--limit 50");
 		} finally {
 			restoreStdout();

@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, test, vi } from "vitest";
 import simpleGit from "simple-git";
+import { describe, expect, test, vi } from "vitest";
 import { currentIdentityCommand } from "../src/commands/index";
 import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
 
@@ -28,11 +28,10 @@ describe("current command e2e", () => {
 			process.chdir(repoDir);
 			process.env.XDG_CONFIG_HOME = configDir;
 
-			await runCli([currentIdentityCommand.command], [
-				"node",
-				"gitface",
-				"current",
-			]);
+			await runCli(
+				[currentIdentityCommand.command],
+				["node", "gitface", "current"],
+			);
 
 			const output = logSpy.mock.calls.flat().join("\n");
 			expect(output).toContain("CLI User");
@@ -71,12 +70,10 @@ describe("current command e2e", () => {
 			process.env.XDG_CONFIG_HOME = configDir;
 
 			const restoreLog = spyConsole(logs);
-			await runCli([currentIdentityCommand.command], [
-				"node",
-				"gitface",
-				"current",
-				"--json",
-			]);
+			await runCli(
+				[currentIdentityCommand.command],
+				["node", "gitface", "current", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -129,14 +126,10 @@ describe("current command e2e", () => {
 			await git.raw(["config", "--global", "user.signingkey", "GLOBALKEY"]);
 
 			const restoreLog = spyConsole(logs);
-			await runCli([currentIdentityCommand.command], [
-				"node",
-				"gitface",
-				"current",
-				"--scope",
-				"global",
-				"--json",
-			]);
+			await runCli(
+				[currentIdentityCommand.command],
+				["node", "gitface", "current", "--scope", "global", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();
@@ -185,14 +178,10 @@ describe("current command e2e", () => {
 			process.exitCode = undefined;
 
 			const restoreLog = spyConsole(logs);
-			await runCli([currentIdentityCommand.command], [
-				"node",
-				"gitface",
-				"current",
-				"--scope",
-				"workspace",
-				"--json",
-			]);
+			await runCli(
+				[currentIdentityCommand.command],
+				["node", "gitface", "current", "--scope", "workspace", "--json"],
+			);
 			restoreLog();
 
 			const output = stripAnsi(logs.join("\n")).trim();

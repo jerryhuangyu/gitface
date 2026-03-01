@@ -2,10 +2,9 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, test, vi } from "vitest";
-import { renameProfileCommand } from "../src/commands/index";
+import { renameProfileCommand, rulesCommand } from "../src/commands/index";
 import { ProfileService } from "../src/core/profile-service";
 import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
-import { rulesCommand } from "../src/commands/index";
 
 describe("rename command e2e", () => {
 	test("renames an existing profile via CLI", async () => {
@@ -30,13 +29,10 @@ describe("rename command e2e", () => {
 				email: "old@example.com",
 			});
 
-			await runCli([renameProfileCommand.command], [
-				"node",
-				"gitface",
-				"rename",
-				"old",
-				"new",
-			]);
+			await runCli(
+				[renameProfileCommand.command],
+				["node", "gitface", "rename", "old", "new"],
+			);
 
 			await expect(service.getProfile("old")).rejects.toThrow();
 			const renamed = await service.getProfile("new");
@@ -71,14 +67,10 @@ describe("rename command e2e", () => {
 				email: "old@example.com",
 			});
 
-			await runCli([renameProfileCommand.command], [
-				"node",
-				"gitface",
-				"rename",
-				"old",
-				"new",
-				"--json",
-			]);
+			await runCli(
+				[renameProfileCommand.command],
+				["node", "gitface", "rename", "old", "new", "--json"],
+			);
 
 			await expect(service.getProfile("old")).rejects.toThrow();
 			const renamed = await service.getProfile("new");
@@ -127,14 +119,10 @@ describe("rename command e2e", () => {
 			});
 			process.exitCode = undefined;
 
-			await runCli([renameProfileCommand.command], [
-				"node",
-				"gitface",
-				"rename",
-				"missing",
-				"new",
-				"--json",
-			]);
+			await runCli(
+				[renameProfileCommand.command],
+				["node", "gitface", "rename", "missing", "new", "--json"],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
 				string,
@@ -182,14 +170,10 @@ describe("rename command e2e", () => {
 			});
 			process.exitCode = undefined;
 
-			await runCli([renameProfileCommand.command], [
-				"node",
-				"gitface",
-				"rename",
-				"old",
-				"new",
-				"--json",
-			]);
+			await runCli(
+				[renameProfileCommand.command],
+				["node", "gitface", "rename", "old", "new", "--json"],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
 				string,
@@ -230,15 +214,10 @@ describe("rename command e2e", () => {
 				email: "old@example.com",
 			});
 
-			await runCli([renameProfileCommand.command], [
-				"node",
-				"gitface",
-				"rename",
-				"old",
-				"new",
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[renameProfileCommand.command],
+				["node", "gitface", "rename", "old", "new", "--dry-run", "--json"],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
 				string,
@@ -291,16 +270,19 @@ describe("rename command e2e", () => {
 				email: "new@example.com",
 			});
 
-			await runCli([renameProfileCommand.command], [
-				"node",
-				"gitface",
-				"rename",
-				"old",
-				"new",
-				"--dry-run",
-				"--force",
-				"--json",
-			]);
+			await runCli(
+				[renameProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"rename",
+					"old",
+					"new",
+					"--dry-run",
+					"--force",
+					"--json",
+				],
+			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as Record<
 				string,
@@ -337,7 +319,9 @@ describe("rename command e2e", () => {
 		const originalArgv = process.argv.slice();
 		const originalExitCode = process.exitCode;
 		const originalCwd = process.cwd();
-		const tmpRootRaw = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-rename-rules-"));
+		const tmpRootRaw = await fs.mkdtemp(
+			path.join(os.tmpdir(), "gitface-rename-rules-"),
+		);
 		const tmpRoot = await fs.realpath(tmpRootRaw);
 		const homeDir = path.join(tmpRoot, "home");
 		const configDir = path.join(tmpRoot, "config");
@@ -360,23 +344,15 @@ describe("rename command e2e", () => {
 				email: "old@example.com",
 			});
 
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"add",
-				projectDir,
-				"old",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "add", projectDir, "old"],
+			);
 
-			await runCli([renameProfileCommand.command], [
-				"node",
-				"gitface",
-				"rename",
-				"old",
-				"new",
-				"--json",
-			]);
+			await runCli(
+				[renameProfileCommand.command],
+				["node", "gitface", "rename", "old", "new", "--json"],
+			);
 
 			const renameJsonLine = stripAnsi(logs.join("\n"))
 				.split("\n")
@@ -392,14 +368,10 @@ describe("rename command e2e", () => {
 			expect(parsed.rulesUpdated).toBe(1);
 
 			logs.length = 0;
-			await runCli([rulesCommand.command], [
-				"node",
-				"gitface",
-				"rules",
-				"resolve",
-				projectDir,
-				"--json",
-			]);
+			await runCli(
+				[rulesCommand.command],
+				["node", "gitface", "rules", "resolve", projectDir, "--json"],
+			);
 			const resolved = JSON.parse(stripAnsi(logs.join("\n"))) as {
 				status: string;
 				matchedRule?: { profileName?: string };

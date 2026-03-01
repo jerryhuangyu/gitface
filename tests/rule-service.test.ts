@@ -1,5 +1,8 @@
 import { describe, expect, test, vi } from "vitest";
-import { RuleService, ruleDirectoryMatchesTarget } from "../src/core/rule-service";
+import {
+	RuleService,
+	ruleDirectoryMatchesTarget,
+} from "../src/core/rule-service";
 
 describe("ruleDirectoryMatchesTarget", () => {
 	test("matches ignoring case on macOS", () => {
@@ -34,7 +37,11 @@ describe("ruleDirectoryMatchesTarget", () => {
 
 	test("still requires prefix match after normalization", () => {
 		expect(
-			ruleDirectoryMatchesTarget("/Users/Jerry/Work/", "/Users/Jerry/Other/", "darwin"),
+			ruleDirectoryMatchesTarget(
+				"/Users/Jerry/Work/",
+				"/Users/Jerry/Other/",
+				"darwin",
+			),
 		).toBe(false);
 	});
 
@@ -45,7 +52,9 @@ describe("ruleDirectoryMatchesTarget", () => {
 			{ directory: "/Users/jerry/work/", profileName: "work" },
 		]);
 
-		const matched = await service.resolveRuleForDirectory("/users/Jerry/work/repo");
+		const matched = await service.resolveRuleForDirectory(
+			"/users/Jerry/work/repo",
+		);
 		expect(matched).toEqual({
 			directory: "/Users/jerry/work/",
 			profileName: "work",

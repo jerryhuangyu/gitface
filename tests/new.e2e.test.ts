@@ -23,18 +23,21 @@ describe("new command e2e", () => {
 		try {
 			process.env.XDG_CONFIG_HOME = configDir;
 
-			await runCli([newProfileCommand.command], [
-				"node",
-				"gitface",
-				"new",
-				"work",
-				"--git-name",
-				"Work User",
-				"--email",
-				"work@example.com",
-				"--signing-key",
-				"WORKKEY",
-			]);
+			await runCli(
+				[newProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"new",
+					"work",
+					"--git-name",
+					"Work User",
+					"--email",
+					"work@example.com",
+					"--signing-key",
+					"WORKKEY",
+				],
+			);
 
 			const service = ProfileService.create();
 			const profile = await service.getProfile("work");
@@ -68,17 +71,20 @@ describe("new command e2e", () => {
 		try {
 			process.env.XDG_CONFIG_HOME = configDir;
 
-			await runCli([newProfileCommand.command], [
-				"node",
-				"gitface",
-				"new",
-				"work",
-				"--git-name",
-				"Work User",
-				"--email",
-				"work@example.com",
-				"--json",
-			]);
+			await runCli(
+				[newProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"new",
+					"work",
+					"--git-name",
+					"Work User",
+					"--email",
+					"work@example.com",
+					"--json",
+				],
+			);
 
 			const payload = JSON.parse(logs.join("\n"));
 			expect(payload).toEqual({
@@ -115,18 +121,21 @@ describe("new command e2e", () => {
 		try {
 			process.env.XDG_CONFIG_HOME = configDir;
 
-			await runCli([newProfileCommand.command], [
-				"node",
-				"gitface",
-				"new",
-				"work",
-				"--git-name",
-				"Work User",
-				"--email",
-				"work@example.com",
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[newProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"new",
+					"work",
+					"--git-name",
+					"Work User",
+					"--email",
+					"work@example.com",
+					"--dry-run",
+					"--json",
+				],
+			);
 
 			const payload = JSON.parse(logs.join("\n"));
 			expect(payload).toEqual({
@@ -174,19 +183,22 @@ describe("new command e2e", () => {
 				signingKey: "OLDKEY",
 			});
 
-			await runCli([newProfileCommand.command], [
-				"node",
-				"gitface",
-				"new",
-				"work",
-				"--git-name",
-				"Work User",
-				"--email",
-				"work@example.com",
-				"--force",
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[newProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"new",
+					"work",
+					"--git-name",
+					"Work User",
+					"--email",
+					"work@example.com",
+					"--force",
+					"--dry-run",
+					"--json",
+				],
+			);
 
 			const payload = JSON.parse(logs.join("\n"));
 			expect(payload).toEqual({
@@ -228,13 +240,10 @@ describe("new command e2e", () => {
 		try {
 			process.env.XDG_CONFIG_HOME = configDir;
 
-			await runCli([newProfileCommand.command], [
-				"node",
-				"gitface",
-				"new",
-				"work",
-				"--json",
-			]);
+			await runCli(
+				[newProfileCommand.command],
+				["node", "gitface", "new", "work", "--json"],
+			);
 
 			const payload = JSON.parse(logs.join("\n"));
 			expect(payload).toEqual({
@@ -270,23 +279,27 @@ describe("new command e2e", () => {
 		try {
 			process.env.XDG_CONFIG_HOME = configDir;
 
-			await runCli([newProfileCommand.command], [
-				"node",
-				"gitface",
-				"new",
-				"../unsafe",
-				"--git-name",
-				"Work User",
-				"--email",
-				"work@example.com",
-				"--json",
-			]);
+			await runCli(
+				[newProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"new",
+					"../unsafe",
+					"--git-name",
+					"Work User",
+					"--email",
+					"work@example.com",
+					"--json",
+				],
+			);
 
 			const payload = JSON.parse(logs.join("\n"));
 			expect(payload).toEqual({
 				status: "error",
 				name: "../unsafe",
-				reason: "Profile name must not contain path separators or NUL characters.",
+				reason:
+					"Profile name must not contain path separators or NUL characters.",
 			});
 			expect(process.exitCode).toBe(1);
 		} finally {

@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, test, vi } from "vitest";
 import simpleGit from "simple-git";
+import { describe, expect, test, vi } from "vitest";
 import { doctorCommand } from "../src/commands/index";
 import { runCli, safeRemove } from "./helpers/e2e";
 
@@ -87,7 +87,9 @@ describe("doctor command e2e", () => {
 
 			const output = logSpy.mock.calls.flat().join("\n");
 			expect(output).toContain("Global Git identity is missing");
-			expect(output).toContain("Strict mode failed because warnings were detected");
+			expect(output).toContain(
+				"Strict mode failed because warnings were detected",
+			);
 			expect(process.exitCode).toBe(1);
 		} finally {
 			logSpy.mockRestore();
@@ -157,7 +159,9 @@ describe("doctor command e2e", () => {
 						),
 				),
 			).toBe(true);
-			expect(parsed.checks.every((check) => check.message.length > 0)).toBe(true);
+			expect(parsed.checks.every((check) => check.message.length > 0)).toBe(
+				true,
+			);
 			expect(
 				parsed.checks.every((check) =>
 					["pass", "warn", "fail"].includes(check.status),

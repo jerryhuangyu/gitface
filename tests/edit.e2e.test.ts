@@ -4,12 +4,7 @@ import path from "node:path";
 import { describe, expect, test } from "vitest";
 import { editProfileCommand } from "../src/commands/index";
 import { ProfileService } from "../src/core/profile-service";
-import {
-	runCli,
-	safeRemove,
-	spyConsole,
-	stripAnsi,
-} from "./helpers/e2e";
+import { runCli, safeRemove, spyConsole, stripAnsi } from "./helpers/e2e";
 
 describe("edit command e2e", () => {
 	test("updates profile fields and prints success", async () => {
@@ -32,18 +27,21 @@ describe("edit command e2e", () => {
 				signingKey: "OLDKEY",
 			});
 
-			await runCli([editProfileCommand.command], [
-				"node",
-				"gitface",
-				"edit",
-				"work",
-				"--git-name",
-				"New Name",
-				"--email",
-				"new@example.com",
-				"--signing-key",
-				"NEWKEY",
-			]);
+			await runCli(
+				[editProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"edit",
+					"work",
+					"--git-name",
+					"New Name",
+					"--email",
+					"new@example.com",
+					"--signing-key",
+					"NEWKEY",
+				],
+			);
 
 			const updated = await service.getProfile("work");
 			expect(updated.gitName).toBe("New Name");
@@ -80,18 +78,21 @@ describe("edit command e2e", () => {
 				signingKey: "OLDKEY",
 			});
 
-			await runCli([editProfileCommand.command], [
-				"node",
-				"gitface",
-				"edit",
-				"work",
-				"--git-name",
-				"New Name",
-				"--email",
-				"new@example.com",
-				"--unset-signing-key",
-				"--json",
-			]);
+			await runCli(
+				[editProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"edit",
+					"work",
+					"--git-name",
+					"New Name",
+					"--email",
+					"new@example.com",
+					"--unset-signing-key",
+					"--json",
+				],
+			);
 
 			const updated = await service.getProfile("work");
 			expect(updated.gitName).toBe("New Name");
@@ -137,18 +138,21 @@ describe("edit command e2e", () => {
 				signingKey: "OLDKEY",
 			});
 
-			await runCli([editProfileCommand.command], [
-				"node",
-				"gitface",
-				"edit",
-				"work",
-				"--git-name",
-				"Dry Name",
-				"--email",
-				"dry@example.com",
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[editProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"edit",
+					"work",
+					"--git-name",
+					"Dry Name",
+					"--email",
+					"dry@example.com",
+					"--dry-run",
+					"--json",
+				],
+			);
 
 			const profile = await service.getProfile("work");
 			expect(profile.gitName).toBe("Old Name");
@@ -194,17 +198,20 @@ describe("edit command e2e", () => {
 				signingKey: "OLDKEY",
 			});
 
-			await runCli([editProfileCommand.command], [
-				"node",
-				"gitface",
-				"edit",
-				"work",
-				"--git-name",
-				"Old Name",
-				"--unset-signing-key",
-				"--dry-run",
-				"--json",
-			]);
+			await runCli(
+				[editProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"edit",
+					"work",
+					"--git-name",
+					"Old Name",
+					"--unset-signing-key",
+					"--dry-run",
+					"--json",
+				],
+			);
 
 			const profile = await service.getProfile("work");
 			expect(profile.signingKey).toBe("OLDKEY");
@@ -241,15 +248,10 @@ describe("edit command e2e", () => {
 			process.env.XDG_CONFIG_HOME = configDir;
 			process.exitCode = undefined;
 
-			await runCli([editProfileCommand.command], [
-				"node",
-				"gitface",
-				"edit",
-				"missing",
-				"--git-name",
-				"Name",
-				"--json",
-			]);
+			await runCli(
+				[editProfileCommand.command],
+				["node", "gitface", "edit", "missing", "--git-name", "Name", "--json"],
+			);
 
 			const payload = JSON.parse(stripAnsi(logs.join("\n")));
 			expect(payload).toEqual({
@@ -281,13 +283,10 @@ describe("edit command e2e", () => {
 			process.env.XDG_CONFIG_HOME = configDir;
 			process.exitCode = undefined;
 
-			await runCli([editProfileCommand.command], [
-				"node",
-				"gitface",
-				"edit",
-				"work",
-				"--json",
-			]);
+			await runCli(
+				[editProfileCommand.command],
+				["node", "gitface", "edit", "work", "--json"],
+			);
 
 			const payload = JSON.parse(stripAnsi(logs.join("\n")));
 			expect(payload).toEqual({
