@@ -460,4 +460,142 @@ describe("export/import e2e", () => {
 			await safeRemove(tmpRoot);
 		}
 	});
+
+	test("sets non-zero exit code when import --strict has failed entries", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-e2e-"));
+		const configDir = path.join(tmpRoot, "config");
+		const importFile = path.join(tmpRoot, "profiles.json");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await fs.writeFile(
+				importFile,
+				JSON.stringify(
+					[
+						{
+							name: "work",
+							gitName: "Work User",
+							email: "work@example.com",
+						},
+						{
+							name: "personal",
+							gitName: "Personal User",
+							email: "me@example.com",
+						},
+					],
+					null,
+					2,
+				),
+				"utf8",
+			);
+
+			await runCli(
+				[importProfileCommand.command],
+				["node", "gitface", "import", importFile, "--strict"],
+			);
+
+			expect(process.exitCode).toBe(1);
+			const output = stripAnsi(logs.join("\n"));
+			expect(output).toMatch(/Profile 'work' already exists/i);
+			expect(output).toMatch(/Imported 1 profiles\./i);
+		} finally {
+			restoreLog();
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
+
+	test("sets non-zero exit code for import --dry-run --json --strict on validation failures", async () => {
+		const originalXdg = process.env.XDG_CONFIG_HOME;
+		const originalExitCode = process.exitCode;
+		const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gitface-e2e-"));
+		const configDir = path.join(tmpRoot, "config");
+		const importFile = path.join(tmpRoot, "profiles.json");
+		const logs: string[] = [];
+		const restoreLog = spyConsole(logs);
+
+		try {
+			process.env.XDG_CONFIG_HOME = configDir;
+			const service = ProfileService.create();
+			await service.createProfile({
+				name: "work",
+				gitName: "Work User",
+				email: "work@example.com",
+			});
+
+			await fs.writeFile(
+				importFile,
+				JSON.stringify(
+					[
+						{
+							name: "work",
+							gitName: "Work User",
+							email: "work@example.com",
+						},
+						{
+							name: "personal",
+							gitName: "Personal User",
+							email: "me@example.com",
+						},
+					],
+					null,
+					2,
+				),
+				"utf8",
+			);
+
+			await runCli(
+				[importProfileCommand.command],
+				[
+					"node",
+					"gitface",
+					"import",
+					importFile,
+					"--dry-run",
+					"--json",
+					"--strict",
+				],
+			);
+
+			const summary = JSON.parse(logs.join("\n")) as {
+				dryRun: boolean;
+				total: number;
+				imported: number;
+				failed: number;
+			};
+			expect(summary.dryRun).toBe(true);
+			expect(summary.total).toBe(2);
+			expect(summary.imported).toBe(1);
+			expect(summary.failed).toBe(1);
+			expect(process.exitCode).toBe(1);
+
+			const profiles = await service.listProfiles();
+			expect(profiles.map((profile) => profile.name)).toEqual(["work"]);
+		} finally {
+			restoreLog();
+			if (originalXdg === undefined) {
+				delete process.env.XDG_CONFIG_HOME;
+			} else {
+				process.env.XDG_CONFIG_HOME = originalXdg;
+			}
+			process.exitCode = originalExitCode;
+			await safeRemove(tmpRoot);
+		}
+	});
 });

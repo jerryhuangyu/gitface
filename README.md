@@ -79,7 +79,7 @@ Run `gitface <command> --help` to see all flags and examples.
 | `gitface current`        | Display active Git identity; supports `--scope` and `current --json` for machine-readable output. |
 | `gitface doctor`         | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--strict` available). |
 | `gitface export [file]`  | Export all profiles as JSON to stdout or a file; supports `--json` summary output.              |
-| `gitface import <file>`  | Import profiles from JSON; supports `--dry-run` and `--json` for structured results.            |
+| `gitface import <file>`  | Import profiles from JSON; supports `--dry-run`, `--strict`, and `--json` for structured results and CI gating.            |
 | `gitface clone <src> <tgt>` | Clone a profile to a new name; supports `--dry-run` and `--json` output.                     |
 | `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run` and `rename --json` for safer automation. |
 | `gitface rm <profile>`   | Remove a profile; supports `--dry-run`, `--force`, and `--json` for safer automation. |
@@ -116,6 +116,8 @@ Run `gitface <command> --help` to see all flags and examples.
   `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }`.
 - `gitface import <file> --dry-run` validates payload and duplicate handling
   without changing local profile files.
+- `gitface import <file> --strict` exits with code `1` when any entry fails to
+  import/validate (also works with `--dry-run` and `--json`) for CI gating.
 - `gitface import <file> --json` emits machine-readable summary:
   `{ "dryRun": false, "total": 2, "imported": 2, "failed": 0, "results": [{ "name": "work", "status": "imported", "message": "Imported." }] }`.
 - `gitface remove <name> --json` emits machine-readable status:

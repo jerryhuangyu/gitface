@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import process from "node:process";
 import { ProfileService } from "@/core/profile-service";
 import { Profile } from "@/domain/profile";
 import { ProfileAlreadyExistsError } from "@/errors";
@@ -14,6 +15,7 @@ import {
 interface Options {
 	overwrite?: boolean;
 	dryRun?: boolean;
+	strict?: boolean;
 	json?: boolean;
 }
 
@@ -55,6 +57,7 @@ const action: (file: string, options: Options) => Promise<void> =
 			const results: ImportResultItem[] = [];
 			const isDryRun = options.dryRun ?? false;
 			const overwrite = options.overwrite ?? false;
+			const strict = options.strict ?? false;
 
 			for (const profileData of raw) {
 				let sourceName = "<unknown>";
@@ -108,6 +111,10 @@ const action: (file: string, options: Options) => Promise<void> =
 				failed: results.filter((item) => item.status === "failed").length,
 				results,
 			};
+
+			if (strict && summary.failed > 0) {
+				process.exitCode = 1;
+			}
 
 			if (options.json) {
 				sendImportJsonSummary(summary);
