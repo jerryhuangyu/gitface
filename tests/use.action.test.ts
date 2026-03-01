@@ -101,7 +101,12 @@ describe("runUseAction scoped identity reads", () => {
 		expect(service.getProfile).not.toHaveBeenCalled();
 		expect(service.applyProfile).not.toHaveBeenCalled();
 		expect(logSpy).toHaveBeenCalledOnce();
-		expect(logSpy.mock.calls[0][0]).toContain('"error"');
+		const payload = JSON.parse(String(logSpy.mock.calls[0][0])) as {
+			status: string;
+			reason: string;
+		};
+		expect(payload.status).toBe("error");
+		expect(payload.reason).toContain("Multiple profiles matched query");
 		expect(process.exitCode).toBe(1);
 
 		logSpy.mockRestore();

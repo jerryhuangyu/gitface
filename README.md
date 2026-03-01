@@ -234,7 +234,8 @@ Run `gitface <command> --help` to see all flags and examples.
 - `gitface use --query <text>` in non-TTY mode fails fast when multiple profiles
   match and asks for an explicit profile name.
 - `gitface use --query <text> --json` keeps machine-readable, non-interactive
-  behavior: unique match auto-applies; ambiguous matches return JSON error.
+  behavior: unique match auto-applies; ambiguous matches return JSON error:
+  `{ "status": "error", "reason": "Multiple profiles matched query \"work\". Re-run with an explicit profile name, for example: \`gitface use work-main\`." }`.
 - `gitface current --scope global --json` inspects one scope and emits:
   `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }`.
 - Scoped identity reads (`current --scope`, `use` planning, and doctor global checks)

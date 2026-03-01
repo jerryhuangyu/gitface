@@ -316,9 +316,11 @@ describe("use command e2e", () => {
 			);
 
 			const parsed = JSON.parse(stripAnsi(logs.join("\n"))) as {
-				error: string;
+				status: string;
+				reason: string;
 			};
-			expect(parsed.error).toContain("Multiple profiles matched query");
+			expect(parsed.status).toBe("error");
+			expect(parsed.reason).toContain("Multiple profiles matched query");
 			expect(process.exitCode).toBe(1);
 
 			const localConfig = await fs.readFile(

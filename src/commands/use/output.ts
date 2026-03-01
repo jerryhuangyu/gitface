@@ -96,7 +96,8 @@ export const sendProfileUseFailedJson = (reason: string): void => {
 	console.log(
 		JSON.stringify(
 			{
-				error: reason,
+				status: "error",
+				reason,
 			},
 			null,
 			2,
