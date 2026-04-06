@@ -2,10 +2,10 @@ import { constants as fsConstants } from "node:fs";
 import { access, mkdir, readdir, readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import {
-	type Profile,
-	type ProfileInput,
-	type ProfileSnapshot,
-	validateProfileName,
+  type Profile,
+  type ProfileInput,
+  type ProfileSnapshot,
+  validateProfileName,
 } from "@/domain/profile";
 import { InvalidProfileError, ProfileNotFoundError } from "@/errors";
 import { writeFileAtomic } from "@/infra/atomic-write";
@@ -17,203 +17,194 @@ const PROFILE_FILE_EXTENSION = ".json";
 export interface ProfileRecord extends ProfileSnapshot {}
 
 export interface ProfileStore {
-	listNames(): Promise<string[]>;
-	list(): Promise<ProfileRecord[]>;
-	load(name: string): Promise<ProfileRecord>;
-	save(profile: Profile): Promise<void>;
-	remove(name: string): Promise<void>;
-	exists(name: string): Promise<boolean>;
+  listNames(): Promise<string[]>;
+  list(): Promise<ProfileRecord[]>;
+  load(name: string): Promise<ProfileRecord>;
+  save(profile: Profile): Promise<void>;
+  remove(name: string): Promise<void>;
+  exists(name: string): Promise<boolean>;
 }
 
 export class FileProfileStore implements ProfileStore {
-	private readonly baseDir: string;
-	private readonly profilesDir: string;
-	private ready: Promise<void> | null = null;
+  private readonly baseDir: string;
+  private readonly profilesDir: string;
+  private ready: Promise<void> | null = null;
 
-	constructor(customDirectory?: string) {
-		this.baseDir = customDirectory ?? resolveConfigDirectory();
-		this.profilesDir = path.join(this.baseDir, "profiles");
-	}
+  constructor(customDirectory?: string) {
+    this.baseDir = customDirectory ?? resolveConfigDirectory();
+    this.profilesDir = path.join(this.baseDir, "profiles");
+  }
 
-	async listNames(): Promise<string[]> {
-		await this.ensureReady();
-		logger.debug("profile-store:listNames entries", {
-			baseDir: this.profilesDir,
-		});
-		const entries = await readdir(this.profilesDir, { withFileTypes: true });
+  async listNames(): Promise<string[]> {
+    await this.ensureReady();
+    logger.debug("profile-store:listNames entries", {
+      baseDir: this.profilesDir,
+    });
+    const entries = await readdir(this.profilesDir, { withFileTypes: true });
 
-		const names = entries
-			.filter(
-				(entry) =>
-					entry.isFile() && entry.name.endsWith(PROFILE_FILE_EXTENSION),
-			)
-			.map((entry) => entry.name.slice(0, -PROFILE_FILE_EXTENSION.length))
-			.filter((name) => isValidProfileName(name))
-			.sort((a, b) => a.localeCompare(b));
+    const names = entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith(PROFILE_FILE_EXTENSION))
+      .map((entry) => entry.name.slice(0, -PROFILE_FILE_EXTENSION.length))
+      .filter((name) => isValidProfileName(name))
+      .sort((a, b) => a.localeCompare(b));
 
-		logger.debug("profile-store:listNames result", {
-			total: entries.length,
-			valid: names.length,
-		});
-		return names;
-	}
+    logger.debug("profile-store:listNames result", {
+      total: entries.length,
+      valid: names.length,
+    });
+    return names;
+  }
 
-	async list(): Promise<ProfileRecord[]> {
-		logger.debug("profile-store:list invoked", { baseDir: this.profilesDir });
-		const names = await this.listNames();
-		const snapshots = await Promise.all(
-			names.map((name) => this.safeLoad(name)),
-		);
-		const records = snapshots.filter(
-			(snapshot): snapshot is ProfileRecord => snapshot !== null,
-		);
-		logger.debug("profile-store:list result", {
-			total: names.length,
-			valid: records.length,
-		});
-		return records;
-	}
+  async list(): Promise<ProfileRecord[]> {
+    logger.debug("profile-store:list invoked", { baseDir: this.profilesDir });
+    const names = await this.listNames();
+    const snapshots = await Promise.all(names.map((name) => this.safeLoad(name)));
+    const records = snapshots.filter((snapshot): snapshot is ProfileRecord => snapshot !== null);
+    logger.debug("profile-store:list result", {
+      total: names.length,
+      valid: records.length,
+    });
+    return records;
+  }
 
-	async load(name: string): Promise<ProfileRecord> {
-		await this.ensureReady();
-		logger.debug("profile-store:load invoked", { name });
-		const filePath = this.profilePath(name);
-		try {
-			const raw = await readFile(filePath, "utf8");
-			const snapshot = parseSnapshot(name, raw);
-			logger.debug("profile-store:load success", { name });
-			return snapshot;
-		} catch (error) {
-			if (isNotFound(error)) {
-				logger.warn("profile-store:load missing profile", { name, filePath });
-				throw new ProfileNotFoundError(name);
-			}
-			logger.error("profile-store:load unexpected error", { name, error });
-			throw error;
-		}
-	}
+  async load(name: string): Promise<ProfileRecord> {
+    await this.ensureReady();
+    logger.debug("profile-store:load invoked", { name });
+    const filePath = this.profilePath(name);
+    try {
+      const raw = await readFile(filePath, "utf8");
+      const snapshot = parseSnapshot(name, raw);
+      logger.debug("profile-store:load success", { name });
+      return snapshot;
+    } catch (error) {
+      if (isNotFound(error)) {
+        logger.warn("profile-store:load missing profile", { name, filePath });
+        throw new ProfileNotFoundError(name);
+      }
+      logger.error("profile-store:load unexpected error", { name, error });
+      throw error;
+    }
+  }
 
-	async save(profile: Profile): Promise<void> {
-		await this.ensureReady();
-		const filePath = this.profilePath(profile.name);
-		const payload = JSON.stringify(profile.snapshot(), null, 2);
-		logger.info("profile-store:save profile", {
-			name: profile.name,
-			filePath,
-		});
-		await writeFileAtomic(filePath, `${payload}\n`);
-	}
+  async save(profile: Profile): Promise<void> {
+    await this.ensureReady();
+    const filePath = this.profilePath(profile.name);
+    const payload = JSON.stringify(profile.snapshot(), null, 2);
+    logger.info("profile-store:save profile", {
+      name: profile.name,
+      filePath,
+    });
+    await writeFileAtomic(filePath, `${payload}\n`);
+  }
 
-	async remove(name: string): Promise<void> {
-		await this.ensureReady();
-		const filePath = this.profilePath(name);
-		try {
-			await unlink(filePath);
-			logger.info("profile-store:remove profile", { name, filePath });
-		} catch (error) {
-			if (isNotFound(error)) {
-				logger.warn("profile-store:remove profile missing", { name, filePath });
-				throw new ProfileNotFoundError(name);
-			}
-			logger.error("profile-store:remove unexpected error", { name, error });
-			throw error;
-		}
-	}
+  async remove(name: string): Promise<void> {
+    await this.ensureReady();
+    const filePath = this.profilePath(name);
+    try {
+      await unlink(filePath);
+      logger.info("profile-store:remove profile", { name, filePath });
+    } catch (error) {
+      if (isNotFound(error)) {
+        logger.warn("profile-store:remove profile missing", { name, filePath });
+        throw new ProfileNotFoundError(name);
+      }
+      logger.error("profile-store:remove unexpected error", { name, error });
+      throw error;
+    }
+  }
 
-	async exists(name: string): Promise<boolean> {
-		await this.ensureReady();
-		const filePath = this.profilePath(name);
-		try {
-			await access(filePath, fsConstants.F_OK);
-			logger.info("profile-store:exists profile present", { name });
-			return true;
-		} catch (error) {
-			if (isNotFound(error)) {
-				logger.debug("profile-store:exists profile missing", { name });
-				return false;
-			}
-			logger.error("profile-store:exists unexpected error", { name, error });
-			throw error;
-		}
-	}
+  async exists(name: string): Promise<boolean> {
+    await this.ensureReady();
+    const filePath = this.profilePath(name);
+    try {
+      await access(filePath, fsConstants.F_OK);
+      logger.info("profile-store:exists profile present", { name });
+      return true;
+    } catch (error) {
+      if (isNotFound(error)) {
+        logger.debug("profile-store:exists profile missing", { name });
+        return false;
+      }
+      logger.error("profile-store:exists unexpected error", { name, error });
+      throw error;
+    }
+  }
 
-	private async ensureDirectories(): Promise<void> {
-		logger.debug("profile-store:ensureDirectories", {
-			baseDir: this.baseDir,
-			profilesDir: this.profilesDir,
-		});
-		await mkdir(this.baseDir, { recursive: true });
-		await mkdir(this.profilesDir, { recursive: true });
-	}
+  private async ensureDirectories(): Promise<void> {
+    logger.debug("profile-store:ensureDirectories", {
+      baseDir: this.baseDir,
+      profilesDir: this.profilesDir,
+    });
+    await mkdir(this.baseDir, { recursive: true });
+    await mkdir(this.profilesDir, { recursive: true });
+  }
 
-	private async ensureReady(): Promise<void> {
-		if (!this.ready) {
-			this.ready = this.ensureDirectories();
-		}
-		await this.ready;
-	}
+  private async ensureReady(): Promise<void> {
+    if (!this.ready) {
+      this.ready = this.ensureDirectories();
+    }
+    await this.ready;
+  }
 
-	private profilePath(name: string): string {
-		validateProfileName(name);
-		return path.join(this.profilesDir, `${name}${PROFILE_FILE_EXTENSION}`);
-	}
+  private profilePath(name: string): string {
+    validateProfileName(name);
+    return path.join(this.profilesDir, `${name}${PROFILE_FILE_EXTENSION}`);
+  }
 
-	private async safeLoad(name: string): Promise<ProfileRecord | null> {
-		try {
-			return await this.load(name);
-		} catch (error) {
-			if (error instanceof InvalidProfileError) {
-				logger.warn("profile-store:safeLoad skipped invalid profile", {
-					name,
-				});
-				return null;
-			}
-			throw error;
-		}
-	}
+  private async safeLoad(name: string): Promise<ProfileRecord | null> {
+    try {
+      return await this.load(name);
+    } catch (error) {
+      if (error instanceof InvalidProfileError) {
+        logger.warn("profile-store:safeLoad skipped invalid profile", {
+          name,
+        });
+        return null;
+      }
+      throw error;
+    }
+  }
 }
 
 function resolveConfigDirectory(): string {
-	const resolved = osPaths.config("gitface");
-	if (resolved) {
-		logger.debug("profile-store:config resolved", { path: resolved });
-		return resolved;
-	}
+  const resolved = osPaths.config("gitface");
+  if (resolved) {
+    logger.debug("profile-store:config resolved", { path: resolved });
+    return resolved;
+  }
 
-	const fallback = path.join(process.cwd(), "gitface");
-	logger.critical(
-		"Unable to resolve OS-specific config directory; falling back to workspace path:",
-		fallback,
-	);
-	return fallback;
+  const fallback = path.join(process.cwd(), "gitface");
+  logger.critical(
+    "Unable to resolve OS-specific config directory; falling back to workspace path:",
+    fallback,
+  );
+  return fallback;
 }
 
 function parseSnapshot(name: string, raw: string): ProfileSnapshot {
-	const data = JSON.parse(raw) as Partial<ProfileSnapshot & ProfileInput>;
+  const data = JSON.parse(raw) as Partial<ProfileSnapshot & ProfileInput>;
 
-	return {
-		name: data.name ?? name,
-		gitName: data.gitName ?? "",
-		email: data.email ?? "",
-		signingKey: data.signingKey ?? null,
-		createdAt: data.createdAt ?? new Date().toISOString(),
-		updatedAt: data.updatedAt ?? new Date().toISOString(),
-	};
+  return {
+    name: data.name ?? name,
+    gitName: data.gitName ?? "",
+    email: data.email ?? "",
+    signingKey: data.signingKey ?? null,
+    createdAt: data.createdAt ?? new Date().toISOString(),
+    updatedAt: data.updatedAt ?? new Date().toISOString(),
+  };
 }
 
 function isNotFound(error: unknown): boolean {
-	return (
-		error instanceof Error &&
-		"code" in error &&
-		(error as NodeJS.ErrnoException).code === "ENOENT"
-	);
+  return (
+    error instanceof Error && "code" in error && (error as NodeJS.ErrnoException).code === "ENOENT"
+  );
 }
 
 function isValidProfileName(name: string): boolean {
-	try {
-		validateProfileName(name);
-		return true;
-	} catch {
-		return false;
-	}
+  try {
+    validateProfileName(name);
+    return true;
+  } catch {
+    return false;
+  }
 }

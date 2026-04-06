@@ -7,164 +7,159 @@ import { logger } from "@/infra/logger";
 import { sendProfileCreateSuccessMsg } from "./output";
 
 interface Props {
-	name: string;
-	defaultGitName?: string;
-	defaultEmail?: string;
-	defaultSigningKey?: string | null;
+  name: string;
+  defaultGitName?: string;
+  defaultEmail?: string;
+  defaultSigningKey?: string | null;
 }
 
 const gitNameSchema = z.string().min(1, "Name is required");
-const emailSchema = z
-	.string()
-	.min(1, "Email is required")
-	.pipe(z.email("Invalid email format"));
+const emailSchema = z.string().min(1, "Email is required").pipe(z.email("Invalid email format"));
 const signingKeySchema = z.string().optional();
 
 type Field = "gitName" | "email" | "signingKey";
 
 interface FormState {
-	values: {
-		gitName: string;
-		email: string;
-		signingKey: string;
-	};
-	error: string | null;
+  values: {
+    gitName: string;
+    email: string;
+    signingKey: string;
+  };
+  error: string | null;
 }
 
 type Action =
-	| { type: "UPDATE_FIELD"; field: Field; value: string }
-	| { type: "SET_ERROR"; error: string | null }
-	| { type: "RESET_ERROR" };
+  | { type: "UPDATE_FIELD"; field: Field; value: string }
+  | { type: "SET_ERROR"; error: string | null }
+  | { type: "RESET_ERROR" };
 
 const formReducer = (state: FormState, action: Action): FormState => {
-	switch (action.type) {
-		case "UPDATE_FIELD":
-			return {
-				...state,
-				values: {
-					...state.values,
-					[action.field]: action.value,
-				},
-				error: null, // auto-clear error when typing
-			};
-		case "SET_ERROR":
-			return { ...state, error: action.error };
-		default:
-			return state;
-	}
+  switch (action.type) {
+    case "UPDATE_FIELD":
+      return {
+        ...state,
+        values: {
+          ...state.values,
+          [action.field]: action.value,
+        },
+        error: null, // auto-clear error when typing
+      };
+    case "SET_ERROR":
+      return { ...state, error: action.error };
+    default:
+      return state;
+  }
 };
 
 const CreateProfile: React.FC<Props> = ({
-	name,
-	defaultGitName,
-	defaultEmail,
-	defaultSigningKey,
+  name,
+  defaultGitName,
+  defaultEmail,
+  defaultSigningKey,
 }) => {
-	const { exit } = useApp();
-	const [step, setStep] = useState(0);
+  const { exit } = useApp();
+  const [step, setStep] = useState(0);
 
-	const [state, dispatch] = useReducer(formReducer, {
-		values: {
-			gitName: defaultGitName ?? "",
-			email: defaultEmail ?? "",
-			signingKey: defaultSigningKey ?? "",
-		},
-		error: null,
-	});
+  const [state, dispatch] = useReducer(formReducer, {
+    values: {
+      gitName: defaultGitName ?? "",
+      email: defaultEmail ?? "",
+      signingKey: defaultSigningKey ?? "",
+    },
+    error: null,
+  });
 
-	const validateStep = () => {
-		const validators = [
-			() => gitNameSchema.safeParse(state.values.gitName.trim()),
-			() => emailSchema.safeParse(state.values.email.trim()),
-			() => signingKeySchema.safeParse(state.values.signingKey.trim()),
-		];
-		const result = validators[step]();
-		if (!result.success) {
-			return result.error.issues[0]?.message ?? "Invalid input";
-		}
-		return null;
-	};
+  const validateStep = () => {
+    const validators = [
+      () => gitNameSchema.safeParse(state.values.gitName.trim()),
+      () => emailSchema.safeParse(state.values.email.trim()),
+      () => signingKeySchema.safeParse(state.values.signingKey.trim()),
+    ];
+    const result = validators[step]();
+    if (!result.success) {
+      return result.error.issues[0]?.message ?? "Invalid input";
+    }
+    return null;
+  };
 
-	const handleSubmit = async () => {
-		try {
-			const service = ProfileService.create();
-			const profile = await service.createProfile({
-				name,
-				gitName: state.values.gitName.trim(),
-				email: state.values.email.trim(),
-				signingKey: state.values.signingKey.trim() || null,
-				force: true,
-			});
+  const handleSubmit = async () => {
+    try {
+      const service = ProfileService.create();
+      const profile = await service.createProfile({
+        name,
+        gitName: state.values.gitName.trim(),
+        email: state.values.email.trim(),
+        signingKey: state.values.signingKey.trim() || null,
+        force: true,
+      });
 
-			exit();
-			sendProfileCreateSuccessMsg(profile);
-		} catch (error) {
-			logger.error("command:new interactive flow failed", error);
-		}
-	};
+      exit();
+      sendProfileCreateSuccessMsg(profile);
+    } catch (error) {
+      logger.error("command:new interactive flow failed", error);
+    }
+  };
 
-	const goNext = async () => {
-		const validationError = validateStep();
-		if (validationError) {
-			dispatch({ type: "SET_ERROR", error: validationError });
-			return;
-		}
+  const goNext = async () => {
+    const validationError = validateStep();
+    if (validationError) {
+      dispatch({ type: "SET_ERROR", error: validationError });
+      return;
+    }
 
-		if (step < questions.length - 1) {
-			setStep(step + 1);
-		} else {
-			await handleSubmit();
-		}
-	};
+    if (step < questions.length - 1) {
+      setStep(step + 1);
+    } else {
+      await handleSubmit();
+    }
+  };
 
-	const questions = [
-		{
-			label: "Git user.name",
-			field: "gitName" as Field,
-			value: state.values.gitName,
-		},
-		{
-			label: "Git user.email",
-			field: "email" as Field,
-			value: state.values.email,
-		},
-		{
-			label: "Signing key (optional)",
-			field: "signingKey" as Field,
-			value: state.values.signingKey,
-		},
-	];
+  const questions = [
+    {
+      label: "Git user.name",
+      field: "gitName" as Field,
+      value: state.values.gitName,
+    },
+    {
+      label: "Git user.email",
+      field: "email" as Field,
+      value: state.values.email,
+    },
+    {
+      label: "Signing key (optional)",
+      field: "signingKey" as Field,
+      value: state.values.signingKey,
+    },
+  ];
 
-	const current = questions[step];
+  const current = questions[step];
 
-	return (
-		<Box flexDirection="column" padding={1}>
-			<Text bold>Create Profile: {name}</Text>
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Text bold>Create Profile: {name}</Text>
 
-			<Box marginTop={1}>
-				<Text>{current.label}: </Text>
-				<TextInput
-					value={current.value}
-					onChange={(value) =>
-						dispatch({ type: "UPDATE_FIELD", field: current.field, value })
-					}
-					onSubmit={goNext}
-				/>
-			</Box>
+      <Box marginTop={1}>
+        <Text>{current.label}: </Text>
+        <TextInput
+          value={current.value}
+          onChange={(value) => dispatch({ type: "UPDATE_FIELD", field: current.field, value })}
+          onSubmit={goNext}
+        />
+      </Box>
 
-			{state.error && (
-				<Box marginTop={1}>
-					<Text color="red">❌ {state.error}</Text>
-				</Box>
-			)}
+      {state.error && (
+        <Box marginTop={1}>
+          <Text color="red">❌ {state.error}</Text>
+        </Box>
+      )}
 
-			<Box marginTop={1}>
-				<Text dimColor>
-					Press Enter to continue ({step + 1}/{questions.length})
-				</Text>
-			</Box>
-		</Box>
-	);
+      <Box marginTop={1}>
+        <Text dimColor>
+          Press Enter to continue ({step + 1}/{questions.length})
+        </Text>
+      </Box>
+    </Box>
+  );
 };
 
 export default CreateProfile;
