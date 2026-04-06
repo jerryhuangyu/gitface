@@ -1,96 +1,64 @@
-import { ProfileService } from "@/core/profile-service";
-import {
-	InvalidProfileError,
-	ProfileAlreadyExistsError,
-	ProfileNotFoundError,
-} from "@/errors";
+import { ProfileCloneService } from "@/core/profile-clone-service";
+import { InvalidProfileError, ProfileAlreadyExistsError, ProfileNotFoundError } from "@/errors";
 import { withCommandHandling } from "../command-runner";
 import { buildProfileNotFoundReason } from "../profile-not-found-reason";
-import {
-	sendProfileCloneDryRunJson,
-	sendProfileCloneDryRunMsg,
-	sendProfileCloneFailedJson,
-	sendProfileCloneFailedMsg,
-	sendProfileCloneSuccessJson,
-	sendProfileCloneSuccessMsg,
-} from "./ui";
+import { createClonePresenter } from "./ui";
 
 interface Options {
-	force?: boolean;
-	dryRun?: boolean;
-	json?: boolean;
+  force?: boolean;
+  dryRun?: boolean;
+  json?: boolean;
 }
 
-const action: (
-	source: string,
-	target: string,
-	options: Options,
-) => Promise<void> = withCommandHandling(
-	"command:clone",
-	async (source: string, target: string, options: Options) => {
-		const service = ProfileService.create();
-		try {
-			if (options.dryRun) {
-				const sourceProfile = await service.getProfile(source);
-				const targetProfile = await service.findProfile(target);
-				if (!options.force && targetProfile !== null) {
-					throw new ProfileAlreadyExistsError(target);
-				}
-				const overwrite = targetProfile !== null;
-				if (options.json) {
-					sendProfileCloneDryRunJson(source, target, sourceProfile, overwrite);
-					return;
-				}
-				sendProfileCloneDryRunMsg(source, target, sourceProfile, overwrite);
-				return;
-			}
+const action: (source: string, target: string, options: Options) => Promise<void> =
+  withCommandHandling("command:clone", async (source: string, target: string, options: Options) => {
+    const presenter = createClonePresenter(options.json === true ? "json" : "text");
+    const service = ProfileCloneService.create();
 
-			const profile = await service.cloneProfile(source, target, options.force);
-			if (options.json) {
-				sendProfileCloneSuccessJson(source, profile);
-				return;
-			}
-			sendProfileCloneSuccessMsg(source, profile.name);
-		} catch (error) {
-			if (error instanceof ProfileNotFoundError) {
-				const reason = await buildProfileNotFoundReason(
-					source,
-					`'${source}' does not exist.`,
-				);
-				if (options.json) {
-					sendProfileCloneFailedJson(source, target, reason);
-				} else {
-					sendProfileCloneFailedMsg(reason);
-				}
-				process.exitCode = 1;
-				return;
-			}
+    try {
+      if (options.dryRun) {
+        const preview = await service.previewClone(source, target, {
+          force: options.force,
+        });
 
-			if (error instanceof ProfileAlreadyExistsError) {
-				const reason = error.message;
-				if (options.json) {
-					sendProfileCloneFailedJson(source, target, reason);
-				} else {
-					sendProfileCloneFailedMsg(reason);
-				}
-				process.exitCode = 1;
-				return;
-			}
+        presenter.dryRun(
+          preview.sourceName,
+          preview.targetName,
+          preview.profile,
+          preview.overwrite,
+        );
+        return;
+      }
 
-			if (error instanceof InvalidProfileError) {
-				const reason = error.message;
-				if (options.json) {
-					sendProfileCloneFailedJson(source, target, reason);
-				} else {
-					sendProfileCloneFailedMsg(reason);
-				}
-				process.exitCode = 1;
-				return;
-			}
+      const result = await service.cloneProfile(source, target, {
+        force: options.force,
+      });
 
-			throw error;
-		}
-	},
-);
+      presenter.success(result.sourceName, result.profile);
+    } catch (error) {
+      if (error instanceof ProfileNotFoundError) {
+        const reason = await buildProfileNotFoundReason(source, `'${source}' does not exist.`);
+        presenter.failure(source, target, reason);
+        process.exitCode = 1;
+        return;
+      }
+
+      if (error instanceof ProfileAlreadyExistsError) {
+        const reason = error.message;
+        presenter.failure(source, target, reason);
+        process.exitCode = 1;
+        return;
+      }
+
+      if (error instanceof InvalidProfileError) {
+        const reason = error.message;
+        presenter.failure(source, target, reason);
+        process.exitCode = 1;
+        return;
+      }
+
+      throw error;
+    }
+  });
 
 export default action;
