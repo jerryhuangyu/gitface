@@ -1,7 +1,7 @@
 VERSION = $(shell git cliff --unreleased --bump --context | jq -r '.[0].version')
 
 link:
-	@npm link
+	@npm link --global
 
 unlink:
 	@npm unlink -g
