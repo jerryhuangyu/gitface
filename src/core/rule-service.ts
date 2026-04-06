@@ -57,11 +57,14 @@ export class RuleService {
     return rules;
   }
 
-  async resolveRuleForDirectory(directory: string): Promise<FolderRule | null> {
+  async resolveRuleForDirectory(
+    directory: string,
+    platform: NodeJS.Platform = process.platform,
+  ): Promise<FolderRule | null> {
     const normalizedDirectory = Rule.create(directory, "dummy").directory;
     const rules = await this.listRules();
     const matchedRules = rules.filter((rule) =>
-      ruleDirectoryMatchesTarget(rule.directory, normalizedDirectory),
+      ruleDirectoryMatchesTarget(rule.directory, normalizedDirectory, platform),
     );
 
     if (matchedRules.length === 0) {

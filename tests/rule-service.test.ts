@@ -37,7 +37,7 @@ describe("ruleDirectoryMatchesTarget", () => {
       { directory: "/Users/jerry/work/", profileName: "work" },
     ]);
 
-    const matched = await service.resolveRuleForDirectory("/users/Jerry/work/repo");
+    const matched = await service.resolveRuleForDirectory("/users/Jerry/work/repo", "darwin");
     expect(matched).toEqual({
       directory: "/Users/jerry/work/",
       profileName: "work",
