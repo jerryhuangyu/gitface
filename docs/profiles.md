@@ -35,6 +35,7 @@
 4. **Renaming** – `ProfileService.renameProfile` creates a new profile with the new name and removes the old one.
 5. **Deletion** – Profiles are removed via `FileProfileStore.remove`; missing profiles raise `ProfileNotFoundError` unless `--force` is supplied.
 6. **Listing** – `FileProfileStore.list` lazily reads each JSON file, skipping invalid payloads instead of failing wholesale.
+7. **Durability** – profile snapshots and generated identity configs use atomic file replacement (temp file + rename) to reduce partial-write corruption risk when writes are interrupted.
 
 ## Custom Directories
 

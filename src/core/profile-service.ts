@@ -1,264 +1,382 @@
+import { type ConfigScope, type GitIdentity, GitService } from "@/core/git-service";
 import {
-	type ConfigScope,
-	type GitIdentity,
-	GitService,
-} from "@/core/git-service";
-import { Profile, type ProfileInput, type ProfileUpdate } from "@/core/profile";
+  Profile,
+  type ProfileInput,
+  type ProfileUpdate,
+  validateProfileName,
+} from "@/domain/profile";
 import {
-	InvalidProfileError,
-	ProfileAlreadyExistsError,
-	ProfileNotFoundError,
+  InvalidProfileError,
+  ProfileAlreadyExistsError,
+  ProfileNotFoundError,
 } from "@/errors/index";
 import { logger } from "@/infra/logger";
+import { FileProfileConfigStore, type ProfileConfigStore } from "@/infra/profile-config-store";
 import { FileProfileStore, type ProfileStore } from "@/infra/profile-store";
+import { suggestProfileNames } from "./profile-name-suggestions";
 
 export interface CreateProfileOptions {
-	name: string;
-	gitName?: string;
-	email?: string;
-	signingKey?: string | null;
-	force?: boolean;
+  name: string;
+  gitName?: string;
+  email?: string;
+  signingKey?: string | null;
+  force?: boolean;
 }
 
 export interface UpdateProfileOptions extends ProfileUpdate {}
 
+export interface CreateProfilePlan {
+  profile: Profile;
+  overwrite: boolean;
+}
+
+export interface UpdateProfilePlan {
+  profile: Profile;
+}
+
 export interface GitGateway {
-	getCurrentIdentity(): Promise<GitIdentity>;
-	applyIdentity(
-		identity: { gitName: string; email: string; signingKey?: string | null },
-		scope: ConfigScope,
-	): Promise<void>;
+  getCurrentIdentity(): Promise<GitIdentity>;
+  getScopedIdentity(scope: ConfigScope): Promise<GitIdentity>;
+  applyIdentity(
+    identity: { gitName: string; email: string; signingKey?: string | null },
+    scope: ConfigScope,
+  ): Promise<void>;
+}
+
+export interface CreateProfileServiceOptions {
+  gitBaseDir?: string;
+}
+
+export type ListProfilesSortMode = "updated" | "name";
+
+export interface ListProfilesQueryOptions {
+  query?: string;
+  sort?: ListProfilesSortMode;
+  limit?: number;
 }
 
 export class ProfileService {
-	constructor(
-		private readonly store: ProfileStore,
-		private readonly gitGateway: GitGateway,
-	) {}
+  constructor(
+    private readonly store: ProfileStore,
+    private readonly gitGateway: GitGateway,
+    private readonly profileConfigStore: ProfileConfigStore,
+  ) {}
 
-	static create(): ProfileService {
-		return new ProfileService(new FileProfileStore(), new GitService());
-	}
+  static create(options: CreateProfileServiceOptions = {}): ProfileService {
+    const gitGateway = options.gitBaseDir
+      ? new GitService({ baseDir: options.gitBaseDir })
+      : new GitService();
+    return new ProfileService(new FileProfileStore(), gitGateway, new FileProfileConfigStore());
+  }
 
-	async listProfiles(): Promise<Profile[]> {
-		logger.debug("profile-service:listProfiles invoked");
-		const snapshots = await this.store.list();
-		const profiles = snapshots
-			.map((snapshot) => Profile.fromSnapshot(snapshot))
-			.sort((a, b) => a.name.localeCompare(b.name));
-		logger.debug("profile-service:listProfiles completed", {
-			count: profiles.length,
-		});
-		return profiles;
-	}
+  getProfileConfigPath(name: string): string {
+    validateProfileName(name);
+    return this.profileConfigStore.getProfileConfigPath(name);
+  }
 
-	async findProfile(name: string): Promise<Profile | null> {
-		logger.debug("profile-service:findProfile invoked", { name });
-		if (!(await this.store.exists(name))) {
-			logger.debug("profile-service:findProfile missing profile", { name });
-			return null;
-		}
-		const snapshot = await this.store.load(name);
-		const profile = Profile.fromSnapshot(snapshot);
-		logger.debug("profile-service:findProfile resolved profile", { name });
-		return profile;
-	}
+  private async ensureProfileConfig(profile: Profile): Promise<void> {
+    await this.profileConfigStore.save(profile);
+  }
 
-	async getProfile(name: string): Promise<Profile> {
-		logger.debug("profile-service:getProfile invoked", { name });
-		if (!(await this.store.exists(name))) {
-			logger.warn("profile-service:getProfile profile not found", { name });
-			throw new ProfileNotFoundError(name);
-		}
-		const snapshot = await this.store.load(name);
-		const profile = Profile.fromSnapshot(snapshot);
-		logger.debug("profile-service:getProfile resolved", { name });
-		return profile;
-	}
+  private async removeProfileConfig(name: string): Promise<void> {
+    await this.profileConfigStore.remove(name);
+  }
 
-	async createProfile(options: CreateProfileOptions): Promise<Profile> {
-		const force = options.force ?? false;
-		logger.info("profile-service:createProfile invoked", {
-			name: options.name,
-			force,
-		});
+  async listProfiles(): Promise<Profile[]> {
+    logger.debug("profile-service:listProfiles invoked");
+    const profiles = await this.listProfilesByQuery({ sort: "name" });
+    logger.debug("profile-service:listProfiles completed", {
+      count: profiles.length,
+    });
+    return profiles;
+  }
 
-		if (!force && (await this.store.exists(options.name))) {
-			logger.warn("profile-service:createProfile profile exists", {
-				name: options.name,
-			});
-			throw new ProfileAlreadyExistsError(options.name);
-		}
+  async listProfilesByQuery(options: ListProfilesQueryOptions = {}): Promise<Profile[]> {
+    const snapshots = await this.store.list();
+    const profiles = snapshots.map((snapshot) => Profile.fromSnapshot(snapshot));
+    const sorted = sortProfiles(profiles, options.sort ?? "updated");
+    const filtered = filterProfilesByQuery(sorted, options.query);
+    return applyProfilesLimit(filtered, options.limit);
+  }
 
-		const profileInput = await this.buildProfileInput(options);
-		const profile = Profile.create(profileInput);
-		await this.store.save(profile);
-		logger.info("profile-service:createProfile saved", {
-			name: profile.name,
-		});
-		return profile;
-	}
+  async listProfileNames(): Promise<string[]> {
+    logger.debug("profile-service:listProfileNames invoked");
+    const names = await this.store.listNames();
+    logger.debug("profile-service:listProfileNames completed", {
+      count: names.length,
+    });
+    return names;
+  }
 
-	async updateProfile(
-		name: string,
-		update: UpdateProfileOptions,
-	): Promise<Profile> {
-		logger.info("profile-service:updateProfile invoked", {
-			name,
-			fields: Object.keys(update).filter(
-				(key) => (update as Record<string, unknown>)[key] !== undefined,
-			),
-		});
-		const profile = await this.getProfile(name);
-		profile.update(update);
-		await this.store.save(profile);
-		logger.info("profile-service:updateProfile saved", { name: profile.name });
-		return profile;
-	}
+  async suggestProfileNames(name: string, limit = 3): Promise<string[]> {
+    validateProfileName(name);
+    const profiles = await this.listProfiles();
+    return suggestProfileNames(
+      name,
+      profiles.map((profile) => profile.name),
+      limit,
+    );
+  }
 
-	async deleteProfile(name: string): Promise<void> {
-		logger.info("profile-service:deleteProfile invoked", { name });
-		if (!(await this.store.exists(name))) {
-			logger.warn("profile-service:deleteProfile profile not found", { name });
-			throw new ProfileNotFoundError(name);
-		}
-		await this.store.remove(name);
-		logger.info("profile-service:deleteProfile removed", { name });
-	}
+  async findProfile(name: string): Promise<Profile | null> {
+    validateProfileName(name);
+    logger.debug("profile-service:findProfile invoked", { name });
+    if (!(await this.store.exists(name))) {
+      logger.debug("profile-service:findProfile missing profile", { name });
+      return null;
+    }
+    const snapshot = await this.store.load(name);
+    const profile = Profile.fromSnapshot(snapshot);
+    logger.debug("profile-service:findProfile resolved profile", { name });
+    return profile;
+  }
 
-	async cloneProfile(
-		sourceName: string,
-		targetName: string,
-		force = false,
-	): Promise<Profile> {
-		logger.info("profile-service:cloneProfile invoked", {
-			sourceName,
-			targetName,
-			force,
-		});
+  async getProfile(name: string): Promise<Profile> {
+    validateProfileName(name);
+    logger.debug("profile-service:getProfile invoked", { name });
+    if (!(await this.store.exists(name))) {
+      logger.warn("profile-service:getProfile profile not found", { name });
+      throw new ProfileNotFoundError(name);
+    }
+    const snapshot = await this.store.load(name);
+    const profile = Profile.fromSnapshot(snapshot);
+    logger.debug("profile-service:getProfile resolved", { name });
+    return profile;
+  }
 
-		const sourceProfile = await this.getProfile(sourceName);
+  async createProfile(options: CreateProfileOptions): Promise<Profile> {
+    const plan = await this.planCreateProfile(options);
+    await this.store.save(plan.profile);
+    await this.ensureProfileConfig(plan.profile);
+    logger.info("profile-service:createProfile saved", {
+      name: plan.profile.name,
+    });
+    return plan.profile;
+  }
 
-		if (!force && (await this.store.exists(targetName))) {
-			throw new ProfileAlreadyExistsError(targetName);
-		}
+  async planCreateProfile(options: CreateProfileOptions): Promise<CreateProfilePlan> {
+    validateProfileName(options.name);
+    const force = options.force ?? false;
+    logger.info("profile-service:createProfile invoked", {
+      name: options.name,
+      force,
+    });
 
-		const newProfile = Profile.create({
-			name: targetName,
-			gitName: sourceProfile.gitName,
-			email: sourceProfile.email,
-			signingKey: sourceProfile.signingKey,
-		});
+    const overwrite = await this.store.exists(options.name);
+    if (!force && overwrite) {
+      logger.warn("profile-service:createProfile profile exists", {
+        name: options.name,
+      });
+      throw new ProfileAlreadyExistsError(options.name);
+    }
 
-		await this.store.save(newProfile);
-		logger.info("profile-service:cloneProfile saved", {
-			name: newProfile.name,
-		});
-		return newProfile;
-	}
+    const profileInput = await this.buildProfileInput(options);
+    const profile = Profile.create(profileInput);
+    return { profile, overwrite };
+  }
 
-	async renameProfile(
-		oldName: string,
-		newName: string,
-		force = false,
-	): Promise<Profile> {
-		logger.info("profile-service:renameProfile invoked", {
-			oldName,
-			newName,
-			force,
-		});
+  async updateProfile(name: string, update: UpdateProfileOptions): Promise<Profile> {
+    const plan = await this.planUpdateProfile(name, update);
+    await this.store.save(plan.profile);
+    await this.ensureProfileConfig(plan.profile);
+    logger.info("profile-service:updateProfile saved", {
+      name: plan.profile.name,
+    });
+    return plan.profile;
+  }
 
-		const profile = await this.getProfile(oldName);
+  async planUpdateProfile(name: string, update: UpdateProfileOptions): Promise<UpdateProfilePlan> {
+    validateProfileName(name);
+    logger.info("profile-service:updateProfile invoked", {
+      name,
+      fields: Object.keys(update).filter(
+        (key) => (update as Record<string, unknown>)[key] !== undefined,
+      ),
+    });
+    const existing = await this.getProfile(name);
+    const profile = Profile.fromSnapshot(existing.snapshot());
+    profile.update(update);
+    return { profile };
+  }
 
-		if (!force && (await this.store.exists(newName))) {
-			throw new ProfileAlreadyExistsError(newName);
-		}
+  async deleteProfile(name: string): Promise<void> {
+    validateProfileName(name);
+    await this.removeProfile(name);
+  }
 
-		const newProfile = Profile.create({
-			name: newName,
-			gitName: profile.gitName,
-			email: profile.email,
-			signingKey: profile.signingKey,
-		});
+  async removeProfile(name: string): Promise<Profile> {
+    validateProfileName(name);
+    logger.info("profile-service:deleteProfile invoked", { name });
+    const profile = await this.getProfile(name);
+    await this.store.remove(name);
+    await this.removeProfileConfig(name);
+    logger.info("profile-service:deleteProfile removed", { name });
+    return profile;
+  }
 
-		await this.store.save(newProfile);
-		await this.store.remove(oldName);
+  async cloneProfile(sourceName: string, targetName: string, force = false): Promise<Profile> {
+    validateProfileName(sourceName);
+    validateProfileName(targetName);
+    logger.info("profile-service:cloneProfile invoked", {
+      sourceName,
+      targetName,
+      force,
+    });
 
-		logger.info("profile-service:renameProfile completed", {
-			oldName,
-			newName,
-		});
-		return newProfile;
-	}
+    const sourceProfile = await this.getProfile(sourceName);
 
-	async applyProfile(
-		name: string,
-		scope: ConfigScope = "local",
-	): Promise<Profile> {
-		logger.info("profile-service:applyProfile invoked", { name, scope });
-		const profile = await this.getProfile(name);
-		await this.gitGateway.applyIdentity(
-			{
-				gitName: profile.gitName,
-				email: profile.email,
-				signingKey: profile.signingKey ?? undefined,
-			},
-			scope,
-		);
-		logger.info("profile-service:applyProfile applied", { name, scope });
-		return profile;
-	}
+    if (!force && (await this.store.exists(targetName))) {
+      throw new ProfileAlreadyExistsError(targetName);
+    }
 
-	async getCurrentIdentity(): Promise<GitIdentity> {
-		logger.debug("profile-service:getCurrentIdentity invoked");
-		const identity = await this.gitGateway.getCurrentIdentity();
-		logger.debug("profile-service:getCurrentIdentity resolved", identity);
-		return identity;
-	}
+    const newProfile = Profile.create({
+      name: targetName,
+      gitName: sourceProfile.gitName,
+      email: sourceProfile.email,
+      signingKey: sourceProfile.signingKey,
+    });
 
-	private async buildProfileInput(
-		options: CreateProfileOptions,
-	): Promise<ProfileInput> {
-		logger.debug("profile-service:buildProfileInput invoked", {
-			name: options.name,
-		});
-		const fallback = await this.gitGateway.getCurrentIdentity();
-		const gitName = options.gitName ?? fallback.gitName;
-		const email = options.email ?? fallback.email;
-		const signingKey = options.signingKey ?? fallback.signingKey ?? null;
+    await this.store.save(newProfile);
+    await this.ensureProfileConfig(newProfile);
+    logger.info("profile-service:cloneProfile saved", {
+      name: newProfile.name,
+    });
+    return newProfile;
+  }
 
-		if (
-			options.gitName === undefined ||
-			options.email === undefined ||
-			options.signingKey === undefined
-		) {
-			logger.debug(
-				"profile-service:buildProfileInput using fallback identity",
-				{
-					hasGitNameFallback: options.gitName === undefined,
-					hasEmailFallback: options.email === undefined,
-					hasSigningKeyFallback: options.signingKey === undefined,
-				},
-			);
-		}
+  async renameProfile(oldName: string, newName: string, force = false): Promise<Profile> {
+    validateProfileName(oldName);
+    validateProfileName(newName);
+    logger.info("profile-service:renameProfile invoked", {
+      oldName,
+      newName,
+      force,
+    });
 
-		if (!gitName || !gitName.trim()) {
-			throw new InvalidProfileError(
-				"Git user.name is required. Provide --git-name or configure Git before creating a profile.",
-			);
-		}
+    const profile = await this.getProfile(oldName);
 
-		if (!email || !email.trim()) {
-			throw new InvalidProfileError(
-				"Git user.email is required. Provide --email or configure Git before creating a profile.",
-			);
-		}
+    if (!force && (await this.store.exists(newName))) {
+      throw new ProfileAlreadyExistsError(newName);
+    }
 
-		return {
-			name: options.name,
-			gitName,
-			email,
-			signingKey,
-		};
-	}
+    const newProfile = Profile.create({
+      name: newName,
+      gitName: profile.gitName,
+      email: profile.email,
+      signingKey: profile.signingKey,
+    });
+
+    await this.store.save(newProfile);
+    await this.ensureProfileConfig(newProfile);
+    await this.store.remove(oldName);
+    await this.removeProfileConfig(oldName);
+
+    logger.info("profile-service:renameProfile completed", {
+      oldName,
+      newName,
+    });
+    return newProfile;
+  }
+
+  async applyProfile(name: string, scope: ConfigScope = "local"): Promise<Profile> {
+    validateProfileName(name);
+    logger.info("profile-service:applyProfile invoked", { name, scope });
+    const profile = await this.getProfile(name);
+    await this.gitGateway.applyIdentity(
+      {
+        gitName: profile.gitName,
+        email: profile.email,
+        signingKey: profile.signingKey ?? undefined,
+      },
+      scope,
+    );
+    logger.info("profile-service:applyProfile applied", { name, scope });
+    return profile;
+  }
+
+  async getCurrentIdentity(): Promise<GitIdentity> {
+    logger.debug("profile-service:getCurrentIdentity invoked");
+    const identity = await this.gitGateway.getCurrentIdentity();
+    logger.debug("profile-service:getCurrentIdentity resolved", identity);
+    return identity;
+  }
+
+  async getScopedIdentity(scope: ConfigScope): Promise<GitIdentity> {
+    logger.debug("profile-service:getScopedIdentity invoked", { scope });
+    const identity = await this.gitGateway.getScopedIdentity(scope);
+    logger.debug("profile-service:getScopedIdentity resolved", {
+      scope,
+      identity,
+    });
+    return identity;
+  }
+
+  private async buildProfileInput(options: CreateProfileOptions): Promise<ProfileInput> {
+    logger.debug("profile-service:buildProfileInput invoked", {
+      name: options.name,
+    });
+    const fallback = await this.gitGateway.getCurrentIdentity();
+    const gitName = options.gitName ?? fallback.gitName;
+    const email = options.email ?? fallback.email;
+    const signingKey = options.signingKey ?? fallback.signingKey ?? null;
+
+    if (
+      options.gitName === undefined ||
+      options.email === undefined ||
+      options.signingKey === undefined
+    ) {
+      logger.debug("profile-service:buildProfileInput using fallback identity", {
+        hasGitNameFallback: options.gitName === undefined,
+        hasEmailFallback: options.email === undefined,
+        hasSigningKeyFallback: options.signingKey === undefined,
+      });
+    }
+
+    if (!gitName || !gitName.trim()) {
+      throw new InvalidProfileError(
+        "Git user.name is required. Provide --git-name or configure Git before creating a profile.",
+      );
+    }
+
+    if (!email || !email.trim()) {
+      throw new InvalidProfileError(
+        "Git user.email is required. Provide --email or configure Git before creating a profile.",
+      );
+    }
+
+    return {
+      name: options.name,
+      gitName,
+      email,
+      signingKey,
+    };
+  }
+}
+
+function sortProfiles(profiles: Profile[], sortMode: ListProfilesSortMode): Profile[] {
+  if (sortMode === "name") {
+    return [...profiles].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+    );
+  }
+
+  return [...profiles].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
+}
+
+function filterProfilesByQuery(profiles: Profile[], query: string | undefined): Profile[] {
+  const normalized = query?.trim().toLowerCase();
+  if (!normalized) {
+    return profiles;
+  }
+
+  return profiles.filter((profile) => profile.name.toLowerCase().includes(normalized));
+}
+
+function applyProfilesLimit(profiles: Profile[], limit: number | undefined): Profile[] {
+  if (limit === undefined) {
+    return profiles;
+  }
+  return profiles.slice(0, limit);
 }

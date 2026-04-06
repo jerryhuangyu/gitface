@@ -9,4 +9,5 @@ export { default as listProfilesCommand } from "./list";
 export { default as newProfileCommand } from "./new";
 export { default as removeProfileCommand } from "./remove";
 export { default as renameProfileCommand } from "./rename";
+export { default as rulesCommand } from "./rules";
 export { default as useProfileCommand } from "./use";

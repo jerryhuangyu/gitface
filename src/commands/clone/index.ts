@@ -3,15 +3,17 @@ import type { CliCommand } from "../command";
 import action from "./action";
 
 const command: Command = new Command("clone")
-	.description("Clone an existing profile to a new name")
-	.argument("<source>", "source profile identifier")
-	.argument("<target>", "target profile identifier")
-	.option("-f, --force", "Overwrite target profile if it exists")
-	.action(action);
+  .description("Clone an existing profile to a new name")
+  .argument("<source>", "source profile identifier")
+  .argument("<target>", "target profile identifier")
+  .option("-f, --force", "Overwrite target profile if it exists")
+  .option("--dry-run", "Preview profile clone without modifying files")
+  .option("--json", "Output result as JSON")
+  .action(action);
 
 const cloneProfileCommand: CliCommand = {
-	command,
-	action,
+  command,
+  action,
 };
 
 export default cloneProfileCommand;

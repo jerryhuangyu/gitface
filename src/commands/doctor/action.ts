@@ -1,105 +1,133 @@
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import simpleGit from "simple-git";
+import { GitService } from "@/core/git-service";
 import { ProfileService } from "@/core/profile-service";
 import { withCommandHandling } from "../command-runner";
-import type { DoctorCheckResult } from "./ui";
+import type { DoctorCheckResult, DoctorReport } from "./ui";
 import {
-	sendDoctorCheckResult,
-	sendDoctorHeading,
-	sendDoctorSummary,
+  sendDoctorCheckResult,
+  sendDoctorHeading,
+  sendDoctorReportEnvelopeError,
+  sendDoctorReportEnvelopeSuccess,
+  sendDoctorReportJson,
+  sendDoctorSummary,
 } from "./ui";
 
 type DoctorCheck = () => Promise<DoctorCheckResult>;
 
-const doctorChecks: DoctorCheck[] = [
-	checkGitInstallation,
-	checkProfileStore,
-	checkGlobalConfig,
-];
+interface DoctorOptions {
+  json?: boolean;
+  jsonEnvelope?: boolean;
+  strict?: boolean;
+}
 
-const action: () => Promise<void> = withCommandHandling(
-	"command:doctor",
-	async () => {
-		sendDoctorHeading();
+const doctorChecks: DoctorCheck[] = [checkGitInstallation, checkProfileStore, checkGlobalConfig];
 
-		const results = await Promise.all(doctorChecks.map((check) => check()));
+const runDoctorChecks = async (): Promise<DoctorReport> => {
+  const checks = await Promise.all(doctorChecks.map((check) => check()));
+  return {
+    checks,
+    hasFailures: checks.some((check) => check.status === "fail"),
+    hasWarnings: checks.some((check) => check.status === "warn"),
+  };
+};
 
-		for (const result of results) {
-			sendDoctorCheckResult(result);
-		}
+const action: (options: DoctorOptions) => Promise<void> = withCommandHandling(
+  "command:doctor",
+  async (options) => {
+    const startedAtMs = Date.now();
+    const traceId = randomUUID();
+    const outputMode =
+      options.jsonEnvelope === true ? "json-envelope" : options.json === true ? "json" : "text";
+    const report = await runDoctorChecks();
+    const strictMode = options.strict ?? false;
+    const hasFatalChecks = report.hasFailures || (strictMode && report.hasWarnings);
 
-		const hasFailures = results.some((result) => result.status === "fail");
+    if (outputMode === "json-envelope") {
+      const durationMs = Date.now() - startedAtMs;
+      if (hasFatalChecks) {
+        sendDoctorReportEnvelopeError(report, strictMode, durationMs, traceId);
+      } else {
+        sendDoctorReportEnvelopeSuccess(report, strictMode, durationMs, traceId);
+      }
+    } else if (outputMode === "json") {
+      sendDoctorReportJson(report);
+    } else {
+      sendDoctorHeading();
+      for (const result of report.checks) {
+        sendDoctorCheckResult(result);
+      }
+      sendDoctorSummary(report.hasFailures, report.hasWarnings, strictMode);
+    }
 
-		sendDoctorSummary(hasFailures);
-
-		if (hasFailures) {
-			process.exitCode = 1;
-		}
-	},
+    if (hasFatalChecks) {
+      process.exitCode = 1;
+    }
+  },
 );
 
 async function checkGitInstallation(): Promise<DoctorCheckResult> {
-	try {
-		const git = simpleGit();
-		const version = await git.version();
+  try {
+    const git = simpleGit();
+    const version = await git.version();
 
-		return {
-			status: "pass",
-			message: `Git is installed: ${version.major}.${version.minor}.${version.patch}`,
-		};
-	} catch (error) {
-		return {
-			status: "fail",
-			message: `Git is not installed or accessible: ${(error as Error).message}`,
-		};
-	}
+    return {
+      status: "pass",
+      message: `Git is installed: ${version.major}.${version.minor}.${version.patch}`,
+    };
+  } catch (error) {
+    return {
+      status: "fail",
+      message: `Git is not installed or accessible: ${(error as Error).message}`,
+    };
+  }
 }
 
 async function checkProfileStore(): Promise<DoctorCheckResult> {
-	try {
-		const service = ProfileService.create();
-		await service.listProfiles();
+  try {
+    const service = ProfileService.create();
+    await service.listProfiles();
 
-		const configDir = process.env.XDG_CONFIG_HOME
-			? path.join(process.env.XDG_CONFIG_HOME, "gitface", "profiles")
-			: path.join(process.env.HOME ?? "", ".config", "gitface", "profiles");
+    const configDir = process.env.XDG_CONFIG_HOME
+      ? path.join(process.env.XDG_CONFIG_HOME, "gitface", "profiles")
+      : path.join(process.env.HOME ?? "", ".config", "gitface", "profiles");
 
-		return {
-			status: "pass",
-			message: `Profile store is accessible at: ${configDir}`,
-		};
-	} catch (error) {
-		return {
-			status: "fail",
-			message: `Profile store is not accessible: ${(error as Error).message}`,
-		};
-	}
+    return {
+      status: "pass",
+      message: `Profile store is accessible at: ${configDir}`,
+    };
+  } catch (error) {
+    return {
+      status: "fail",
+      message: `Profile store is not accessible: ${(error as Error).message}`,
+    };
+  }
 }
 
 async function checkGlobalConfig(): Promise<DoctorCheckResult> {
-	try {
-		const git = simpleGit();
-		const name = await git.getConfig("user.name");
-		const email = await git.getConfig("user.email");
+  try {
+    const gitService = new GitService();
+    const identity = await gitService.getScopedIdentity("global");
 
-		if (name.value && email.value) {
-			return {
-				status: "pass",
-				message: `Global Git identity is set: ${name.value} <${email.value}>`,
-			};
-		}
+    if (identity.gitName && identity.email) {
+      return {
+        status: "pass",
+        message: `Global Git identity is set: ${identity.gitName} <${identity.email}>`,
+      };
+    }
 
-		return {
-			status: "warn",
-			message:
-				"Global Git identity is missing. GitFace will require explicit values for new profiles.",
-		};
-	} catch (error) {
-		return {
-			status: "fail",
-			message: `Failed to check global Git config: ${(error as Error).message}`,
-		};
-	}
+    return {
+      status: "warn",
+      message:
+        "Global Git identity is missing. GitFace will require explicit values for new profiles.",
+    };
+  } catch (error) {
+    return {
+      status: "fail",
+      message: `Failed to check global Git config: ${(error as Error).message}`,
+    };
+  }
 }
 
 export default action;

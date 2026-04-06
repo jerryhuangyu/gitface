@@ -1,175 +1,316 @@
 import { describe, expect, test, vi } from "vitest";
 import type { ConfigScope, GitIdentity } from "../src/core/git-service";
-import type { Profile } from "../src/core/profile";
 import { type GitGateway, ProfileService } from "../src/core/profile-service";
-import { ProfileAlreadyExistsError, ProfileNotFoundError } from "../src/errors";
+import type { Profile } from "../src/domain/profile";
+import {
+  InvalidProfileError,
+  ProfileAlreadyExistsError,
+  ProfileNotFoundError,
+} from "../src/errors";
+import type { ProfileConfigStore } from "../src/infra/profile-config-store";
 import type { ProfileRecord, ProfileStore } from "../src/infra/profile-store";
 
 class InMemoryProfileStore implements ProfileStore {
-	private readonly store = new Map<string, ProfileRecord>();
+  private readonly store = new Map<string, ProfileRecord>();
 
-	async list(): Promise<ProfileRecord[]> {
-		return Array.from(this.store.values()).map((snapshot) => ({ ...snapshot }));
-	}
+  async listNames(): Promise<string[]> {
+    return Array.from(this.store.keys()).sort((a, b) => a.localeCompare(b));
+  }
 
-	async load(name: string): Promise<ProfileRecord> {
-		const snapshot = this.store.get(name);
-		if (!snapshot) {
-			throw new ProfileNotFoundError(name);
-		}
-		return { ...snapshot };
-	}
+  async list(): Promise<ProfileRecord[]> {
+    return Array.from(this.store.values()).map((snapshot) => ({ ...snapshot }));
+  }
 
-	async save(profile: Profile): Promise<void> {
-		this.store.set(profile.name, profile.snapshot());
-	}
+  async load(name: string): Promise<ProfileRecord> {
+    const snapshot = this.store.get(name);
+    if (!snapshot) {
+      throw new ProfileNotFoundError(name);
+    }
+    return { ...snapshot };
+  }
 
-	async remove(name: string): Promise<void> {
-		if (!this.store.delete(name)) {
-			throw new ProfileNotFoundError(name);
-		}
-	}
+  async save(profile: Profile): Promise<void> {
+    this.store.set(profile.name, profile.snapshot());
+  }
 
-	async exists(name: string): Promise<boolean> {
-		return this.store.has(name);
-	}
+  async remove(name: string): Promise<void> {
+    if (!this.store.delete(name)) {
+      throw new ProfileNotFoundError(name);
+    }
+  }
+
+  async exists(name: string): Promise<boolean> {
+    return this.store.has(name);
+  }
 }
 
 class FakeGitGateway implements GitGateway {
-	public readonly applied: Array<{
-		identity: GitIdentity;
-		scope: ConfigScope;
-	}> = [];
+  public readonly applied: Array<{
+    identity: GitIdentity;
+    scope: ConfigScope;
+  }> = [];
 
-	constructor(private identity: GitIdentity) {}
+  constructor(private identity: GitIdentity) {}
 
-	async getCurrentIdentity(): Promise<GitIdentity> {
-		return this.identity;
-	}
+  async getCurrentIdentity(): Promise<GitIdentity> {
+    return this.identity;
+  }
 
-	async applyIdentity(
-		identity: { gitName: string; email: string; signingKey?: string | null },
-		scope: ConfigScope,
-	): Promise<void> {
-		this.applied.push({
-			identity: {
-				gitName: identity.gitName,
-				email: identity.email,
-				signingKey: identity.signingKey ?? undefined,
-			},
-			scope,
-		});
-	}
+  async applyIdentity(
+    identity: { gitName: string; email: string; signingKey?: string | null },
+    scope: ConfigScope,
+  ): Promise<void> {
+    this.applied.push({
+      identity: {
+        gitName: identity.gitName,
+        email: identity.email,
+        signingKey: identity.signingKey ?? undefined,
+      },
+      scope,
+    });
+  }
+}
+
+class NoopProfileConfigStore implements ProfileConfigStore {
+  getProfileConfigPath(name: string): string {
+    return `/tmp/gitface-test/identities/${name}.gitconfig`;
+  }
+
+  async save(_profile: Profile): Promise<void> {}
+
+  async remove(_name: string): Promise<void> {}
+}
+
+class RecordingProfileConfigStore extends NoopProfileConfigStore {
+  public readonly saved: string[] = [];
+  public readonly removed: string[] = [];
+
+  override async save(profile: Profile): Promise<void> {
+    this.saved.push(profile.name);
+  }
+
+  override async remove(name: string): Promise<void> {
+    this.removed.push(name);
+  }
 }
 
 function createService(
-	overrides: { store?: ProfileStore; git?: GitGateway } = {},
+  overrides: { store?: ProfileStore; git?: GitGateway; configStore?: ProfileConfigStore } = {},
 ): ProfileService {
-	const store = overrides.store ?? new InMemoryProfileStore();
-	const git = overrides.git ?? new FakeGitGateway({ gitName: "", email: "" });
-	return new ProfileService(store, git);
+  const store = overrides.store ?? new InMemoryProfileStore();
+  const git = overrides.git ?? new FakeGitGateway({ gitName: "", email: "" });
+  const configStore = overrides.configStore ?? new NoopProfileConfigStore();
+  return new ProfileService(store, git, configStore);
 }
 
 describe("ProfileService", () => {
-	test("creates a profile from the current Git identity", async () => {
-		const git = new FakeGitGateway({
-			gitName: "Jane Doe",
-			email: "jane@example.com",
-		});
-		const service = createService({ git });
+  test("creates a profile from the current Git identity", async () => {
+    const git = new FakeGitGateway({
+      gitName: "Jane Doe",
+      email: "jane@example.com",
+    });
+    const service = createService({ git });
 
-		const profile = await service.createProfile({ name: "work" });
+    const profile = await service.createProfile({ name: "work" });
 
-		expect(profile.name).toBe("work");
-		expect(profile.gitName).toBe("Jane Doe");
-		expect(profile.email).toBe("jane@example.com");
+    expect(profile.name).toBe("work");
+    expect(profile.gitName).toBe("Jane Doe");
+    expect(profile.email).toBe("jane@example.com");
 
-		const fetched = await service.getProfile("work");
-		expect(fetched.gitName).toBe("Jane Doe");
-	});
+    const fetched = await service.getProfile("work");
+    expect(fetched.gitName).toBe("Jane Doe");
+  });
 
-	test("prevents duplicate profile names unless forced", async () => {
-		const git = new FakeGitGateway({
-			gitName: "Jane",
-			email: "jane@example.com",
-		});
-		const service = createService({ git });
+  test("prevents duplicate profile names unless forced", async () => {
+    const git = new FakeGitGateway({
+      gitName: "Jane",
+      email: "jane@example.com",
+    });
+    const service = createService({ git });
 
-		await service.createProfile({ name: "work" });
-		await expect(
-			service.createProfile({ name: "work" }),
-		).rejects.toBeInstanceOf(ProfileAlreadyExistsError);
+    await service.createProfile({ name: "work" });
+    await expect(service.createProfile({ name: "work" })).rejects.toBeInstanceOf(
+      ProfileAlreadyExistsError,
+    );
 
-		const profile = await service.createProfile({ name: "work", force: true });
-		expect(profile.name).toBe("work");
-	});
+    const profile = await service.createProfile({ name: "work", force: true });
+    expect(profile.name).toBe("work");
+  });
 
-	test("applies a profile to the requested Git scope", async () => {
-		const git = new FakeGitGateway({
-			gitName: "Jane",
-			email: "jane@example.com",
-		});
-		const service = createService({ git });
-		const applySpy = vi.spyOn(git, "applyIdentity");
+  test("rejects path-traversal style profile names", async () => {
+    const git = new FakeGitGateway({
+      gitName: "Jane",
+      email: "jane@example.com",
+    });
+    const service = createService({ git });
 
-		await service.createProfile({
-			name: "work",
-			gitName: "Jane",
-			email: "jane@example.com",
-			signingKey: "ABC123",
-		});
+    await expect(service.createProfile({ name: "../unsafe" })).rejects.toBeInstanceOf(
+      InvalidProfileError,
+    );
+  });
 
-		await service.applyProfile("work", "global");
+  test("applies a profile to the requested Git scope", async () => {
+    const git = new FakeGitGateway({
+      gitName: "Jane",
+      email: "jane@example.com",
+    });
+    const service = createService({ git });
+    const applySpy = vi.spyOn(git, "applyIdentity");
 
-		expect(applySpy).toHaveBeenCalledTimes(1);
-		expect(applySpy.mock.calls[0]?.[1]).toBe("global");
-	});
+    await service.createProfile({
+      name: "work",
+      gitName: "Jane",
+      email: "jane@example.com",
+      signingKey: "ABC123",
+    });
 
-	test("clones a profile", async () => {
-		const git = new FakeGitGateway({
-			gitName: "Jane",
-			email: "jane@example.com",
-		});
-		const service = createService({ git });
+    await service.applyProfile("work", "global");
 
-		await service.createProfile({
-			name: "source",
-			gitName: "Source User",
-			email: "source@example.com",
-		});
+    expect(applySpy).toHaveBeenCalledTimes(1);
+    expect(applySpy.mock.calls[0]?.[1]).toBe("global");
+  });
 
-		const cloned = await service.cloneProfile("source", "target");
+  test("clones a profile", async () => {
+    const git = new FakeGitGateway({
+      gitName: "Jane",
+      email: "jane@example.com",
+    });
+    const service = createService({ git });
 
-		expect(cloned.name).toBe("target");
-		expect(cloned.gitName).toBe("Source User");
-		expect(cloned.email).toBe("source@example.com");
+    await service.createProfile({
+      name: "source",
+      gitName: "Source User",
+      email: "source@example.com",
+    });
 
-		const fetched = await service.getProfile("target");
-		expect(fetched.gitName).toBe("Source User");
-	});
+    const cloned = await service.cloneProfile("source", "target");
 
-	test("renames a profile", async () => {
-		const git = new FakeGitGateway({
-			gitName: "Jane",
-			email: "jane@example.com",
-		});
-		const service = createService({ git });
+    expect(cloned.name).toBe("target");
+    expect(cloned.gitName).toBe("Source User");
+    expect(cloned.email).toBe("source@example.com");
 
-		await service.createProfile({
-			name: "old",
-			gitName: "Old User",
-			email: "old@example.com",
-		});
+    const fetched = await service.getProfile("target");
+    expect(fetched.gitName).toBe("Source User");
+  });
 
-		const renamed = await service.renameProfile("old", "new");
+  test("renames a profile", async () => {
+    const git = new FakeGitGateway({
+      gitName: "Jane",
+      email: "jane@example.com",
+    });
+    const service = createService({ git });
 
-		expect(renamed.name).toBe("new");
-		expect(renamed.gitName).toBe("Old User");
+    await service.createProfile({
+      name: "old",
+      gitName: "Old User",
+      email: "old@example.com",
+    });
 
-		await expect(service.getProfile("old")).rejects.toBeInstanceOf(
-			ProfileNotFoundError,
-		);
-		const fetched = await service.getProfile("new");
-		expect(fetched.gitName).toBe("Old User");
-	});
+    const renamed = await service.renameProfile("old", "new");
+
+    expect(renamed.name).toBe("new");
+    expect(renamed.gitName).toBe("Old User");
+
+    await expect(service.getProfile("old")).rejects.toBeInstanceOf(ProfileNotFoundError);
+    const fetched = await service.getProfile("new");
+    expect(fetched.gitName).toBe("Old User");
+  });
+
+  test("syncs profile identity configs through config store", async () => {
+    const git = new FakeGitGateway({
+      gitName: "Jane",
+      email: "jane@example.com",
+    });
+    const configStore = new RecordingProfileConfigStore();
+    const service = createService({ git, configStore });
+
+    await service.createProfile({
+      name: "source",
+      gitName: "Source User",
+      email: "source@example.com",
+    });
+    await service.updateProfile("source", { gitName: "Source Updated" });
+    await service.cloneProfile("source", "copy");
+    await service.renameProfile("copy", "copy-renamed");
+    await service.deleteProfile("copy-renamed");
+
+    expect(configStore.saved).toEqual(["source", "source", "copy", "copy-renamed"]);
+    expect(configStore.removed).toEqual(["copy", "copy-renamed"]);
+  });
+
+  test("removeProfile returns deleted snapshot", async () => {
+    const git = new FakeGitGateway({
+      gitName: "Jane",
+      email: "jane@example.com",
+    });
+    const service = createService({ git });
+
+    await service.createProfile({
+      name: "temp",
+      gitName: "Temp User",
+      email: "temp@example.com",
+      signingKey: "TEMPKEY",
+    });
+
+    const removed = await service.removeProfile("temp");
+    expect(removed.name).toBe("temp");
+    expect(removed.gitName).toBe("Temp User");
+    expect(removed.email).toBe("temp@example.com");
+    expect(removed.signingKey).toBe("TEMPKEY");
+    await expect(service.getProfile("temp")).rejects.toBeInstanceOf(ProfileNotFoundError);
+  });
+
+  test("listProfilesByQuery applies updated sort, query filter, and limit", async () => {
+    const git = new FakeGitGateway({
+      gitName: "Jane",
+      email: "jane@example.com",
+    });
+    const service = createService({ git });
+
+    await service.createProfile({
+      name: "work",
+      gitName: "Work User",
+      email: "work@example.com",
+    });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await service.createProfile({
+      name: "personal",
+      gitName: "Personal User",
+      email: "personal@example.com",
+    });
+
+    const result = await service.listProfilesByQuery({
+      query: "or",
+      sort: "updated",
+      limit: 1,
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.name).toBe("work");
+  });
+
+  test("listProfilesByQuery supports case-insensitive name sort", async () => {
+    const git = new FakeGitGateway({
+      gitName: "Jane",
+      email: "jane@example.com",
+    });
+    const service = createService({ git });
+
+    await service.createProfile({
+      name: "zeta",
+      gitName: "Zeta User",
+      email: "zeta@example.com",
+    });
+    await service.createProfile({
+      name: "Alpha",
+      gitName: "Alpha User",
+      email: "alpha@example.com",
+    });
+
+    const result = await service.listProfilesByQuery({
+      sort: "name",
+    });
+
+    expect(result.map((profile) => profile.name)).toEqual(["Alpha", "zeta"]);
+  });
 });
