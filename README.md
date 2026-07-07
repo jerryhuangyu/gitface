@@ -75,10 +75,15 @@ eval "$(gitface completion snippet --shell bash)"
   - Zsh: `gitface completion snippet --shell zsh`
   - Bash: `gitface completion snippet --shell bash`
 - Append the snippet to your shell rc (or source it) and reload your terminal.
-- Generated snippets use `gitface completion profiles --limit 50` to keep
-  completion responsive for large profile sets.
+- Snippets complete three things: top-level command names, `rules` subcommand
+  names, and profile arguments for `use`, `rm/remove`, `edit`, `clone`,
+  `rename/mv`, plus the `rules add` profile argument.
+- Completion data comes from `gitface completion <topic>` with topics
+  `profiles`, `commands`, and `rules-commands`; snippets call it with
+  `--limit 50` to keep completion responsive for large profile sets.
 - `gitface completion profiles --prefix <value>` uses case-insensitive prefix
-  matching, so `wo` can match `Work` / `work-admin`.
+  matching, so `wo` can match `Work` / `work-admin`. `--delimiter` customizes
+  the separator between suggestions (default: newline).
 - `gitface completion profiles --json` emits machine-readable payload:
   `{ "topic": "profiles", "prefix": "wo", "limit": 5, "count": 1, "names": ["work-admin"] }`.
 - `gitface completion profiles --json-envelope` emits Result Envelope output for
@@ -87,30 +92,29 @@ eval "$(gitface completion snippet --shell bash)"
 - `gitface completion profiles` reads profile names from local profile
   filenames, so unrelated malformed profile JSON payloads do not block tab
   completion.
-- Completion is scoped to source-profile arguments for `use`, `rm/remove`,
-  `edit`, `clone`, and `rename/mv`, plus `rules add` profile argument.
 
 ## Command Reference
 
 | Command                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gitface new <profile>`      | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--dry-run`, `--json`).                                                                                                                                                                                                                                                                                                                                                                      |
-| `gitface edit <profile>`     | Update a stored profile via flags or an interactive editor; supports `--dry-run` and `--json` output.                                                                                                                                                                                                                                                                                                                                                                                     |
-| `gitface list`               | Render saved profiles (Ink on TTY, plain text on non-TTY), filter with `--query`, sort with `--sort` (`updated`/`name`), cap output with `--limit`, or use `list --json` / `list --json-envelope`.                                                                                                                                                                                                                                                                                        |
-| `gitface use <profile>`      | Apply a profile to Git config; supports `--scope`, `--query`, `--dry-run`, plus `use --json` and `use --json-envelope` output.                                                                                                                                                                                                                                                                                                                                                            |
-| `gitface current`            | Display active Git identity; supports `--scope`, `current --json`, and `current --json-envelope` machine-readable output.                                                                                                                                                                                                                                                                                                                                                                 |
-| `gitface doctor`             | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--json-envelope`, `--strict` available).                                                                                                                                                                                                                                                                                                                                 |
-| `gitface export [file]`      | Export all profiles as JSON to stdout or a file; supports legacy `--json` summary and `--json-envelope` unified output.                                                                                                                                                                                                                                                                                                                                                                   |
-| `gitface import <file>`      | Import profiles from JSON; supports `--dry-run`, `--strict`, `--atomic`, plus `--json` / `--json-envelope` for automation and CI gating.                                                                                                                                                                                                                                                                                                                                                  |
-| `gitface clone <src> <tgt>`  | Clone a profile to a new name; supports `--dry-run` and `--json` output.                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `gitface rename <old> <new>` | Rename a profile (alias: `mv`); supports `--dry-run`, `rename --json`, and `rename --json-envelope` for safer automation.                                                                                                                                                                                                                                                                                                                                                                 |
-| `gitface rm <profile>`       | Remove a profile; supports `--dry-run`, `--force`, plus `remove --json` and `remove --json-envelope` for safer automation.                                                                                                                                                                                                                                                                                                                                                                |
-| `gitface rules <subcommand>` | Manage folder rules (`list`, `add`, `remove`, `resolve`, `apply`, `doctor`, `prune`) with optional `--json`; `rules add/remove/resolve/apply` also support `--json-envelope`; mutations support `--dry-run`; `rules list` supports `--query`, `--limit`, and `--health` (`--concurrency` in health mode); `rules apply` supports `--fallback-profile`; `rules resolve/apply/doctor/prune --strict` support CI gating; `rules doctor/prune --concurrency` tune integrity scan parallelism. |
+| [`gitface new <profile>`](./docs/cli.md#gitface-new-name) | Create a profile from prompts or flags (`--git-name`, `--email`, `--signing-key`, `--force`, `--dry-run`, `--json`).                                                                                                                                                                                                                                                                                                                                                                      |
+| [`gitface edit <profile>`](./docs/cli.md#gitface-edit-name) | Update a stored profile via flags or an interactive editor; supports `--dry-run` and `--json` output.                                                                                                                                                                                                                                                                                                                                                                                     |
+| [`gitface list`](./docs/cli.md#gitface-list) | Render saved profiles (alias: `ls`; Ink on TTY, plain text on non-TTY), filter with `--query`, sort with `--sort` (`updated`/`name`), cap output with `--limit`, or use `list --json` / `list --json-envelope`.                                                                                                                                                                                                                                                                                        |
+| [`gitface use <profile>`](./docs/cli.md#gitface-use-name) | Apply a profile to Git config; supports `--scope`, `--query`, `--dry-run`, plus `use --json` and `use --json-envelope` output.                                                                                                                                                                                                                                                                                                                                                            |
+| [`gitface current`](./docs/cli.md#gitface-current) | Display active Git identity; supports `--scope`, `current --json`, and `current --json-envelope` machine-readable output.                                                                                                                                                                                                                                                                                                                                                                 |
+| [`gitface doctor`](./docs/cli.md#gitface-doctor) | Run environment diagnostics; checks Git install, profile store, and explicit **global** Git identity (`--json`, `--json-envelope`, `--strict` available).                                                                                                                                                                                                                                                                                                                                 |
+| [`gitface export [file]`](./docs/cli.md#gitface-export-file) | Export all profiles as JSON to stdout or a file; supports legacy `--json` summary and `--json-envelope` unified output.                                                                                                                                                                                                                                                                                                                                                                   |
+| [`gitface import <file>`](./docs/cli.md#gitface-import-file) | Import profiles from JSON; supports `--dry-run`, `--strict`, `--atomic`, plus `--json` / `--json-envelope` for automation and CI gating.                                                                                                                                                                                                                                                                                                                                                  |
+| [`gitface clone <src> <tgt>`](./docs/cli.md#gitface-clone-source-name-target-name) | Clone a profile to a new name; supports `--force` overwrite, `--dry-run`, and `--json` output.                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| [`gitface rename <old> <new>`](./docs/cli.md#gitface-rename-old-name-new-name) | Rename a profile (alias: `mv`); supports `--dry-run`, `rename --json`, and `rename --json-envelope` for safer automation.                                                                                                                                                                                                                                                                                                                                                                 |
+| [`gitface rm <profile>`](./docs/cli.md#gitface-rm-name) | Remove a profile; supports `--dry-run`, `--force`, plus `remove --json` and `remove --json-envelope` for safer automation.                                                                                                                                                                                                                                                                                                                                                                |
+| [`gitface rules <subcommand>`](./docs/cli.md#gitface-rules-subcommand) | Manage folder rules (`list`/`ls`, `add`, `remove`/`rm`, `resolve`, `apply`, `doctor`, `prune`) with optional `--json`; `rules add/remove/resolve/apply` also support `--json-envelope`; mutations support `--dry-run`; `rules list` supports `--query`, `--limit`, and `--health` (`--concurrency` in health mode); `rules apply` supports `--scope` and `--fallback-profile`; `rules resolve/apply/doctor/prune --strict` support CI gating; `rules doctor/prune --concurrency` tune integrity scan parallelism. |
+| [`gitface completion`](./docs/cli.md#gitface-completion-topic) | Emit completion data (`profiles`, `commands`, `rules-commands` topics; `--prefix`, `--limit`, `--delimiter`, `--json`, `--json-envelope`) and shell snippets via `completion snippet --shell <bash\|zsh>`.                                                                                                                                                                                                                                                                                  |
 
 ## Profiles & Storage
 
 - Files are saved as prettified JSON in
-  `~/.config/gitface/profiles/<profile>.json`.
+  `~/.config/gitface/profiles/<profile>.json` (respects `$XDG_CONFIG_HOME`).
 - Git include files are generated in
   `~/.config/gitface/identities/<profile>.gitconfig` for folder rules and
   advanced git config workflows.
@@ -124,172 +128,8 @@ eval "$(gitface completion snippet --shell bash)"
   auditing.
 - `--signing-key` values map to `user.signingkey`; use
   `gitface edit <name> --unset-signing-key` to remove it.
-- `gitface new <name> --git-name <value> --email <value> --json` emits:
-  `{ "status": "created", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
-- `gitface new <name> --git-name <value> --email <value> --dry-run --json`
-  previews creation without writing:
-  `{ "status": "dry-run", "name": "work", "overwrite": false, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
-- `gitface new <name> --json` without non-interactive field flags emits:
-  `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }`.
-- `gitface edit <name> --git-name <value> --json` emits:
-  `{ "status": "updated", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
-- `gitface edit <name> --git-name <value> --dry-run --json` previews updates
-  without writing:
-  `{ "status": "dry-run", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
-- `gitface edit <name> --json` without non-interactive field flags emits:
-  `{ "status": "error", "name": "work", "reason": "Non-interactive flags are required when using --json output mode." }`.
-- `gitface import <file> --dry-run` validates payload and duplicate handling
-  without changing local profile files.
-- `gitface import <file> --strict` exits with code `1` when any entry fails to
-  import/validate (also works with `--dry-run` and `--json`) for CI gating.
-- `gitface import <file> --atomic` runs a full precheck first; if any entry
-  fails, no profile is written in that run and exit code is `1`.
-- `gitface import <file> --json` emits machine-readable summary:
-  `{ "dryRun": false, "total": 2, "imported": 2, "failed": 0, "results": [{ "name": "work", "status": "imported", "message": "Imported." }] }`.
-- `gitface import <file> --json-envelope` emits unified Result Envelope output:
-  `{ "status": "success", "code": "IMPORT_PROFILES_OK", "message": "Profiles imported successfully.", "data": { "file": "./profiles.json", "strict": false, "overwrite": false, "atomic": false, "dryRun": false, "total": 2, "imported": 2, "failed": 0, "results": [{ "name": "work", "status": "imported", "message": "Imported." }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface import <file> --atomic --json` on precheck failure emits all entries
-  as failed (invalid entries + skipped entries), for example:
-  `{ "dryRun": false, "total": 2, "imported": 0, "failed": 2, "results": [{ "name": "work", "status": "failed", "message": "Profile already exists. Use --overwrite to replace." }, { "name": "personal", "status": "failed", "message": "Skipped due to --atomic precheck failure." }] }`.
-- `gitface import <file> --atomic --json-envelope` on precheck failure emits
-  envelope error and exits with code `1`:
-  `{ "status": "error", "code": "IMPORT_PROFILES_ATOMIC_ABORTED", "message": "Atomic precheck failed; no profiles were written.", "data": { "atomic": true, "failed": 2 }, "errors": [{ "code": "IMPORT_PROFILE_ATOMIC_FAILED", "message": "work: Profile 'work' already exists." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface remove <name> --json` emits machine-readable status:
-  `{ "status": "removed", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
-- `gitface remove <name> --dry-run --json` previews deletion without writing:
-  `{ "status": "dry-run", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
-- `gitface remove <name> --json-envelope` emits unified Result Envelope output:
-  `{ "status": "success", "code": "REMOVE_PROFILE_OK", "message": "Profile removed successfully.", "data": { "result": "removed", "name": "work", "force": false, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "reason": null }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface remove missing --force --json-envelope` emits skipped Result Envelope
-  output:
-  `{ "status": "success", "code": "REMOVE_PROFILE_SKIPPED", "message": "Profile removal skipped due to --force missing profile.", "data": { "result": "skipped", "name": "missing", "force": true, "profile": null, "reason": "Profile not found." }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
-- Missing-profile failures in `use`/`clone`/`rename`/`remove`/`rules add` now
+- Missing-profile failures in `use`/`clone`/`rename`/`remove`/`rules add`
   include best-effort `Did you mean ...` suggestions.
-- `gitface use <profile> --dry-run --json` previews scope-specific git config
-  changes without writing:
-  `{ "status": "dry-run", "scope": "local", "hasChanges": true, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
-- `gitface use <profile> --json` emits machine-readable success output:
-  `{ "status": "applied", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
-- `gitface use <profile> --json-envelope` emits unified Result Envelope output:
-  `{ "status": "success", "code": "USE_PROFILE_APPLIED", "message": "Profile applied to Git config.", "data": { "result": "applied", "scope": "local", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface current --json-envelope` emits unified Result Envelope output:
-  `{ "status": "success", "code": "CURRENT_IDENTITY_RESOLVED", "message": "Current Git identity resolved.", "data": { "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
-- `gitface use <profile> --json` returns an explicit no-op payload when the
-  active scope already matches the profile:
-  `{ "status": "unchanged", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "changes": [] }`.
-- `gitface list --query wor` filters profiles by case-insensitive name substring
-  matching (works in both human and JSON modes).
-- `gitface list --sort name` sorts output alphabetically by profile name;
-  default `--sort updated` keeps most-recently-updated first.
-- `gitface list --limit 10` caps displayed/JSON rows after sorting and query
-  filtering.
-- `gitface list --json-envelope` emits unified Result Envelope output:
-  `{ "status": "success", "code": "LIST_PROFILES_OK", "message": "Profiles listed successfully.", "data": { "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }], "query": "wo", "sort": "updated", "limit": 10, "count": 1 }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface list` automatically falls back to deterministic plain-text output
-  when stdout is not a TTY (for example when piped in scripts).
-- `gitface rules add <dir> <profile> --json` emits machine-readable status:
-  `{ "status": "added", "directory": "/abs/path/", "profileName": "work" }`.
-- `gitface rules add <dir> <profile> --dry-run --json` previews add/update
-  without writing:
-  `{ "status": "dry-run", "directory": "/abs/path/", "profileName": "work", "overwrite": false }`.
-- `gitface rules add <dir> <profile> --json-envelope` emits unified Result
-  Envelope output:
-  `{ "status": "success", "code": "RULE_ADD_OK", "message": "Rule added successfully.", "data": { "result": "added", "directory": "/abs/path/", "profileName": "work", "overwrite": false }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface rules remove <dir> --json` emits machine-readable status:
-  `{ "status": "removed", "directory": "/abs/path/" }`.
-- `gitface rules remove <dir> --dry-run --json` previews removal without
-  writing: `{ "status": "dry-run", "directory": "/abs/path/", "exists": true }`.
-- `gitface rules remove <dir> --json-envelope` emits unified Result Envelope
-  output:
-  `{ "status": "success", "code": "RULE_REMOVE_OK", "message": "Rule removed successfully.", "data": { "result": "removed", "directory": "/abs/path/", "exists": null }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface rules list --query work --limit 10 --json` filters by
-  directory/profile substring, returns deterministic directory-sorted rows, and
-  caps output size for scripts.
-- `gitface rules list --health --json` emits integrity-aware report output:
-  `{ "rules": [{ "directory": "/abs/path/", "profileName": "work", "status": "pass", "profileExists": true, "directoryExists": true }], "summary": { "total": 1, "pass": 1, "warn": 0, "fail": 0 }, "metrics": { "concurrency": 1, "scanned": 1, "uniqueProfilesChecked": 1, "uniqueDirectoriesChecked": 1, "scanDurationMs": 2 } }`.
-- `gitface rules list --health --concurrency <number>` limits concurrent
-  integrity checks in health mode (default `8`; must be a positive integer).
-- Rules commands read `includeIf.gitdir:*` entries via targeted regexp lookup
-  (with fallback to full global config scan on unexpected Git errors), keeping
-  rule resolution responsive in large `.gitconfig` setups.
-- `gitface rules resolve [dir] --json` resolves the most specific matching rule
-  for a target directory:
-  `{ "status": "matched", "directory": "/abs/path/repo/", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profileExists": true }`.
-- `gitface rules resolve [dir] --json-envelope` emits unified Result Envelope
-  output:
-  `{ "status": "success", "code": "RULE_RESOLVE_MATCHED", "message": "Rule resolved successfully.", "data": { "result": "matched", "directory": "/abs/path/repo/", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profileExists": true }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- On macOS/Windows, `rules resolve/apply` treat directory matching as
-  case-insensitive to align with common filesystem behavior; Linux keeps
-  case-sensitive matching.
-- `gitface rules resolve [dir] --json` when no rule matches:
-  `{ "status": "unmatched", "directory": "/abs/path/repo/", "matchedRule": null, "profileExists": null }`.
-- `gitface rules resolve [dir] --strict` treats `unmatched` and
-  `matched + profileExists=false` as non-zero exit results for CI gating.
-- `gitface rules apply [dir] --json` resolves and applies matched profile in one
-  step:
-  `{ "status": "applied", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }`.
-- `gitface rules apply [dir] --json-envelope` emits unified Result Envelope
-  output:
-  `{ "status": "success", "code": "RULE_APPLY_APPLIED", "message": "Matched rule profile applied successfully.", "data": { "result": "applied", "resolution": "matched", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "fallbackProfileName": null, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface rules apply [dir]` applies local scope against the target directory
-  directly and does not mutate the caller process working directory.
-- `gitface rules apply [dir] --dry-run --json` previews scope-specific changes
-  without writing:
-  `{ "status": "dry-run", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": { "directory": "/abs/path/", "profileName": "work" }, "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
-- `gitface rules apply [dir] --json` when no rule matches:
-  `{ "status": "unmatched", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null }`.
-- `gitface rules apply [dir] --fallback-profile work --json` applies fallback
-  profile when no rule matches:
-  `{ "status": "applied", "resolution": "fallback", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null, "fallbackProfileName": "work", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }`.
-- `gitface rules apply [dir] --dry-run --fallback-profile work --json` previews
-  fallback application without writing:
-  `{ "status": "dry-run", "resolution": "fallback", "directory": "/abs/path/repo/", "scope": "local", "matchedRule": null, "fallbackProfileName": "work", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "current": { "gitName": "Current User", "email": "current@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
-- `gitface rules apply [dir] --strict` treats `unmatched` as non-zero exit
-  results for CI gating.
-- `gitface rules doctor --json` checks every rule for missing profile/directory
-  and emits:
-  `{ "status": "issues", "strict": false, "summary": { "total": 2, "pass": 1, "warn": 1, "fail": 0 }, "metrics": { "concurrency": 2, "scanned": 2, "uniqueProfilesChecked": 1, "uniqueDirectoriesChecked": 2, "scanDurationMs": 4 }, "results": [{ "directory": "/abs/path/", "profileName": "work", "status": "warn", "profileExists": true, "directoryExists": false }] }`.
-- `gitface rules doctor --strict` treats both `warn` and `fail` as non-zero exit
-  results for CI gating.
-- `gitface rules doctor --concurrency <number>` limits concurrent integrity
-  checks (default `8`; must be a positive integer).
-- `gitface rules prune --dry-run --json` previews stale rules that reference
-  missing profiles:
-  `{ "status": "dry-run", "dryRun": true, "strict": false, "summary": { "scanned": 3, "prunable": 1, "pruned": 0, "skipped": 0 }, "metrics": { "concurrency": 3, "scanned": 3, "uniqueProfilesChecked": 2, "uniqueDirectoriesChecked": 0, "scanDurationMs": 3 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "candidate" }] }`.
-- `gitface rules prune --dry-run --strict` treats detected stale candidates as
-  non-zero exit results for CI gating (`summary.prunable > 0` => exit code `1`).
-- `gitface rules prune --concurrency <number>` limits concurrent integrity
-  checks (default `8`; must be a positive integer).
-- `gitface rules prune --dry-run --include-missing-directory --json` also
-  previews stale rules whose target directory is missing:
-  `{ "status": "dry-run", "dryRun": true, "strict": false, "summary": { "scanned": 3, "prunable": 1, "pruned": 0, "skipped": 0 }, "metrics": { "concurrency": 3, "scanned": 3, "uniqueProfilesChecked": 2, "uniqueDirectoriesChecked": 3, "scanDurationMs": 4 }, "results": [{ "directory": "/abs/path/deleted/", "profileName": "work", "profileExists": true, "directoryExists": false, "staleReason": "missing-directory", "status": "candidate" }] }`.
-- `gitface rules prune --json` removes stale rules and emits:
-  `{ "status": "pruned", "dryRun": false, "strict": false, "summary": { "scanned": 3, "prunable": 1, "pruned": 1, "skipped": 0 }, "metrics": { "concurrency": 3, "scanned": 3, "uniqueProfilesChecked": 2, "uniqueDirectoriesChecked": 0, "scanDurationMs": 3 }, "results": [{ "directory": "/abs/path/stale/", "profileName": "old-profile", "profileExists": false, "status": "pruned" }] }`.
-- `gitface rename <old> <new> --json` emits machine-readable status:
-  `{ "status": "renamed", "oldName": "old", "name": "new", "rulesUpdated": 2, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
-- `gitface rename <old> <new> --json-envelope` emits unified Result Envelope
-  output:
-  `{ "status": "success", "code": "RENAME_PROFILE_OK", "message": "Profile renamed successfully.", "data": { "result": "renamed", "oldName": "old", "newName": "new", "rulesUpdated": 2, "profile": { "name": "new", "gitName": "Work User", "email": "work@example.com", "signingKey": null } }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface rename <old> <new> --dry-run --json` previews rename metadata without
-  writing:
-  `{ "status": "dry-run", "oldName": "old", "newName": "new", "overwrite": false, "rulesToUpdate": 2, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
-- `gitface rename` automatically migrates folder rules that reference the old
-  profile name.
-- `gitface clone <src> <tgt> --json` emits machine-readable status:
-  `{ "status": "cloned", "sourceName": "work", "name": "work-copy", "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
-- `gitface clone <src> <tgt> --dry-run --json` previews clone metadata without
-  writing:
-  `{ "status": "dry-run", "sourceName": "work", "targetName": "work-copy", "overwrite": false, "gitName": "Work User", "email": "work@example.com", "signingKey": null }`.
-- `gitface export --json` emits machine-readable summary:
-  `{ "status": "exported", "count": 2, "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }] }`.
-- `gitface export ./profiles.json --json` emits machine-readable file result:
-  `{ "status": "exported", "count": 2, "file": "./profiles.json" }`.
-- `gitface export --json-envelope` emits unified Result Envelope output:
-  `{ "status": "success", "code": "EXPORT_PROFILES_STDOUT", "message": "Profiles exported to stdout successfully.", "data": { "count": 2, "profiles": [{ "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "createdAt": "...", "updatedAt": "..." }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface export ./profiles.json --json-envelope` emits unified file result:
-  `{ "status": "success", "code": "EXPORT_PROFILES_WRITTEN", "message": "Profiles exported to file successfully.", "data": { "count": 2, "file": "./profiles.json" }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `--json-envelope` write failures return envelope errors with exit code `1`:
-  `{ "status": "error", "code": "EXPORT_WRITE_FAILED", "message": "...", "data": { "count": 0, "file": "./profiles.json" }, "errors": [{ "code": "EXPORT_WRITE_FAILED", "message": "..." }], "meta": { "schemaVersion": "1.0.0", "durationMs": 1, "traceId": "..." } }`.
 
 ### Example profile file
 
@@ -308,50 +148,24 @@ eval "$(gitface completion snippet --shell bash)"
 
 - `local` scope updates `.git/config` in the current repo (default).
 - `global` writes to your user config (`~/.gitconfig`), handy when you swap
-  machines.
-- `system` forwards to the system config for admin setups.
+  machines; `system` forwards to the system config for admin setups.
 - GitFace automatically wipes `user.signingkey` when the target profile has no
   key.
-- `gitface use <profile> --json` emits machine-readable output:
-  `{ "status": "applied", "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null, "scope": "local", "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }`.
-- `gitface use <profile> --json-envelope` emits machine-readable Result
-  Envelope:
-  `{ "status": "success", "code": "USE_PROFILE_APPLIED", "message": "Profile applied to Git config.", "data": { "result": "applied", "scope": "local", "profile": { "name": "work", "gitName": "Work User", "email": "work@example.com", "signingKey": null }, "hasChanges": true, "changes": [{ "key": "user.name", "action": "set", "before": "Current User", "after": "Work User" }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface use` (without `<profile>`) opens an interactive selector and applies
-  the selected profile immediately.
-- `gitface use --query <text>` pre-filters profile candidates by
-  case-insensitive substring matching when `<profile>` is omitted.
-- `gitface use --query <text>` auto-applies directly when exactly one profile
-  matches.
-- `gitface use --query <text>` in non-TTY mode fails fast when multiple profiles
-  match and asks for an explicit profile name.
-- `gitface use --query <text> --json` keeps machine-readable, non-interactive
-  behavior: unique match auto-applies; ambiguous matches return JSON error:
-  `{ "status": "error", "reason": "Multiple profiles matched query \"work\". Re-run with an explicit profile name, for example: \`gitface
-  use work-main\`." }`.
-- `gitface current --scope global --json` inspects one scope and emits:
-  `{ "gitName": "Work User", "email": "work@example.com", "signingKey": "ABC123", "scope": "global" }`.
-- `gitface doctor --json-envelope` emits unified Result Envelope output:
-  `{ "status": "success", "code": "DOCTOR_CHECKS_OK", "message": "Doctor checks passed.", "data": { "strict": false, "hasFatalChecks": false, "summary": { "total": 3, "pass": 3, "warn": 0, "fail": 0 }, "checks": [{ "status": "pass", "message": "..." }] }, "errors": [], "meta": { "schemaVersion": "1.0.0", "durationMs": 2, "traceId": "..." } }`.
-- `gitface doctor --strict --json-envelope` emits envelope errors and exits `1`
-  when warnings/failures are present.
-- Scoped identity reads (`current --scope`, `use` planning, and doctor global
-  checks) use a single `git config --list` snapshot per scope by default, with
-  safe fallback behavior when listing fails.
-- `gitface use <profile>` guards multi-key writes with rollback: if any write
-  fails, GitFace restores the previous scoped identity before exiting.
-- `gitface doctor --strict` treats warnings as CI-failing results (exit code
-  `1`) while keeping default doctor behavior unchanged.
-- `gitface use <profile> --dry-run` previews planned scoped config updates and
-  does not mutate `.git/config`; dry-run output only lists effective changes.
-- `gitface remove <name> --dry-run` previews profile deletion and does not
-  mutate `~/.config/gitface/profiles/*.json`.
-- `gitface use` exits with code `1` and a guidance message when no profiles are
-  available to select.
+- `gitface use` without `<profile>` opens an interactive selector; `--query`
+  narrows candidates and auto-applies on a unique match. In non-TTY or JSON
+  mode, ambiguous matches fail fast with exit code `1` instead of prompting.
+- Mutating commands support `--dry-run` previews; dry-run lists only effective
+  changes and never writes.
+- `gitface use` guards multi-key writes with rollback: if any write fails,
+  GitFace restores the previous scoped identity before exiting.
+- `gitface doctor --strict` (and `rules resolve/apply/doctor/prune --strict`)
+  turn warnings into exit code `1` for CI gating.
+- Every command's `--json` / `--json-envelope` payload shapes are documented in
+  the [CLI Reference](./docs/cli.md).
 
 Set `GITFACE_LOG_LEVEL=debug` (or `GITFACE_DEBUG=1`) to print stack traces and
 additional diagnostics. Supported levels: `critical`, `error`, `warn`, `info`,
-`debug`, `trace`, `silent`.
+`debug` (default: `error`; unknown values fall back to `error`).
 
 ## Development
 
@@ -364,8 +178,9 @@ pnpm run build        # tsc + tsdown bundle
 ```
 
 - `pnpm run dev` runs tsdown in watch mode for local hacking.
-- CI requires `pnpm run lint` to pass before test workflow continues. Use
-  `pnpm exec biome check --write .` for safe auto-fixes.
+- CI runs typecheck and Biome (`biome ci .`) as separate jobs; both must pass
+  before the test-and-coverage job runs. Use `pnpm exec biome check --write .`
+  for safe auto-fixes.
 - Biome configuration is pinned to the local CLI schema and includes both
   `src/**` and `tests/**` TypeScript files so test code also stays under the
   same quality gate.
@@ -376,4 +191,5 @@ pnpm run build        # tsc + tsdown bundle
 - Non-interactive paths (for example `list --json`, `use <name> --json`,
   `new --json`, and `edit --json`) lazy-load Ink UI modules to keep script
   startup lean.
-- Release automation lives in `docs/release.md`; keep CI green before tagging.
+- Release automation lives in [docs/release.md](./docs/release.md); keep CI
+  green before tagging.
