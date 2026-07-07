@@ -1,0 +1,163 @@
+<section class="page-section hero-section" data-page-title="automation">
+  <div class="eyebrow">CI 與腳本</div>
+  <h1>所有機器介面，集中在這一頁。</h1>
+  <p class="lede">
+    其他頁面以互動使用為主；要把 GitFace 放進 CI、dotfiles、腳本或 agent 的話，這裡是完整介面：
+    <code>--json</code> 與 <code>--json-envelope</code> 拿結構化輸出，<code>--dry-run</code>、
+    <code>--strict</code>、<code>--atomic</code> 控制副作用。
+  </p>
+</section>
+
+<section class="page-section">
+  <div class="section-heading">
+    <div>
+      <div class="eyebrow">Commands</div>
+      <h2>腳本、備份、completion</h2>
+    </div>
+    <p>這一組命令適合放進 dotfiles、CI jobs、developer bootstrap 和 shell startup。</p>
+  </div>
+
+  <div class="command-grid">
+    <article class="command-card">
+      <div class="command-meta">
+        <span>Result Envelope</span>
+        <button class="copy-button" type="button" data-copy="gitface use work --dry-run --json-envelope">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface use work --dry-run --json-envelope</code></pre>
+      <p>回傳 <code>status</code>、<code>code</code>、<code>message</code>、<code>data</code>、<code>errors</code>、<code>meta</code> 的統一格式。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>Export backup</span>
+        <button class="copy-button" type="button" data-copy="gitface export ./profiles-backup.json">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface export ./profiles-backup.json</code></pre>
+      <p>把所有 profile snapshot 輸出成 prettified JSON array，方便版本備份或跨機器搬移。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>Import dry-run</span>
+        <button class="copy-button" type="button" data-copy="gitface import ./profiles-backup.json --dry-run --strict --json-envelope">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface import ./profiles-backup.json --dry-run --strict --json-envelope</code></pre>
+      <p>先驗證匯入檔與重複 profile；strict 會讓任何失敗以 exit code 1 呈現。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>Atomic import</span>
+        <button class="copy-button" type="button" data-copy="gitface import ./profiles-backup.json --atomic --overwrite --json">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface import ./profiles-backup.json --atomic --overwrite --json</code></pre>
+      <p>正式匯入前做全檔 precheck；任一 entry 失敗時不寫入任何 profile。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>Zsh completion</span>
+        <button class="copy-button" type="button" data-copy='eval "$(gitface completion snippet --shell zsh)"'>
+          Copy
+        </button>
+      </div>
+      <pre><code>eval "$(gitface completion snippet --shell zsh)"</code></pre>
+      <p>產生與目前版本同步的 completion snippet，可放進 <code>~/.zshrc</code>。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>Completion data</span>
+        <button class="copy-button" type="button" data-copy="gitface completion profiles --prefix wo --limit 5 --json">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface completion profiles --prefix wo --limit 5 --json</code></pre>
+      <p>從 profile filename index 取得建議，避免壞掉的 profile JSON 阻塞 completion。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>CI identity gate</span>
+        <button class="copy-button" type="button" data-copy="gitface current --json-envelope">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface current --json-envelope</code></pre>
+      <p>在 build 前紀錄有效 Git identity，讓 log 中有 schemaVersion、durationMs 和 traceId。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>Rule gate</span>
+        <button class="copy-button" type="button" data-copy="gitface rules resolve . --strict --json-envelope">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rules resolve . --strict --json-envelope</code></pre>
+      <p>確保目前資料夾有匹配 rule 且 profile 存在；不符合就讓 CI fail fast。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>Environment gate</span>
+        <button class="copy-button" type="button" data-copy="gitface doctor --strict --json-envelope">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface doctor --strict --json-envelope</code></pre>
+      <p>把 warning 視為失敗，以統一 envelope 回傳 code、message、errors 和 meta。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>Bootstrap fallback</span>
+        <button class="copy-button" type="button" data-copy="gitface rules apply . --fallback-profile personal --json">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rules apply . --fallback-profile personal --json</code></pre>
+      <p>沒有 matching rule 時改用指定 profile，適合 bootstrap 腳本的保底行為。</p>
+    </article>
+  </div>
+</section>
+
+<section class="page-section band">
+  <div class="section-heading">
+    <div>
+      <div class="eyebrow">Output choices</div>
+      <h2>何時用 JSON 或 Result Envelope</h2>
+    </div>
+  </div>
+  <div class="comparison">
+    <div>
+      <strong><code>--json</code></strong>
+      <p>適合簡短腳本，只需要 command-specific payload，例如 list rows、dry-run changes 或 import summary。</p>
+    </div>
+    <div>
+      <strong><code>--json-envelope</code></strong>
+      <p>適合 CI、agent、observability。格式固定，包含錯誤陣列、traceId、durationMs 和 schemaVersion。</p>
+    </div>
+  </div>
+</section>
+
+<nav class="page-nav" aria-label="閱讀順序">
+  <a
+    class="prev"
+    href="?page=overview"
+    hx-get="./pages/overview.html"
+    hx-target="#content"
+    hx-push-url="?page=overview"
+  >
+    <small>回到主線</small>
+    <strong>總覽與快速上手</strong>
+  </a>
+</nav>

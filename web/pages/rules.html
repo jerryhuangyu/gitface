@@ -1,0 +1,170 @@
+<section class="page-section hero-section" data-page-title="rules">
+  <div class="eyebrow">03 · Folder rules</div>
+  <h1>Folder Rules 讓 profile 跟資料夾結構綁定。</h1>
+  <p class="lede">
+    把 <code>~/code/work</code> 綁定工作 profile 之後，底下所有 repo 的 commit
+    自動用對身分——不用逐個 repo 設定，也不用擔心忘記切換。只有想把某個 repo
+    的身分固定下來時，才需要額外執行 <code>rules apply</code>。
+  </p>
+</section>
+
+<section class="page-section">
+  <div class="section-heading">
+    <div>
+      <div class="eyebrow">Commands</div>
+      <h2>建立、解析、套用、修復規則</h2>
+    </div>
+    <p>設定一次，之後只要在對的資料夾裡工作，commit 就自動用對身分。</p>
+  </div>
+
+  <div class="command-grid">
+    <article class="command-card">
+      <div class="command-meta">
+        <span>綁定資料夾</span>
+        <button class="copy-button" type="button" data-copy="gitface rules add ~/code/work work">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rules add ~/code/work work</code></pre>
+      <p>把資料夾綁到 profile。之後這個資料夾底下的每個 repo，commit 都自動用 work 身分。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>查看所有規則</span>
+        <button class="copy-button" type="button" data-copy="gitface rules list">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rules list</code></pre>
+      <p>列出目前所有資料夾與 profile 的對應；規則多的時候可加 <code>--query</code> 過濾。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>連健康狀態一起看</span>
+        <button class="copy-button" type="button" data-copy="gitface rules list --health">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rules list --health</code></pre>
+      <p>列表同時檢查每條規則：profile 還在嗎、資料夾還在嗎，直接看到 pass／warn／fail。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>查路徑命中哪條規則</span>
+        <button class="copy-button" type="button" data-copy="gitface rules resolve ~/code/work/app">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rules resolve ~/code/work/app</code></pre>
+      <p>查某個路徑會命中哪條規則、用哪個 profile——懷疑規則沒生效時先跑這個。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>固定 repo 身分</span>
+        <button class="copy-button" type="button" data-copy="gitface rules apply ~/code/work/app">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rules apply ~/code/work/app</code></pre>
+      <p>把命中的 profile 直接寫進這個 repo 自己的設定，適合想把身分固定住的 repo。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>規則體檢</span>
+        <button class="copy-button" type="button" data-copy="gitface rules doctor">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rules doctor</code></pre>
+      <p>總體檢：找出指向已刪 profile 的規則和消失的資料夾。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>清除失效規則</span>
+        <button class="copy-button" type="button" data-copy="gitface rules prune">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rules prune</code></pre>
+      <p>清掉 doctor 找到的壞規則；連資料夾已消失的規則一起清，加 <code>--include-missing-directory</code>。</p>
+    </article>
+  </div>
+</section>
+
+<section class="page-section">
+  <div class="section-heading">
+    <div>
+      <div class="eyebrow">Usage model</div>
+      <h2>綁定讓規則自動生效，固定把身分寫死</h2>
+    </div>
+    <p>大多數情況綁定就夠了；只有想讓某個 repo 不受之後規則變動影響時，才需要固定。</p>
+  </div>
+
+  <div class="command-grid">
+    <article class="command-card">
+      <div class="command-meta">
+        <span>綁定：讓規則自動生效</span>
+        <button class="copy-button" type="button" data-copy="gitface rules add ~/code/work work">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rules add ~/code/work work</code></pre>
+      <p>綁定之後，<code>~/code/work</code> 底下的 repo 不需要逐一設定，commit 時自動使用 work profile。日常用這個就夠。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>固定：寫進單一 repo</span>
+        <button class="copy-button" type="button" data-copy="gitface rules apply ~/code/work/repo-with-git">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rules apply ~/code/work/repo-with-git</code></pre>
+      <p>把命中的 profile 直接寫進這個 repo 自己的設定。之後就算資料夾規則改了，這個 repo 的身分也不會變。</p>
+    </article>
+  </div>
+</section>
+
+<section class="page-section band">
+  <div class="section-heading">
+    <div>
+      <div class="eyebrow">Resolution model</div>
+      <h2>Rules 的解析順序</h2>
+    </div>
+  </div>
+  <div class="flow-list">
+    <div><span>1</span><p>讀出你設定過的所有資料夾規則。規則存在 Git 內建的設定機制裡，不需要任何背景程式。</p></div>
+    <div><span>2</span><p>找出涵蓋目標路徑的規則；macOS 和 Windows 上大小寫不同也算符合。</p></div>
+    <div><span>3</span><p>多條規則都符合時，路徑最深、最具體的那條獲勝，並確認它指向的 profile 還存在。</p></div>
+    <div><span>4</span><p>commit 時自動套用規則對應的身分；如果 repo 自己已經設定了身分，以 repo 自己的為準。</p></div>
+  </div>
+</section>
+
+<nav class="page-nav" aria-label="閱讀順序">
+  <a
+    class="prev"
+    href="?page=apply"
+    hx-get="./pages/apply.html"
+    hx-target="#content"
+    hx-push-url="?page=apply"
+  >
+    <small>上一頁</small>
+    <strong>套用與檢查</strong>
+  </a>
+  <a
+    class="next"
+    href="?page=architecture"
+    hx-get="./pages/architecture.html"
+    hx-target="#content"
+    hx-push-url="?page=architecture"
+  >
+    <small>下一頁</small>
+    <strong>架構與開發</strong>
+  </a>
+</nav>

@@ -1,0 +1,157 @@
+<section class="page-section hero-section" data-page-title="profiles">
+  <div class="eyebrow">01 · Profile lifecycle</div>
+  <h1>一個 profile，就是一組可重複使用的 Git 身分。</h1>
+  <p class="lede">
+    包含顯示名稱、email 和可選的 signing key，存在你的電腦裡。建立一次，之後在任何
+    repo 都能用 <code>gitface use</code> 套用。這一頁涵蓋 profile 的完整生命週期：
+    建立、查詢、修改、複製、改名、刪除。
+  </p>
+</section>
+
+<section class="page-section">
+  <div class="section-heading">
+    <div>
+      <div class="eyebrow">Commands</div>
+      <h2>建立、維護、清理 profiles</h2>
+    </div>
+    <p>日常維護都在這裡：想逐步確認就用互動介面，已經知道要改什麼就一行帶旗標。</p>
+  </div>
+
+  <div class="command-grid">
+    <article class="command-card">
+      <div class="command-meta">
+        <span>互動建立</span>
+        <button class="copy-button" type="button" data-copy="gitface new work">Copy</button>
+      </div>
+      <pre><code>gitface new work</code></pre>
+      <p>一步步問你名稱和 email，用目前的 Git 設定預填，照著確認就好。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>一行建立</span>
+        <button
+          class="copy-button"
+          type="button"
+          data-copy='gitface new oss --git-name "Open Source" --email "oss@example.com"'
+        >
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface new oss --git-name "Open Source" --email "oss@example.com"</code></pre>
+      <p>已經知道欄位值時，一行建立、不開精靈；缺的欄位會從目前 Git 設定補上。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>列出所有 profiles</span>
+        <button class="copy-button" type="button" data-copy="gitface list">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface list</code></pre>
+      <p>列出所有 profiles，依最近更新排序。profiles 多的時候可加 <code>--query</code> 過濾名稱。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>編輯 profile</span>
+        <button class="copy-button" type="button" data-copy="gitface edit work">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface edit work</code></pre>
+      <p>開啟互動編輯逐欄修改。只改單一欄位也可以直接帶旗標，例如 <code>--email</code>。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>移除 signing key</span>
+        <button class="copy-button" type="button" data-copy="gitface edit work --unset-signing-key">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface edit work --unset-signing-key</code></pre>
+      <p>移除 profile 裡的 signing key；下次套用時，repo 設定的 signing key 也會一併清掉。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>複製 profile</span>
+        <button class="copy-button" type="button" data-copy="gitface clone work work-copy">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface clone work work-copy</code></pre>
+      <p>以現有 profile 為底建立副本，名稱、email、signing key 全部帶過去，適合先複製再微調。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>改名</span>
+        <button class="copy-button" type="button" data-copy="gitface rename work-copy work-archive">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rename work-copy work-archive</code></pre>
+      <p>改名時會一併把引用這個 profile 的 folder rules 遷移到新名稱，不會留下斷掉的規則。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>刪除 profile</span>
+        <button class="copy-button" type="button" data-copy="gitface rm work-archive">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface rm work-archive</code></pre>
+      <p>刪掉存放的 profile 檔；已經套用到各 repo 的 Git 設定不會被動到。</p>
+    </article>
+  </div>
+</section>
+
+<section class="page-section band">
+  <div class="section-heading">
+    <div>
+      <div class="eyebrow">Storage contract</div>
+      <h2>Profile 儲存位置</h2>
+    </div>
+  </div>
+  <div class="info-strip">
+    <div>
+      <strong>存放位置</strong>
+      <p>每個 profile 一個檔案：<code>~/.config/gitface/profiles/&lt;profile&gt;.json</code>，可以直接打開看。</p>
+    </div>
+    <div>
+      <strong>自訂位置</strong>
+      <p>想換地方存，設定 <code>$XDG_CONFIG_HOME</code> 即可，profiles 會跟著搬到對應目錄。</p>
+    </div>
+    <div>
+      <strong>寫入保證</strong>
+      <p>更新不會寫到一半壞掉；就算中途中斷，原本的內容也會完整保留。</p>
+    </div>
+  </div>
+</section>
+
+<nav class="page-nav" aria-label="閱讀順序">
+  <a
+    class="prev"
+    href="?page=overview"
+    hx-get="./pages/overview.html"
+    hx-target="#content"
+    hx-push-url="?page=overview"
+  >
+    <small>上一頁</small>
+    <strong>總覽與快速上手</strong>
+  </a>
+  <a
+    class="next"
+    href="?page=apply"
+    hx-get="./pages/apply.html"
+    hx-target="#content"
+    hx-push-url="?page=apply"
+  >
+    <small>下一頁</small>
+    <strong>套用與檢查</strong>
+  </a>
+</nav>

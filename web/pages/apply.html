@@ -1,0 +1,123 @@
+<section class="page-section hero-section" data-page-title="apply">
+  <div class="eyebrow">02 · Apply and inspect</div>
+  <h1>套用 profile 時，GitFace 預設只改目前 repo。</h1>
+  <p class="lede">
+    <code>gitface use</code> 預設只寫進目前 repo 的設定，不會不小心改到全域身分。
+    搭配 <code>current</code> 隨時確認生效身分、<code>doctor</code> 排查環境問題。
+  </p>
+</section>
+
+<section class="page-section">
+  <div class="section-heading">
+    <div>
+      <div class="eyebrow">Commands</div>
+      <h2>切換、確認、排錯</h2>
+    </div>
+    <p>日常會做的三件事都在這一頁：套用 profile、看目前生效的身分、環境有問題時排查。</p>
+  </div>
+
+  <div class="command-grid">
+    <article class="command-card">
+      <div class="command-meta">
+        <span>套用到目前 repo</span>
+        <button class="copy-button" type="button" data-copy="gitface use work">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface use work</code></pre>
+      <p>把 <code>work</code> 的名稱和 email 寫進目前這個 repo 的設定，其他專案不受影響。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>套用到整台機器</span>
+        <button class="copy-button" type="button" data-copy="gitface use work --scope global">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface use work --scope global</code></pre>
+      <p>讓整台機器預設都用這組身分，適合平常只用一個身分的人。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>用關鍵字找再套用</span>
+        <button class="copy-button" type="button" data-copy="gitface use --query work">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface use --query work</code></pre>
+      <p>記不得完整名稱時用關鍵字找：只有一個符合就直接套用，多個符合會列出來讓你選。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>看目前生效身分</span>
+        <button class="copy-button" type="button" data-copy="gitface current">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface current</code></pre>
+      <p>顯示在目前位置 commit 會用的身分；直接輸入 <code>gitface</code> 不帶子命令也是同樣效果。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>指定範圍檢查</span>
+        <button class="copy-button" type="button" data-copy="gitface current --scope global">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface current --scope global</code></pre>
+      <p>只看指定 scope 的設定，方便分辨身分是 repo 自己設的、還是從全域繼承來的。</p>
+    </article>
+
+    <article class="command-card">
+      <div class="command-meta">
+        <span>環境體檢</span>
+        <button class="copy-button" type="button" data-copy="gitface doctor">
+          Copy
+        </button>
+      </div>
+      <pre><code>gitface doctor</code></pre>
+      <p>覺得哪裡不對勁時先跑這個：檢查 Git 能不能用、profile 存放區正不正常、全域身分設定完不完整。</p>
+    </article>
+  </div>
+</section>
+
+<section class="page-section band">
+  <div class="section-heading">
+    <div>
+      <div class="eyebrow">Safety model</div>
+      <h2>套用時的安全邏輯</h2>
+    </div>
+  </div>
+  <div class="flow-list">
+    <div><span>1</span><p>先讀取 profile 內容和目前實際生效的身分設定。</p></div>
+    <div><span>2</span><p>比對出真正需要改的項目，沒有差異的設定不會被碰。</p></div>
+    <div><span>3</span><p>寫入中途出錯時，會還原成套用前的設定，不會停在改一半的狀態。</p></div>
+  </div>
+</section>
+
+<nav class="page-nav" aria-label="閱讀順序">
+  <a
+    class="prev"
+    href="?page=profiles"
+    hx-get="./pages/profiles.html"
+    hx-target="#content"
+    hx-push-url="?page=profiles"
+  >
+    <small>上一頁</small>
+    <strong>Profiles 生命週期</strong>
+  </a>
+  <a
+    class="next"
+    href="?page=rules"
+    hx-get="./pages/rules.html"
+    hx-target="#content"
+    hx-push-url="?page=rules"
+  >
+    <small>下一頁</small>
+    <strong>Folder Rules</strong>
+  </a>
+</nav>
