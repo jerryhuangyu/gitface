@@ -1,10 +1,14 @@
 VERSION = $(shell git cliff --unreleased --bump --context | jq -r '.[0].version')
 
-.PHONY: w link unlink build dev lint typecheck unit-test test bump release
+.PHONY: w w-build link unlink build dev lint typecheck unit-test test bump release
 
 w:
-	@echo "✅ Web server running at http://localhost:4173"
-	@python3 -m http.server 4173 -d web
+	@pnpm --dir web install
+	@pnpm --dir web dev
+
+w-build:
+	@pnpm --dir web install
+	@pnpm --dir web build
 
 link:
 	@npm link --global

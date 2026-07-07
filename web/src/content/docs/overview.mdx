@@ -1,0 +1,122 @@
+---
+title: 總覽與快速上手
+description: 不需要先懂任何 GitFace 概念，照順序執行四步，這個 repo 的 commit 身分就換好了。
+---
+
+import { LinkCard, CardGrid, Steps } from "@astrojs/starlight/components";
+
+工作、個人、開源各有一組 `user.name` 和 `user.email`，手動改 `git config`
+遲早會用錯身分 commit。GitFace 把每組身分存成 profile，之後在任何 repo 用
+`gitface use <profile>` 一次切換乾淨。
+
+## 3 分鐘上手
+
+不需要先懂任何 GitFace 概念。照順序執行四步，這個 repo 的 commit 身分就換好了。
+
+<Steps>
+
+1. **安裝**
+
+   ```sh
+   npm install --global gitface
+   ```
+
+   安裝成全域 CLI。不想安裝的話，用 `npx gitface` 一次性執行也可以。
+
+2. **建立第一個 profile**
+
+   ```sh
+   gitface new work
+   ```
+
+   互動精靈會從你目前的 Git 設定預填名稱和 email，照著確認即可，不用查任何文件。
+
+3. **套用到目前 repo**
+
+   ```sh
+   gitface use work
+   ```
+
+   只改這個 repo 的設定，其他專案不受影響。隨時可以再切到別的 profile。
+
+4. **確認結果**
+
+   ```sh
+   gitface current
+   ```
+
+   顯示這個 repo 實際生效的身分。看到 work 的名稱和 email，就完成了。
+
+</Steps>
+
+:::tip[到這裡，日常使用已經足夠。]
+如果你只是要在幾組身分之間切換，`new`、`use`、`current` 就是日常的全部。
+接下來的內容給想更進一步的人，回答三個問題：它為什麼這樣設計、它管到哪裡為止、
+還有哪些功能等你需要時再學。
+:::
+
+## 三個原則貫穿所有命令
+
+理解這三件事，之後每個命令的行為都能預期，不用背例外。
+
+### Local first
+
+所有 profile 都存在你電腦的 `~/.config/gitface/`，看得到也帶得走。
+沒有帳號、沒有雲端同步，備份和搬機器用 `export` 與 `import`。
+
+### 安全預設
+
+`use` 預設只改目前 repo，不會不小心動到全域設定；寫入中途出錯也不會留下改到一半的設定。
+
+### 人與腳本同等
+
+互動時有終端 UI 引導；同一套命令也能給 CI 和腳本呼叫，行為完全一致。
+腳本用法集中在[「JSON 與自動化」](/gitface/automation/)。
+
+## GitFace 管什麼、不管什麼
+
+邊界劃清楚，才知道什麼問題該來找它、什麼問題不該。
+
+| 在範圍內 | 不在範圍內 |
+| --- | --- |
+| Git 身分的三個設定值——`user.name`、`user.email`、`user.signingkey` 的儲存與切換 | 不產生或保管 SSH／GPG 金鑰本體 |
+| 資料夾自動對應身分（Folder Rules） | 不碰 credentials 和 Git hosting 帳號授權 |
+| profile 的備份遷移與環境檢查 | 不同步任何資料到雲端，這些交給 `ssh`、`gpg` 和平台本身 |
+
+## 接下來照這個順序讀
+
+每一頁銜接上一頁：先把 profile 管好，再學會套用與檢查，然後讓切換自動發生，最後給想深入實作的人。
+
+<CardGrid>
+	<LinkCard
+		title="01 · Profiles 生命週期"
+		description="快速上手裡的 new 只是起點：列表、編輯、複製、改名、刪除，以及 profile 實際存在哪裡。"
+		href="/gitface/profiles/"
+	/>
+	<LinkCard
+		title="02 · 套用與檢查"
+		description="use 要套用到單一 repo 還是整台機器、current 確認生效身分、doctor 排查環境。"
+		href="/gitface/apply/"
+	/>
+	<LinkCard
+		title="03 · Folder Rules"
+		description="讓 ~/code/work 底下的 repo 自動用工作身分，不必每個 repo 手動 use。"
+		href="/gitface/rules/"
+	/>
+	<LinkCard
+		title="04 · 架構與開發"
+		description="原始碼分層、本地開發指令和技術組成，給想貢獻程式或深入理解實作的人。"
+		href="/gitface/architecture/"
+	/>
+</CardGrid>
+
+## 要放進 CI 或腳本？走另一條路線。
+
+上面的主線以互動使用為主。結構化輸出、執行前預檢、備份遷移、shell completion
+這些給程式呼叫的介面，全部集中在一頁。
+
+<LinkCard
+	title="CI · JSON 與自動化"
+	description="結構化輸出、副作用控制、備份遷移與 completion，適合 dotfiles、CI jobs 和 agent。"
+	href="/gitface/automation/"
+/>
