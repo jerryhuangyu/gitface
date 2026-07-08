@@ -1,0 +1,291 @@
+/*
+ * starlight.css — Starlight chrome / 內容樣式 override
+ *
+ * 這些規則刻意「不分層」（unlayered），特異度相同時會贏過 Starlight 放在
+ * @layer starlight 的預設樣式。逐檔對照 Cloudflare docs 的 src/styles/*.css
+ * 移植，適配 GitFace 實際 Starlight markup。
+ */
+
+/* ── 標題字距、Header hairline、Tab rail ────────────────────────── */
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6) {
+	letter-spacing: -0.01em;
+	text-wrap: balance; /* 標題斷行更平衡，避免末行孤字 */
+}
+
+/* 內文避免行尾孤字（orphan） */
+.sl-markdown-content :is(p, li) {
+	text-wrap: pretty;
+}
+
+/* 內容圖片加極淡外框，統一深度感（亮色純黑、暗色純白，勿用帶色中性灰） */
+.sl-markdown-content img:not(:where(.not-content *)) {
+	outline: 1px solid rgba(0, 0, 0, 0.1);
+	outline-offset: -1px;
+	border-radius: 0.375rem;
+}
+:root[data-theme="dark"] .sl-markdown-content img:not(:where(.not-content *)) {
+	outline-color: rgba(255, 255, 255, 0.1);
+}
+
+header.header {
+	border-bottom: 1px solid var(--sl-color-hairline-shade);
+}
+
+starlight-tabs [role="tablist"] {
+	border-bottom: 2px solid var(--sl-color-gray-5);
+}
+
+/* ── Sidebar（對齊 cloudflare sidebar.css）───────────────────────── */
+.sidebar-content {
+	gap: 2px;
+}
+
+.sidebar-pane {
+	scrollbar-gutter: stable;
+}
+
+/* 分組標題渲染為 span.group-label > span.large；改成大寫 static badge */
+.sidebar-content span.group-label > span.large,
+.sidebar-content span.large {
+	display: inline-block;
+	font-size: 0.6875rem;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	opacity: 0.45;
+}
+
+/* 連結 state 走 Cloudflare 中性風：hover/active 皆為中性底 + 強色字，
+   不讓 accent 上到文字（Starlight 預設 active 是綠底反白 pill，觀感突兀）。 */
+.sidebar-content a:hover,
+.sidebar-content a:focus {
+	background-color: color-mix(in srgb, var(--sl-color-gray-5) 35%, transparent);
+	color: var(--sl-color-white);
+}
+
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover,
+.sidebar-content a[aria-current="page"]:focus {
+	background-color: color-mix(in srgb, var(--sl-color-gray-5) 50%, transparent);
+	color: var(--sl-color-white);
+	font-weight: 600;
+}
+
+/* ── 右側 TOC：sticky（Starlight scoped 選擇器特異度較高，需 !important）── */
+@media (min-width: 72rem) {
+	.right-sidebar {
+		position: sticky !important;
+		top: var(--sl-nav-height) !important;
+		height: auto !important;
+		max-height: calc(100vh - var(--sl-nav-height));
+		border-inline-start: none !important;
+	}
+
+	.right-sidebar-panel .sl-container {
+		width: 100% !important;
+		max-width: var(--layout-toc-width) !important;
+	}
+}
+
+/* ── Aside（cloudflare asides.css）：扁平、4px 圓角、語意底色 ─────── */
+.starlight-aside {
+	border: unset;
+	border-radius: 4px;
+}
+
+.starlight-aside--note {
+	background-color: rgb(236, 244, 255);
+}
+
+.starlight-aside--caution {
+	background-color: rgb(255, 248, 228);
+}
+
+:root[data-theme="dark"] .starlight-aside--note {
+	background-color: var(--color-cl1-blue-1);
+}
+
+:root[data-theme="dark"] .starlight-aside--caution {
+	background-color: var(--color-cl1-gold-0);
+}
+
+/* ── Badge（cloudflare badges.css）：pill 造型 + 語意色 ──────────── */
+.sl-badge {
+	border: none;
+	overflow-wrap: unset;
+	align-items: center;
+	border-radius: 50px;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 1;
+	user-select: none;
+	white-space: nowrap;
+	padding: 4px 8px;
+}
+
+.sl-badge.note {
+	background-color: var(--color-cl1-blue-8) !important;
+	color: var(--color-cl1-blue-2) !important;
+}
+.sl-badge.danger {
+	background-color: var(--color-cl1-red-8) !important;
+	color: var(--color-cl1-red-2) !important;
+}
+.sl-badge.success {
+	background-color: var(--color-cl1-green-8) !important;
+	color: var(--color-cl1-green-2) !important;
+}
+.sl-badge.caution {
+	background-color: var(--color-cl1-orange-8) !important;
+	color: var(--color-cl1-orange-2) !important;
+}
+.sl-badge.tip {
+	background-color: var(--color-cl1-violet-8) !important;
+	color: var(--color-cl1-violet-1) !important;
+}
+.sl-badge.default {
+	background-color: var(--color-cl1-gray-9) !important;
+	color: var(--color-cl1-gray-2) !important;
+}
+
+:root[data-theme="dark"] .sl-badge.note {
+	background-color: var(--color-cl1-blue-7) !important;
+	color: var(--color-cl1-blue-0) !important;
+}
+:root[data-theme="dark"] .sl-badge.danger {
+	background-color: var(--color-cl1-red-8) !important;
+	color: var(--color-cl1-red-0) !important;
+}
+:root[data-theme="dark"] .sl-badge.success {
+	background-color: var(--color-cl1-green-7) !important;
+	color: var(--color-cl1-green-0) !important;
+}
+:root[data-theme="dark"] .sl-badge.caution {
+	background-color: var(--color-cl1-orange-8) !important;
+	color: var(--color-cl1-orange-0) !important;
+}
+:root[data-theme="dark"] .sl-badge.tip {
+	background-color: var(--color-cl1-violet-8) !important;
+	color: var(--color-cl1-violet-0) !important;
+}
+:root[data-theme="dark"] .sl-badge.default {
+	background-color: var(--color-cl1-gray-8) !important;
+	color: var(--color-cl1-gray-3) !important;
+}
+
+/* ── 表格（cloudflare table.css）：圓角外框、條紋、無外框線 ──────── */
+.sl-markdown-content table:not(:where(.not-content *)) {
+	width: 100%;
+	border-collapse: collapse;
+	border-radius: 0.75rem;
+	text-align: left;
+	font-size: 0.875rem;
+	line-height: 1.4;
+	color: var(--sl-color-text);
+	display: block;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.sl-markdown-content :is(th, thead td):not(:where(.not-content *)) {
+	background-color: var(--color-table-base);
+	border-bottom: 1px solid var(--color-table-fill);
+	padding: 0.75rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+}
+
+.sl-markdown-content td:not(:where(.not-content *)) {
+	border-bottom: 1px solid var(--color-table-fill);
+	padding: 0.75rem;
+	vertical-align: top;
+}
+
+.sl-markdown-content
+	tbody:has(tr:nth-child(5))
+	tr:nth-child(even)
+	td:not(:where(.not-content *)) {
+	background-color: var(--color-table-tint);
+}
+
+.sl-markdown-content tr:last-child td:not(:where(.not-content *)) {
+	border-bottom: none;
+}
+
+.sl-markdown-content
+	:is(th:first-child, td:first-child):not(:where(.not-content *)) {
+	padding-inline-start: 1rem;
+}
+.sl-markdown-content
+	:is(th:last-child, td:last-child):not(:where(.not-content *)) {
+	padding-inline-end: 1rem;
+}
+
+.sl-markdown-content :is(td, th) code:not(:where(.not-content *)) {
+	background-color: var(--sl-color-gray-6);
+	border: 1px solid var(--color-table-fill);
+	border-radius: 0.375rem;
+	padding: 0.125rem 0.375rem;
+}
+
+/* ── Pagination（cloudflare pagination.css）：無邊框、左右分列 ────── */
+.pagination-links {
+	display: flex !important;
+	justify-content: space-between;
+	margin-top: 3rem;
+}
+
+.pagination-links > a {
+	flex-basis: unset;
+	flex-grow: unset;
+	width: fit-content;
+	padding: unset;
+	border: unset;
+	box-shadow: unset;
+}
+
+.pagination-links > a[rel="prev"] {
+	text-align: right;
+	margin-right: auto;
+}
+
+.pagination-links > a[rel="next"] {
+	text-align: left;
+	margin-left: auto;
+}
+
+.pagination-links > a > span {
+	font-size: 0.75rem;
+}
+
+.pagination-links > a > span .link-title {
+	font-size: 1rem;
+}
+
+/* ── 連結與列表 ─────────────────────────────────────────────────── */
+.external-link {
+	text-wrap-mode: nowrap;
+}
+
+.sl-markdown-content ol > li > ul {
+	padding-bottom: 1em;
+}
+
+/* Starlight LinkCard：套上 CF 卡片質感（hover 抬升 + accent 邊框） */
+.sl-markdown-content .sl-link-card {
+	border-radius: var(--radius-card, 0.75rem);
+	transition:
+		border-color 0.15s ease,
+		transform 0.15s ease,
+		box-shadow 0.15s ease;
+}
+
+.sl-markdown-content .sl-link-card:hover {
+	border-color: var(--sl-color-accent);
+	transform: translateY(-2px);
+	/* 分層陰影：近距離細影 + 遠距離擴散影，自然深度 */
+	box-shadow:
+		0 1px 2px rgb(0 0 0 / 0.08),
+		0 6px 20px rgb(0 0 0 / 0.12);
+}

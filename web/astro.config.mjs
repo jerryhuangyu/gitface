@@ -1,10 +1,15 @@
 // @ts-check
 import starlight from "@astrojs/starlight";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
 	site: "https://jerryhuangyu.github.io",
 	base: "/gitface",
+	// Tailwind v4 走 Vite plugin（對齊 Cloudflare docs 的建置層）
+	vite: {
+		plugins: [tailwindcss()],
+	},
 	integrations: [
 		starlight({
 			title: "GitFace",
@@ -20,6 +25,12 @@ export default defineConfig({
 					href: "https://github.com/jerryhuangyu/gitface",
 				},
 			],
+			// 自製元件系統：override Starlight 內建 chrome
+			components: {
+				Hero: "./src/components/overrides/Hero.astro",
+				Header: "./src/components/overrides/Header.astro",
+				Footer: "./src/components/overrides/Footer.astro",
+			},
 			sidebar: [
 				{
 					label: "入門",
@@ -42,7 +53,14 @@ export default defineConfig({
 					items: [{ label: "架構與開發", slug: "architecture" }],
 				},
 			],
-			customCss: ["./src/styles/custom.css"],
+			customCss: [
+				// 字體：Inter（自架、離線可用）
+				"@fontsource-variable/inter",
+				// Tailwind v4 entry + design tokens（@theme）
+				"./src/styles/global.css",
+				// Starlight chrome / 內容樣式 override
+				"./src/styles/starlight.css",
+			],
 		}),
 	],
 });

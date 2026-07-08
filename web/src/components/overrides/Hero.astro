@@ -1,0 +1,287 @@
+---
+/*
+ * Hero override — Cloudflare 式落地 hero。
+ *
+ * 在 Starlight 預設 hero（title / tagline / image / actions）之上加：
+ *   - eyebrow：小字大寫 accent 標籤（frontmatter `eyebrow`）
+ *   - 點陣背景（StructuralGrid）
+ *   - 可複製安裝指令 chip（frontmatter `command`）
+ *
+ * 資料讀取沿用 Starlight 契約：Astro.locals.starlightRoute.entry.data.hero。
+ */
+import { Image } from "astro:assets";
+import { LinkButton } from "@astrojs/starlight/components";
+import StructuralGrid from "../StructuralGrid.astro";
+
+// Starlight 內部常數（constants.ts 未公開匯出）：主標題錨點 id
+const PAGE_TITLE_ID = "_top";
+
+const { data } = Astro.locals.starlightRoute.entry;
+const { title = data.title, tagline, image, actions = [] } = data.hero || {};
+const eyebrow = data.eyebrow;
+const command = data.command;
+
+const imageAttrs = {
+	loading: "eager" as const,
+	decoding: "async" as const,
+	width: 400,
+	height: 400,
+	alt: image?.alt || "",
+};
+
+let darkImage: ImageMetadata | undefined;
+let lightImage: ImageMetadata | undefined;
+let rawHtml: string | undefined;
+if (image) {
+	if ("file" in image) {
+		darkImage = image.file;
+	} else if ("dark" in image) {
+		darkImage = image.dark;
+		lightImage = image.light;
+	} else {
+		rawHtml = image.html;
+	}
+}
+---
+
+<div class="gf-hero">
+	<StructuralGrid />
+
+	<div class="gf-hero__inner sl-flex">
+		{
+			darkImage && (
+				<Image
+					src={darkImage}
+					{...imageAttrs}
+					class:list={{ "light:sl-hidden": Boolean(lightImage) }}
+				/>
+			)
+		}
+		{
+			lightImage && (
+				<Image src={lightImage} {...imageAttrs} class="dark:sl-hidden" />
+			)
+		}
+		{rawHtml && <div class="hero-html sl-flex" set:html={rawHtml} />}
+
+		<div class="gf-hero__copy sl-flex">
+			{eyebrow && <p class="gf-hero__eyebrow">{eyebrow}</p>}
+			<h1 id={PAGE_TITLE_ID} data-page-title set:html={title} />
+			{tagline && <div class="gf-hero__tagline" set:html={tagline} />}
+
+			{
+				actions.length > 0 && (
+					<div class="gf-hero__actions sl-flex">
+						{actions.map(
+							({
+								attrs: { class: className, ...attrs } = {},
+								icon,
+								link: href,
+								text,
+								variant,
+							}) => (
+								<LinkButton
+									{href}
+									{variant}
+									icon={icon?.name}
+									class:list={[className]}
+									{...attrs}
+								>
+									{text}
+									{icon?.html && <Fragment set:html={icon.html} />}
+								</LinkButton>
+							),
+						)}
+					</div>
+				)
+			}
+
+			{
+				command && (
+					<button
+						class="gf-hero__command"
+						type="button"
+						data-command={command}
+						title="複製指令"
+					>
+						<span class="gf-hero__prompt">$</span>
+						<code>{command}</code>
+						<span class="gf-hero__copy-icon" aria-hidden="true">⧉</span>
+					</button>
+				)
+			}
+		</div>
+	</div>
+</div>
+
+<script>
+	// 點擊複製安裝指令
+	document.querySelectorAll<HTMLButtonElement>(".gf-hero__command").forEach(
+		(btn) => {
+			btn.addEventListener("click", async () => {
+				const cmd = btn.dataset.command;
+				if (!cmd) return;
+				try {
+					await navigator.clipboard.writeText(cmd);
+					btn.classList.add("is-copied");
+					setTimeout(() => btn.classList.remove("is-copied"), 1500);
+				} catch {
+					/* clipboard 不可用時忽略 */
+				}
+			});
+		},
+	);
+</script>
+
+<style>
+	.gf-hero {
+		position: relative;
+		isolation: isolate;
+		margin-inline: calc(-1 * var(--sl-content-pad-x));
+		padding-inline: var(--sl-content-pad-x);
+		padding-block: clamp(3rem, calc(2rem + 8vmin), 7rem);
+		overflow: clip;
+	}
+
+	.gf-hero__inner {
+		position: relative;
+		z-index: 1;
+		flex-direction: column;
+		align-items: center;
+		gap: clamp(1.5rem, calc(1.5rem + 1vw), 2rem);
+		text-align: center;
+	}
+
+	.gf-hero__inner > img,
+	.gf-hero__inner > .hero-html {
+		object-fit: contain;
+		width: min(60%, 16rem);
+		height: auto;
+	}
+
+	.gf-hero__copy {
+		flex-direction: column;
+		align-items: center;
+		gap: 1.25rem;
+		max-width: 52ch;
+	}
+
+	/* 進場：拆成語意片段逐段錯開淡入（~100ms stagger）。
+	   一次性 keyframe（非 interactive），僅在使用者未要求減少動態時啟用。 */
+	@media (prefers-reduced-motion: no-preference) {
+		.gf-hero__copy > *,
+		.gf-hero__inner > img,
+		.gf-hero__inner > .hero-html {
+			animation: gf-hero-in 0.5s cubic-bezier(0.2, 0, 0, 1) both;
+		}
+		.gf-hero__inner > img,
+		.gf-hero__inner > .hero-html {
+			animation-delay: 0s;
+		}
+		.gf-hero__eyebrow {
+			animation-delay: 0.05s;
+		}
+		.gf-hero h1 {
+			animation-delay: 0.1s;
+		}
+		.gf-hero__tagline {
+			animation-delay: 0.2s;
+		}
+		.gf-hero__actions {
+			animation-delay: 0.3s;
+		}
+		.gf-hero__command {
+			animation-delay: 0.4s;
+		}
+	}
+
+	@keyframes gf-hero-in {
+		from {
+			opacity: 0;
+			translate: 0 0.5rem; /* 小幅位移，進場柔和 */
+		}
+		to {
+			opacity: 1;
+			translate: 0 0;
+		}
+	}
+
+	.gf-hero__eyebrow {
+		margin: 0;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--sl-color-accent);
+	}
+
+	.gf-hero h1 {
+		font-size: clamp(var(--sl-text-3xl), calc(0.5rem + 5vw), var(--sl-text-6xl));
+		line-height: 1.1;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		color: var(--sl-color-white);
+	}
+
+	.gf-hero__tagline {
+		font-size: clamp(var(--sl-text-base), calc(0.0625rem + 1.2vw), var(--sl-text-xl));
+		color: var(--sl-color-gray-2);
+	}
+
+	.gf-hero__actions {
+		gap: 0.75rem 1rem;
+		flex-wrap: wrap;
+		justify-content: center;
+		margin-top: 0.25rem;
+	}
+
+	.gf-hero__command {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.625rem;
+		margin-top: 0.5rem;
+		padding: 0.625rem 0.875rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: var(--radius-control, 0.5rem);
+		background: var(--sl-color-gray-6);
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-white);
+		cursor: pointer;
+		transition:
+			border-color 0.15s ease,
+			background 0.15s ease,
+			scale 0.1s ease;
+	}
+
+	.gf-hero__command:hover {
+		border-color: var(--sl-color-accent);
+	}
+
+	.gf-hero__command:active {
+		scale: 0.96; /* 按壓觸感，固定 0.96 */
+	}
+
+	.gf-hero__command code {
+		font-family: var(--sl-font-mono);
+		background: none;
+		border: none;
+		padding: 0;
+	}
+
+	.gf-hero__prompt {
+		color: var(--sl-color-accent);
+		font-weight: 700;
+		font-family: var(--sl-font-mono);
+	}
+
+	.gf-hero__copy-icon {
+		opacity: 0.5;
+		font-size: 0.9em;
+	}
+
+	.gf-hero__command.is-copied .gf-hero__copy-icon::after {
+		content: " 已複製";
+		font-family: var(--sl-font);
+		color: var(--sl-color-accent);
+	}
+</style>

@@ -1,0 +1,37 @@
+---
+/*
+ * StructuralGrid — Cloudflare 式點陣背景裝飾層。
+ * 放進 position: relative 的容器內當底圖；用 radial-gradient 畫點陣，
+ * 再用 mask 讓邊緣淡出。純裝飾，aria-hidden。
+ */
+---
+
+<div class="structural-grid" aria-hidden="true"></div>
+
+<style>
+	.structural-grid {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		pointer-events: none;
+		--l-dot-color: #e6e6e8;
+		--l-dot-size: 18px 18px;
+		background-image: radial-gradient(var(--l-dot-color) 1px, transparent 1px);
+		background-size: var(--l-dot-size);
+		-webkit-mask-image: radial-gradient(
+			ellipse 75% 65% at 50% 42%,
+			#000 25%,
+			transparent 78%
+		);
+		mask-image: radial-gradient(
+			ellipse 75% 65% at 50% 42%,
+			#000 25%,
+			transparent 78%
+		);
+	}
+
+	:global(:root[data-theme="dark"]) .structural-grid {
+		--l-dot-color: rgba(255, 255, 255, 0.06);
+		--l-dot-size: 22px 22px;
+	}
+</style>

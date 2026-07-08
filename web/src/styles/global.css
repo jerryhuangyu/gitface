@@ -1,0 +1,119 @@
+/*
+ * global.css — Tailwind v4 entry + design tokens
+ *
+ * 建置層對齊 Cloudflare Developer Docs：starlight-tailwind 橋接 Starlight 色票
+ * 到 Tailwind，Tailwind utilities 可供 MDX 作者使用。
+ *
+ * 設計 token 刻意「不分層」（unlayered）定義在 :root：
+ *   - 未分層規則永遠贏過任何 @layer（含 Starlight 的 @layer starlight），
+ *     故灰階/accent/字體覆寫穩定生效；
+ *   - 不放進 @theme，避免 Tailwind v4 對「未被 utility 引用的 token」做
+ *     tree-shake 而導致 var() 取不到值。
+ *   - 元件與 starlight.css 一律用 var(--token) 取值。
+ */
+
+@layer base, starlight, theme, components, utilities;
+
+@import "@astrojs/starlight-tailwind";
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 設計 token（unlayered，永遠生效）
+ * ═══════════════════════════════════════════════════════════════════ */
+:root {
+	/* 字體 */
+	--sl-font:
+		"Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system,
+		"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+	/* 版面尺寸（對齊 Cloudflare layout.css） */
+	--sl-content-width: 45rem; /* 720px：有 TOC */
+	--sl-sidebar-width: 18.75rem; /* 300px */
+	--layout-toc-width: 18rem; /* 288px */
+
+	/* 標題階層收緊 */
+	--sl-text-h4: var(--sl-text-lg);
+	--sl-text-h5: var(--sl-text-base);
+
+	/* 圓角 */
+	--radius-card: 0.75rem;
+	--radius-control: 0.5rem;
+
+	/* Cloudflare cl1 語意色票（供 aside / badge / 元件引用） */
+	--color-cl1-white: #fff;
+	--color-cl1-black: #000;
+	--color-cl1-red-0: #3c0501;
+	--color-cl1-red-2: #780a02;
+	--color-cl1-red-7: #fe9f97;
+	--color-cl1-red-8: #feccc8;
+	--color-cl1-orange-0: #361a02;
+	--color-cl1-orange-2: #592b04;
+	--color-cl1-orange-8: #fbcda5;
+	--color-cl1-gold-0: #361a02;
+	--color-cl1-green-0: #0a2614;
+	--color-cl1-green-2: #104122;
+	--color-cl1-green-7: #55d584;
+	--color-cl1-green-8: #a8e9c0;
+	--color-cl1-blue-0: #001c43;
+	--color-cl1-blue-1: #002b67;
+	--color-cl1-blue-2: #003681;
+	--color-cl1-blue-7: #82b6ff;
+	--color-cl1-blue-8: #b9d6ff;
+	--color-cl1-violet-0: #350b42;
+	--color-cl1-violet-1: #490f5c;
+	--color-cl1-violet-8: #ebcaf6;
+	--color-cl1-gray-0: #1d1d1d;
+	--color-cl1-gray-2: #3d3d3d;
+	--color-cl1-gray-3: #4a4a4a;
+	--color-cl1-gray-7: #b6b6b6;
+	--color-cl1-gray-8: #d9d9d9;
+	--color-cl1-gray-9: #f2f2f2;
+
+	/* 中性灰階（去掉 Starlight 預設偏藍）— dark 主題 */
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #eeeeee;
+	--sl-color-gray-2: #c2c2c2;
+	--sl-color-gray-3: #8b8b8b;
+	--sl-color-gray-4: #585858;
+	--sl-color-gray-5: #383838;
+	--sl-color-gray-6: #272727;
+	--sl-color-gray-7: #1a1a1a;
+	--sl-color-black: #181818;
+
+	/* GitFace 綠 accent（品牌，刻意不採 Cloudflare 橘） */
+	--sl-color-accent-low: #12301f;
+	--sl-color-accent: #1f7a4f;
+	--sl-color-accent-high: #a8d8bd;
+
+	/* 表格語意 token */
+	--color-table-base: var(--sl-color-bg);
+	--color-table-fill: var(--sl-color-gray-6);
+	--color-table-tint: oklch(26.9% 0 0);
+}
+
+:root[data-theme="light"] {
+	--sl-color-white: #181818;
+	--sl-color-gray-1: #272727;
+	--sl-color-gray-2: #383838;
+	--sl-color-gray-3: #585858;
+	--sl-color-gray-4: #8b8b8b;
+	--sl-color-gray-5: #c2c2c2;
+	--sl-color-gray-6: #eeeeee;
+	--sl-color-gray-7: #f6f6f6;
+	--sl-color-black: #ffffff;
+
+	--sl-color-accent-low: #d2e9dc;
+	--sl-color-accent: #1f7a4f;
+	--sl-color-accent-high: #115c39;
+
+	--color-table-tint: oklch(96.7% 0 0);
+}
+
+html:not([data-has-toc]) {
+	--sl-content-width: 67.5rem;
+}
+
+body {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}

@@ -2,6 +2,8 @@
 title: GitFace
 description: 一條命令，讓每個 repo 用對 Git 身分。
 template: splash
+eyebrow: Git 身分管理 CLI
+command: npm install --global gitface
 hero:
   title: 一條命令，讓每個 repo 用對 Git 身分。
   tagline: 工作、個人、開源各有一組 user.name 和 user.email，手動改 git config 遲早會用錯身分 commit。GitFace 把每組身分存成 profile，之後在任何 repo 一次切換乾淨。
@@ -15,19 +17,20 @@ hero:
       variant: minimal
 ---
 
-import { Card, CardGrid } from "@astrojs/starlight/components";
+import { CardGrid } from "@astrojs/starlight/components";
+import FeatureCard from "../../components/FeatureCard.astro";
 
 <CardGrid>
-	<Card title="1 條命令" icon="rocket">
-		切換身分只要 `gitface use work`，不必記 Git config keys。
-	</Card>
-	<Card title="Local 優先" icon="approve-check">
-		預設只改目前 repo，不會誤動全域 Git 設定。
-	</Card>
-	<Card title="存在本機" icon="laptop">
-		Profiles 只存在你的電腦上，不用註冊帳號、不會上傳。
-	</Card>
-	<Card title="自動切換" icon="setting">
-		資料夾規則讓 repo 依所在位置自動用對身分。
-	</Card>
+	<FeatureCard title="Profiles 生命週期" icon="setting" href="/gitface/profiles/">
+		把工作、個人、開源各存成一組身分 profile，集中管理不再手改 config。
+	</FeatureCard>
+	<FeatureCard title="套用與檢查" icon="approve-check" href="/gitface/apply/">
+		`gitface use` 預設只改目前 repo，套用後可一鍵檢查目前身分是否正確。
+	</FeatureCard>
+	<FeatureCard title="Folder Rules" icon="laptop" href="/gitface/rules/">
+		資料夾規則讓 repo 依所在位置自動用對身分，clone 完不必再想。
+	</FeatureCard>
+	<FeatureCard title="JSON 與自動化" icon="rocket" href="/gitface/automation/">
+		所有指令支援 JSON 輸出，接 CI 與腳本乾淨可靠。
+	</FeatureCard>
 </CardGrid>

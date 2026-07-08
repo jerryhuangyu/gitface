@@ -4,6 +4,7 @@ description: 不需要先懂任何 GitFace 概念，照順序執行四步，這�
 ---
 
 import { LinkCard, CardGrid, Steps } from "@astrojs/starlight/components";
+import CommandBlock from "../../components/CommandBlock.astro";
 
 工作、個人、開源各有一組 `user.name` 和 `user.email`，手動改 `git config`
 遲早會用錯身分 commit。GitFace 把每組身分存成 profile，之後在任何 repo 用
@@ -17,9 +18,7 @@ import { LinkCard, CardGrid, Steps } from "@astrojs/starlight/components";
 
 1. **安裝**
 
-   ```sh
-   npm install --global gitface
-   ```
+   <CommandBlock command="npm install --global gitface" />
 
    安裝成全域 CLI。不想安裝的話，用 `npx gitface` 一次性執行也可以。
 
